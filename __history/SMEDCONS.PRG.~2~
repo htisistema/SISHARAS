@@ -1,0 +1,93 @@
+*****************************
+* GERAR CODIGO DE AUTORIZACAO
+*****************************
+FUNCTION smedcons(maut_cli,maut_prod)
+**************************************
+LOCAL mprg:='SMEDCONS',;
+      lci_aut:=13,cci_aut:=01,lba_aut:=20,cba_aut:=78,mcodig_c,mcodig_p,opcao:=' ',;
+      mnum_gerar,mcodig_o,mtela_aut,mcod_autor,m_auto:={},m_posicao:={},m_ponto:=0,;
+      mlci_aut:=03,mcci_aut:=01,mlba_aut:=20,mcba_aut:=78
+
+PRIVATE mcliente,mcpf,mcgc,mconsulta,mrsoc
+
+IF ! ver_nivel(mprg,'CONSULTAS MARCADAS','1',nivel_acess)
+        RETURN NIL
+ENDIF
+*----------------------------------------------
+IF ! AbriArq('sacdupr','dupr');RETURN NIL;ENDIF
+IF ! AbriArq('smedespe','espe');RETURN NIL;ENDIF
+IF ! AbriArq('smedcli','cli');RETURN NIL;ENDIF
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+*--------------------------------------------------
+mdata_sis := DATE()
+mtela_aut := SAVESCREEN(00,00,24,79)
+CLEAR GETS
+WHILE .T.
+        WHILE LASTKEY() <> 27
+                botao(mlci_aut,mcci_aut,mlba_aut,mcba_aut,,' CLIENTES COM CONSULTA MARCADA ')
+                **************************
+                SELE('dupr');ORDSETFOCUS(5)
+                GO TOP
+                **************************
+                IF ! dupr->(DBSEEK(DTOS(mdata_sis)))
+                        atencao('Nao existe nenhum Clientes Marcado nesta DATA')
+                        EXIT
+                ENDIF
+                ASIZE(m_auto,0)
+                ASIZE(m_posicao,0)
+                i := 0
+                WHILE ! EOF() .AND. dupr->emissao = mdata_sis
+                        IF EMPTY(dupr->status) .AND. cod_operado = dupr->cod_med
+                                setcor(3)
+                                DEVPOS(mlci_aut+1+i,mcci_aut+1);DEVOUT('Cliente: '+dupr->fornec+' - '+dupr->cliente+' - Hora:'+dupr->hora)
+                                setcor(1)
+                                AADD(m_auto,'Cliente: '+dupr->fornec+'-'+dupr->cliente+' - Hora:'+dupr->hora)
+                                AADD(m_posicao,RECNO())
+                        ELSE
+                                SKIP
+                                LOOP
+                        ENDIF
+                        IF i = 7;SCROLL(mlci_aut+1,mcci_aut+1,mlba_aut-1,mcba_aut-1,1);ELSE;i++;ENDIF
+                        SKIP
+                ENDDO
+                IF LEN(m_auto) > 0
+                        INKEY(5)
+                ELSE
+                        atencao('Nao existe nenhum Clientes Marcado',5)
+                ENDIF
+                IF LASTKEY() = 13 .AND. ! EMPTY(m_auto)
+                        botao(mlci_aut,mcci_aut,mlba_aut,mcba_aut,,' CLIENTES COM CONSULTA MARCADA ')
+                        m_ponto := ACHOICE(mlci_aut+1,mcci_aut+1,mlba_aut-1,mcba_aut-1,m_auto,,,m_ponto)
+                        IF LASTKEY() = 13
+                                mconsulta := dupr->tipo_con
+                                GO m_posicao[m_ponto]
+
+                                **********************
+                                SELE('cli');ORDSETFOCUS(2)
+                                GO TOP
+                                **********************
+                                cli->(DBSEEK(dupr->fornec))
+                                smed310(mconsulta)
+                                opcao := mensagem1('Confirma o ATENDIMENTO [S/n]:','S','S,N')
+                                IF LASTKEY() = 27 .OR. opcao = 'N'
+                                        LOOP
+                                ENDIF
+                                **************************
+                                SELE('dupr');ORDSETFOCUS(5)
+                                GO m_posicao[m_ponto]
+                                **************************
+                                BLOQREG()
+                                dupr->status := 'A'
+                                DBCOMMIT()
+                                DBUNLOCK()
+                        ENDIF
+                ENDIF
+        ENDDO
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+ENDDO
+RESTSCREEN(00,00,24,79,mtela_aut)
+RETURN NIL
+********************************** F I M ***********************************
+

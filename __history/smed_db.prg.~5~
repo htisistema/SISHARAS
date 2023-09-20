@@ -1,0 +1,256 @@
+***********************************
+* FUNCAO PARA ATUALIZAR OS DBF'S
+***********************************
+
+FUNCTION smed_dbf
+****************
+
+LOCAL matcov:={ }
+
+LOCAL mmerc,mmov,mpeds,mpede,mdupr,mcli,msetup,mcaixa,mcartao,mcor,mforn,mdupp
+
+SET CONS OFF
+SET WRAP ON
+SET TALK OFF
+SET SCOREBOARD OFF
+SET DATE BRITI
+SET DELE ON
+SET INTEN ON
+mcor := SETCOLOR()
+WHILE .T.
+        mmerc := SPACE(1)
+        mmov := SPACE(1)
+        mpeds := SPACE(1)
+        mpede := SPACE(1)
+        mdupr := SPACE(1)
+        mdupp := SPACE(1)
+        mcli := SPACE(1)
+        msetup:= SPACE(1)
+        mcaixa:= SPACE(1)
+        mcartao:= SPACE(1)
+        mforn := SPACE(1)
+
+        CLS
+        @ 01,01 SAY 'ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿ '
+        @ 02,01 SAY '³ ÄÄÄÜÜÜÜÜÜÜÜÜÜÄÄÄ ³Û'
+        @ 03,01 SAY '³    ÄÄÄÄÜÜÄÄÄÄ    ³Û'
+        @ 04,01 SAY '³     ÄÄÄÜÜÄÄÄ     ³Û'
+        @ 05,01 SAY '³    ÄÄÄÄÜÜÄÄÄÄ    ³Û'
+        @ 06,01 SAY '³ ÄÄÄÜÜÜÜÜÜÜÜÜÜÄÄÄ ³Û'
+        @ 07,01 SAY '³                  ³Û'
+        @ 08,01 SAY 'ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙÛ'
+        @ 09,01 SAY ' ßßßßßßßßßßßßßßßßßßßß'
+        @ 01,31 SAY 'ÜÜÜ ÜÜÜ Ü ÜÜÜÜ ÜÜÜÜ ÜÜÜÜ ÜÜÜÜ ÜÜÜÜ ÜÜÜÜÜ '
+        @ 02,31 SAY ' Û  Û Û Û ÛÜÜÜ ÛÜ   ÛÜÜÛ Û    Û  Û Û Û Û '
+        @ 03,31 SAY 'ÜÛÜ Û ÛÜÛ ÜÜÜÛ ÛÜÜÜ Û ÛÜ ÛÜÜÜ ÛÜÜÛ Û Û Û '
+        @ 04,31 SAY 'ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ'
+        @ 05,31 SAY 'Av.Bernardo Vieira de Melo, 4243 - Sl.24 '
+        @ 06,31 SAY 'Piedade - JaboatÆo dos Guararapes - PE   '
+        @ 07,31 SAY 'CEP.54410-000                            '
+        @ 08,31 SAY 'TeleFax: (081) 975.5923/976.6773         '
+        @ 11,00 SAY REPLI('ß',80)
+        DEVPOS(13,00);DEVOUT('1> Atualizar o arquivo CONVENIOS       [ ]  24.10.01')
+        DEVPOS(14,00);DEVOUT('2> Atualizar o arquivo CLIENTES        [ ]  05.05.04')
+        DEVPOS(15,00);DEVOUT('3> Atualizar o arquivo CONSULTA        [ ]  08/09/97')
+        DEVPOS(16,00);DEVOUT('4> Atualizar o arquivo SMEDCID         [ ]  06.05.02')
+        DEVPOS(24,00);DEVOUT('Marque com um "X" os Arquivos que deseja atualizar')
+
+        @ 13,40 GET mmerc PICT '@!' VALID mmerc $ 'X, '
+        @ 14,40 GET mmov PICT '@!' VALID mmov $ 'X, '
+        @ 15,40 GET mpeds PICT '@!' VALID mpeds $ 'X, '
+        @ 16,40 GET mpede PICT '@!' VALID mpede $ 'X, '
+        READ
+        IF LASTKEY() = 27
+                DEVPOS(24,00);DEVOUT('Deseja Finalizar a opera‡Æo [S/n]:')
+                opcao := 'S'
+                @ 23,COL()+1 GET opcao PICT '@!' VALID opcao $ 'S,N'
+                READ
+                IF opcao = 'S'
+                        SETCOLOR('w/n,,N,x')
+                        CLEAR
+                        QUIT
+                ELSE
+                        LOOP
+                ENDIF
+        ENDIF
+        DEVPOS(24,00);DEVOUT('Confirma a Atualiza‡Æo [S/n]:')
+        opcao := 'S'
+        @ 23,COL()+1 GET opcao PICT '@!' VALID opcao $ 'S,N'
+        READ
+        IF LASTKEY() = 27
+                DEVPOS(24,00);DEVOUT('Deseja Finalizar a opera‡Æo [S/n]:')
+                opcao := 'S'
+                @ 23,COL()+1 GET opcao PICT '@!' VALID opcao $ 'S,N'
+                READ
+                IF opcao = 'S'
+                        SETCOLOR('w/n,,N,x')
+                        CLEAR
+                        QUIT
+                ELSE
+                        LOOP
+                ENDIF
+        ENDIF
+        IF opcao = 'N'
+                LOOP
+        ENDIF
+        limpa(13,00,24,79)
+        SETPOS(12,00)
+        IF mmerc = 'X'
+                DEVPOS(ROW()+1,00);DEVOUT('** Atualizando o arquivo CONVENIO.DBF.. Aguarde um momento OK')
+                rename SMEDCONV.DBF TO CONVENIO.DBF
+                matcov:={ }
+                AADD(matcov,{'codconv','C',2,0})
+                AADD(matcov,{'modalidade','C',2,0})
+                AADD(matcov,{'tipo','C',1,0})
+                AADD(matcov,{'fator','N',3,1})
+                AADD(matcov,{'rsocial','C',30,0})
+                AADD(matcov,{'endereco','C',35,0})
+                AADD(matcov,{'foneconv','C',13,0})
+                AADD(matcov,{'dataini','D',8,0})
+                AADD(matcov,{'prazo','N',2,0})
+                AADD(matcov,{'valor_con','N',10,2})
+                AADD(matcov,{'valor_op','N',10,2})
+                DBCREATE('smedconv.dbf',matcov)
+                ERASE *.ntx
+                USE smedconv ALIAS conv NEW SHARED
+                **************
+                SELE('conv')
+                **************
+                BLOQARQ()
+                APPEND FROM convenio.DBF
+                COMMIT
+                UNLOCK
+                CLOSE ALL
+                ERASE convenio.dbf
+        ENDIF
+        IF mmov = 'X'
+                DEVPOS(ROW()+1,00);DEVOUT('** Atualizando o arquivo CLIENTE.DBF.. Aguarde um momento OK')
+                rename SMEDCLI.DBF TO SMEDCLIV.DBF
+                rename SMEDCLI.DBT TO SMEDCLIV.DBT
+                matcli:={ }
+                AADD(matcli,{'registro','C',5,0})
+                AADD(matcli,{'data','D',8,0})
+                AADD(matcli,{'nome','C',35,0})
+                AADD(matcli,{'datans','D',8,0})
+                AADD(matcli,{'sexo','C',1,0})
+                AADD(matcli,{'cor','C',1,0})
+                AADD(matcli,{'endereco','C',35,0})
+                AADD(matcli,{'cidade','C',25,0})
+                AADD(matcli,{'fone','C',15,0})
+                AADD(matcli,{'est','C',2,0})
+                AADD(matcli,{'cep','C',9,0})
+                AADD(matcli,{'resp','C',30,0})
+                AADD(matcli,{'indica','C',30,0})
+                AADD(matcli,{'datault','D',8,0})
+                AADD(matcli,{'historico','M',10,0})
+                AADD(matcli,{'presc','M',10,0})
+                AADD(matcli,{'probinden','M',10,0})
+                AADD(matcli,{'diagnostic','M',10,0})
+                AADD(matcli,{'exame_comp','M',10,0})
+                AADD(matcli,{'codconv','C',2,0})
+                AADD(matcli,{'bairro','C',25,0})
+                AADD(matcli,{'conjuge','C',30,0})
+                AADD(matcli,{'emp_conj','C',20,0})
+                AADD(matcli,{'prof_conj','C',20,0})
+                AADD(matcli,{'fone_conj','C',15,0})
+                AADD(matcli,{'plano','C',25,0})
+                AADD(matcli,{'empresa','C',25,0})
+                AADD(matcli,{'num_cart','C',18,0})
+                AADD(matcli,{'val_cart','D',8,0})
+                AADD(matcli,{'rg','C',12,0})
+                AADD(matcli,{'fuma','C',1,0})
+                AADD(matcli,{'fum_dat1','D',8,0})
+                AADD(matcli,{'fum_dat2','D',8,0})
+                AADD(matcli,{'obs1','C',60,0})
+                AADD(matcli,{'obs2','C',60,0})
+                AADD(matcli,{'obs3','C',60,0})
+                AADD(matcli,{'obs4','C',60,0})
+                AADD(matcli,{'ult_mest1','D',8,0})
+                AADD(matcli,{'pro_nasc1','D',8,0})
+                AADD(matcli,{'dat_nasc1','D',8,0})
+                AADD(matcli,{'ult_mest2','D',8,0})
+                AADD(matcli,{'pro_nasc2','D',8,0})
+                AADD(matcli,{'dat_nasc2','D',8,0})
+                AADD(matcli,{'ult_mest3','D',8,0})
+                AADD(matcli,{'pro_nasc3','D',8,0})
+                AADD(matcli,{'dat_nasc3','D',8,0})
+                AADD(matcli,{'ult_mest4','D',8,0})
+                AADD(matcli,{'pro_nasc4','D',8,0})
+                AADD(matcli,{'dat_nasc4','D',8,0})
+                AADD(matcli,{'ult_mest5','D',8,0})
+                AADD(matcli,{'pro_nasc5','D',8,0})
+                AADD(matcli,{'dat_nasc5','D',8,0})
+                AADD(matcli,{'ult_mest6','D',8,0})
+                AADD(matcli,{'pro_nasc6','D',8,0})
+                AADD(matcli,{'dat_nasc6','D',8,0})
+                DBCREATE('smedcli.dbf',matcli)
+                ERASE *.ntx
+                USE smedcli ALIAS cli NEW SHARED
+                **************
+                SELE('cli')
+                **************
+                BLOQARQ()
+                APPEND FROM smedcliv.DBF
+                COMMIT
+                UNLOCK
+                CLOSE ALL
+                ERASE smedcliv.dbf
+                ERASE smedcliv.dbt
+        ENDIF
+        IF mpeds = 'X'
+                DEVPOS(ROW()+1,00);DEVOUT('** Atualizando o arquivo CONSULTA.DBF.. Aguarde um momento OK')
+                rename SMEDCON.DBF TO SMEDCONS.DBF
+                matcons:={ }
+                AADD(matcons,{'turno','C',2,0})
+                AADD(matcons,{'data','D',8,0})
+                AADD(matcons,{'hora','C',5,0})
+                AADD(matcons,{'cod_cli','C',5,0})
+                AADD(matcons,{'nome','C',35,0})
+                AADD(matcons,{'con_conv','C',2,0})
+                AADD(matcons,{'datans','D',8,0})
+                AADD(matcons,{'fone','C',13,0})
+                DBCREATE('smedcon.dbf',matcons)
+                ERASE *.ntx
+                USE smedcon ALIAS con NEW SHARED
+                **************
+                SELE('con')
+                **************
+                BLOQARQ()
+                APPEND FROM smedcons.DBF
+                COMMIT
+                UNLOCK
+                CLOSE ALL
+                ERASE smedcons.dbf
+        ENDIF
+        IF mpede = 'X'
+                DEVPOS(ROW()+1,00);DEVOUT('** Atualizando o arquivo SMEDCID.DBF.. Aguarde um momento OK')
+                rename SMEDCID.DBF TO SMEDCIDV.DBF
+                matproc:={ }
+                AADD(matproc,{'codigo','C',11,0})
+                AADD(matproc,{'cod','C',5,0})
+                AADD(matproc,{'nome','C',60,0})
+                AADD(matproc,{'vlr_us','N',8,2})
+                AADD(matproc,{'tipo','C',1,0})
+                DBCREATE('smedcid.dbf',matproc)
+                ERASE *.ntx
+                USE smedcid ALIAS cid NEW SHARED
+                **************
+                SELE('cid')
+                **************
+                BLOQARQ()
+                APPEND FROM smedcidv.DBF
+                COMMIT
+                UNLOCK
+                CLOSE ALL
+                ERASE smedcidv.dbf
+        ENDIF
+        SETPOS(ROW()+1,00)
+        RUN ERASE *.ntx
+        RUN ERASE TEXTO.dbf
+        RUN ERASE TEXTO.dbt
+        DEVPOS(24,00);DEVOUT('Atualiza‡Æo Completa com exito !!!')
+        SETCOLOR('w/n,,N,x')
+        CLEAR
+        quit
+ENDDO
+RETURN NIL

@@ -1,0 +1,211 @@
+#INCLUDE 'INKEY.CH'
+
+FUNCTION smedcor(mop)
+*****************
+
+LOCAL f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,;
+      oconsprod,ocolprod[2],f7i,f7nkey,f7opcao,mcodcli,mponto,;
+      mcod_cor,mdescricao,mobs1,mobs2,mobs3,mobs4,mobs5,mobs6,mobs7,mobs8,mobs9,mobs10
+MEMVAR mcod_cli
+
+f7lci := f7cci := 0
+f7lba := 22
+f7cba := 65
+
+f7msele := SELE()
+f7morde := INDEXORD()
+IF ! AbriArq('smedcor','scor');RETURN NIL;ENDIF
+*************
+SELE('scor');ORDSETFOCUS(1)
+*************
+op_tela(00,15,30,80,' PELAGEM DE ANIMAIS                  Quantidades: '+TRANSFORM(LASTREC(),'999,999'))
+oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+ocolprod[1] := TBCOLUMNNEW('Descricao',{||scor->descricao+SPACE(15)})
+ocolprod[2] := TBCOLUMNNEW('Cod.',{||scor->codigo})
+f7i:=0
+FOR f7i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[f7i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+WHILE .T.
+        mcod_cor := 0
+        mdescricao:= SPACE(40)
+        mobs1:=mobs2:=mobs3:=mobs4:=mobs5:=mobs6:=mobs7:=;
+        mobs8:=mobs9:=mobs10:=SPACE(60)
+
+        exibi_prg('SMEDCOR')
+        IF mop = '*'
+                mensagem('<P>esquisa <I>nclusao <A>Alterar e <E>xcluir <ESC>Retornar')
+        ELSE
+                mensagem('<PGUP> <PGDN> <P>esquisa <I>nclusao <ENTER> Conf. <ESC>Retornar')
+        ENDIF
+        f7nkey := 0
+        WHILE f7nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                botao(f7lba+1,f7cci,f7lba+3,f7cba,,' Detalhe ')
+                setcor(1)
+                DEVPOS(f7lba+1,f7cci+1);DEVOUT('Caracteristicas:')
+                setcor(3)
+                DEVPOS(f7lba+2,f7cci+1);DEVOUT(scor->obs1)
+                DEVPOS(f7lba+3,f7cci+1);DEVOUT(scor->obs2)
+                setcor(1)
+                f7nkey := INKEY(0)
+        ENDDO
+        IF f7nkey == K_ESC
+                EXIT
+        ELSEIF f7nkey == 105 .OR. f7nkey == 73
+                *************
+                SELE('scor');ORDSETFOCUS(1)
+                GO BOTT
+                *************
+                mcod_cor := VAL(scor->codigo) + 1
+                setcor(1)
+                op_tela(10,10,24,80,'INCLUSÃO DE RAÇAS')
+                DEVPOS(01,01);DEVOUT('Codigo........:')
+                DEVPOS(02,01);DEVOUT('Descricao.....:')
+                DEVPOS(03,01);DEVOUT('Caracteristica:')
+                @ 01,17 GET mcod_cor PICT '99999' //ver_cor(mcod_cor)
+                @ 02,17 GET mdescricao PICT '@!' VALID IF(EMPTY(mdescricao),.F.,.T.)
+                @ 03,17 GET mobs1 PICT '@!'
+                @ 04,17 GET mobs2 PICT '@!'
+                READ
+                IF LASTKEY() = 27
+                        wvw_lclosewindow()
+                        LOOP
+                ENDIF
+                opcao := op_simnao('S','Confirma a Inclusao da Raça:')
+                IF opcao = 'N' .OR. LASTKEY() = 27
+                        wvw_lclosewindow()
+                        LOOP
+                ENDIF
+                ADIREG()
+                scor->codigo := STRZERO(mcod_cor,5)
+                scor->descricao := mdescricao
+                scor->obs1     := mobs1                        
+                scor->obs2     := mobs2
+                DBCOMMIT()
+                DBUNLOCK()
+                wvw_lclosewindow()
+                oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                ocolprod[1] := TBCOLUMNNEW('Descricao',{||scor->descricao+SPACE(15)})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||scor->codigo})
+                f7i:=0
+                FOR f7i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f7i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+                
+        ELSEIF f7nkey == K_ENTER
+                mcod_cor := VAL(scor->codigo)
+                   IF mop = NIL
+                        op_tela(10,10,12,60,'Escolha a Opcao')
+                        DEVPOS(01,00);DEVOUT('Deseja <A>lterar <E>xcluir:')
+                        f7opcao := 'A'
+                        @ 01,COL()+1 GET f7opcao PICT '@!' VALID f7opcao $ 'A,E'
+                        READ
+                        wvw_lclosewindow()
+                        IF LASTKEY() = 27
+                                LOOP
+                        ELSEIF f7opcao = 'A'
+                                mcod_cor            :=  VAL(scor->codigo)
+                                mdescricao           :=  scor->descricao 
+                                mobs1               :=  scor->obs1             
+                                mobs2               :=  scor->obs2     
+                                setcor(1)
+                                op_tela(10,10,24,80,'ALTERACAO DE RAÇAS')
+                                DEVPOS(01,01);DEVOUT('Codigo........:')
+                                DEVPOS(02,01);DEVOUT('Descricao.....:')
+                                DEVPOS(03,01);DEVOUT('Caracteristica:')
+                                @ 01,17 GET mcod_cor PICT '99999'
+                                @ 02,17 GET mdescricao PICT '@!' VALID IF(EMPTY(mdescricao),.F.,.T.)
+                                @ 03,17 GET mobs1 PICT '@!'
+                                @ 04,17 GET mobs2 PICT '@!'
+                                READ
+                                IF LASTKEY() = 27
+                                        wvw_lclosewindow()
+                                        LOOP
+                                ENDIF
+                                opcao := op_simnao('S','Confirma a ALTERACAO da Raça:')
+                                IF opcao = 'N' .OR. LASTKEY() = 27
+                                        wvw_lclosewindow()
+                                        LOOP
+                                ENDIF
+                                BLOQREG()
+                                scor->codigo    := STRZERO(mcod_cor,5)
+                                scor->descricao := mdescricao
+                                scor->obs1     := mobs1                        
+                                scor->obs2     := mobs2
+                                DBCOMMIT()
+                                DBUNLOCK()
+                                wvw_lclosewindow()
+                        ELSEIF f7opcao = 'E'
+                                setcor(1)
+                                op_tela(10,10,24,80,'EXCLUSAO DE RAÇAS')
+                                DEVPOS(01,01);DEVOUT('Codigo........:')
+                                DEVPOS(02,01);DEVOUT('Descricao.....:')
+                                DEVPOS(03,01);DEVOUT('Caracteristica:')
+                                DEVPOS(01,17 );DEVOUT(scor->codigo)
+                                DEVPOS(02,17 );DEVOUT(scor->descricao)
+                                DEVPOS(03,17 );DEVOUT(scor->obs1)
+                                DEVPOS(04,17 );DEVOUT(scor->obs2) 
+                                READ
+                                IF LASTKEY() = 27
+                                        wvw_lclosewindow()
+                                        LOOP
+                                ENDIF
+                                opcao := op_simnao('N','Confirma a EXCLUSAO da Raça:')
+                                IF opcao = 'N' .OR. LASTKEY() = 27
+                                        wvw_lclosewindow()
+                                        LOOP
+                                ENDIF
+                                BLOQREG()
+                                DELE
+                                DBCOMMIT()
+                                DBUNLOCK()
+                                wvw_lclosewindow()
+                        ENDIF
+                        oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                        ocolprod[1] := TBCOLUMNNEW('Descricao',{||scor->descricao+SPACE(15)})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||scor->codigo})
+                        f7i:=0
+                        FOR f7i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f7i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ELSE
+                        CLEAR GETS
+                        EXIT
+                ENDIF
+        ELSE
+                IF genkey(oconsprod,f7nkey,'raca')
+                        oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                        ocolprod[1] := TBCOLUMNNEW('Descricao',{||scor->descricao+SPACE(15)})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||scor->codigo})
+                        f7i:=0
+                        FOR f7i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f7i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+
+END
+SELE(f7msele);IF(f7morde>0,ORDSETFOCUS(f7morde),)
+wvw_lclosewindow()
+IF f7nkey == K_ESC
+        RELEASE f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        RETURN NIL
+ELSE
+        RELEASE f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        CLEAR GETS
+        RETURN mcod_cor
+ENDIF
+RETURN NIL
+******************************* f i m *********************************************

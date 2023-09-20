@@ -1,0 +1,184 @@
+* RELATORIO de INSEMINACAO
+**************************
+FUNCTION smed491
+*****************
+LOCAL mprg:='SMED491',opcao := ' ',;
+      cons_semen:={},cons_prop:={},cons_anim:={},;
+      minseminado,mprenhe,mnascimento,mcomando,mpag,;
+      minse_ini,minse_fim,mpren_ini,mpren_fim,mnasc_ini,mnasc_fim,mcomu_ini,mcomu_fim,;
+      mcomunicado,mtotal_pren,mtotal_npren,mtotal_nasc,mtotal_nnasc,mtotal_comu,mtotal_ncomu
+
+PRIVATE mcod_ani,mcod_doa,mtipo_imp,mimp_tipo:=0,marq:=SPACE(35)
+IF ! ver_nivel(mprg,'RELATORIO DE INSEMINACAO','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(10,0,20,80,'RELATORIO DE INSEMINACAO',,1)
+mtipo_imp := m_indiv[1,18]
+WHILE .T.
+        mtit := 'RELATORIO DE INSEMINACAO'
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mcod_ani := mcod_doa := mpag := ;
+        mtotal_pren:=mtotal_npren:=mtotal_nasc:=mtotal_nnasc:=mtotal_comu:=mtotal_ncomu:=0
+        minseminado := mprenhe := mnascimento := mcomunicado := 'N'
+        minse_ini:=minse_fim:=mpren_ini:=mpren_fim:=mnasc_ini:=mnasc_fim:=mcomu_ini:=mcomu_fim := CTOD('  /  /  ')
+        limpa(00,00,40,120)
+        exibi_prg(mprg)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        //DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(0, 1);DEVOUT('Codigo GARANHAO.................:')
+        DEVPOS(1, 1);DEVOUT('Codigo DOADORA..................:')
+        DEVPOS(2, 1);DEVOUT('Data inicial INSEMINACAO........:')
+        DEVPOS(2,45);DEVOUT('Data Final:')
+        DEVPOS(3, 1);DEVOUT('Data inicial CONFIRMACAO PRENHES:')
+        DEVPOS(3,45);DEVOUT('Data Final:')
+        DEVPOS(4, 1);DEVOUT('Data inicial NASCIMENTO.........:')
+        DEVPOS(4,45);DEVOUT('Data Final:')
+        DEVPOS(5, 1);DEVOUT('Data inicial COMUNICADO ASSOC...:')
+        DEVPOS(5,45);DEVOUT('Data Final:')
+        DEVPOS(6, 1);DEVOUT('SO INSEMINACAO LIBERADO....[S/N]:')
+        DEVPOS(7, 1);DEVOUT('SO Confirma de PRENHENS....[S/N]:')
+        DEVPOS(8, 1);DEVOUT('SO NASCIMENTOS.............[S/N]:')
+        DEVPOS(9, 1);DEVOUT('SO Comunicado Associacao...[S/N]:')
+        //@ 0,22 GET mdocumento
+        //@ 0,24 GET mcod_ani PICT '99999' VALID IF(EMPTY(mcod_ani),.F.,ver_prop(mcod_ani,0,30))
+        @ 0,35 GET mcod_ani PICT '99999' VALID ver_prop(mcod_ani,0,47)
+        @ 1,35 GET mcod_doa PICT '99999' VALID ver_prop(mcod_doa,1,47)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_animal(mcod_ani,0,47)
+        ver_animal(mcod_doa,1,47)
+
+        @ 2,35 GET minse_ini
+        @ 2,57 GET minse_fim VALID IF(minse_ini > minse_fim,.F.,.T.) WHEN ! EMPTY(minse_ini)
+        @ 3,35 GET mpren_ini WHEN EMPTY(minse_ini)
+        @ 3,57 GET mpren_fim VALID IF(mpren_ini > mpren_fim,.F.,.T.) WHEN ! EMPTY(mpren_ini)
+        @ 4,35 GET mnasc_ini WHEN EMPTY(minse_ini) .AND. EMPTY(mpren_ini)
+        @ 4,57 GET mnasc_fim VALID IF(mnasc_ini > mnasc_fim,.F.,.T.) WHEN ! EMPTY(mnasc_ini)
+        @ 5,35 GET mcomu_ini WHEN EMPTY(minse_ini) .AND. EMPTY(mpren_ini) .AND. EMPTY(mnasc_ini)
+        @ 5,57 GET mcomu_fim VALID IF(mcomu_ini > mcomu_fim,.F.,.T.)  WHEN ! EMPTY(mcomu_ini)
+
+        @ 6,35 GET minseminado PICT '@!' VALID minseminado $ 'S,N'
+        @ 7,35 GET mprenhe PICT '@!' VALID mprenhe $ 'S,N'
+        @ 8,35 GET mnascimento PICT '@!' VALID mnascimento $ 'S,N'
+        @ 9,35 GET mcomunicado PICT '@!' VALID mcomunicado $ 'S,N'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        cons_semen := {}
+        IF ! EMPTY(mcod_ani)
+                mcomando := "SELECT * FROM smedinsem WHERE cod_garan = "+sr_cdbvalue(mcod_ani)
+        ELSEIF ! EMPTY(mcod_doa)
+                mcomando := "SELECT * FROM smedinsem WHERE cod_doado = "+sr_cdbvalue(mcod_doa)
+                //sr_getconnection():exec("SELECT * FROM smedinsem WHERE cod_anim = "+sr_cdbvalue(mcod_ani),,.t.,@cons_semen)
+        ELSE
+                mcomando := "SELECT * FROM smedinsem WHERE data IS NOT NULL"
+                //sr_getconnection():exec("SELECT * FROM smedinsem WHERE data IS NOT NULL",,.t.,@cons_semen)
+        ENDIF
+        IF ! EMPTY(minse_ini)
+                mcomando := mcomando + " AND data_ins >= "+sr_cdbvalue(minse_ini)+" AND data_ins <= "+sr_cdbvalue(minse_fim)
+        ELSEIF ! EMPTY(mpren_ini)
+                mcomando := mcomando + " AND DATA_PREN >= "+sr_cdbvalue(mpren_ini)+" AND DATA_PREN <= "+sr_cdbvalue(mpren_fim)
+        ELSEIF ! EMPTY(mnasc_ini)
+                mcomando := mcomando + " AND DATA_NASC >= "+sr_cdbvalue(mnasc_ini)+" AND DATA_NASC <= "+sr_cdbvalue(mnasc_fim)
+        ELSEIF ! EMPTY(mcomu_ini)
+                mcomando := mcomando + " AND DATA_COMU >= "+sr_cdbvalue(mcomu_ini)+" AND DATA_COMU <= "+sr_cdbvalue(mcomu_fim)
+        ENDIF
+        mtipo := 'INSEMINACAO'
+        IF minseminado = 'S'
+                mtipo := ' INSEMINADOS -'
+                mcomando := mcomando + " AND data_ins IS NOT NULL"
+        ENDIF
+        IF mprenhe = 'S'
+                mtipo := ' PRENHAS -'
+                mcomando := mcomando + " AND data_pren IS NOT NULL"
+        ENDIF
+        IF mnascimento = 'S'
+                mtipo := ' NASCIDOS -'
+                mcomando := mcomando + " AND data_nasc IS NOT NULL"
+        ENDIF
+        IF mcomunicado = 'S'
+                mtipo := ' COMUNICADOS -'
+                mcomando := mcomando + " AND data_comu IS NOT NULL"
+        ENDIF
+        sr_getconnection():exec(mcomando,,.t.,@cons_semen)
+        IF LEN(cons_semen) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        IF ! imp_arq('REL_INSEM.REL','R')
+                LOOP
+        ENDIF
+        i := 0
+        m_repass := {}
+        FOR i = 1 TO LEN(cons_semen)
+                prog_imp(i,DTOC(cons_semen[i,1]))
+                cons_prop:={}
+                sr_getconnection():exec("SELECT nome,(SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,5])+"),(SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,6])+"),(SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3])+") FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_prop)
+                //sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        LOOP
+                ENDIF
+                /*
+                cons_anim:={}
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                IF LEN(cons_anim) = 0
+                        LOOP
+                ENDIF
+                */
+                IF mpag=0 .OR. PROW()>=57
+                        mpag := mpag+1
+                        IF mpag > 1
+                                EJECT
+                        ENDIF
+                        cabecalho(mpag,mtit,mtipo,mprg)
+                        imprt(mtipo_imp,'C')
+                        DEVPOS(PROW()+1,0);DEVOUT('Documento')
+                        DEVPOS(PROW(),PCOL()+3);DEVOUT('Garanhao        ')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Doadora         ')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Receptora       ')
+                        DEVPOS(PROW(),PCOL());DEVOUT('Inseminacao')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Prenhes')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Nascimento')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Comunicado')
+                        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+                ENDIF
+                                          //     doc                            GARANHAO                                                          DOADORA                                                   RECEPTORA                                INSEMINACAO              PRENHES                          NASCIMENTO                   COMUNICADO
+                DEVPOS(PROW()+1,00);DEVOUT(cons_semen[i,2]+'  '+STR(cons_semen[i,4],5)+'-'+SUBSTR(cons_prop[1,1],1,10)+'  '+STR(cons_semen[i,5],5)+'-'+SUBSTR(cons_prop[1,2],1,10)+'  '+STR(cons_semen[i,6],5)+'-'+SUBSTR(cons_prop[1,3],1,10)+'   '+DTOC(cons_semen[i,1])+'  '+DTOC(cons_semen[i,10])+'   '+DTOC(cons_semen[i,12])+'  '+DTOC(cons_semen[i,14]))
+                IF ! EMPTY(cons_semen[i,10])
+                        mtotal_pren ++
+                ELSE
+                        mtotal_npren ++
+                ENDIF
+                IF ! EMPTY(cons_semen[i,12])
+                        mtotal_nasc ++
+                ELSE
+                        mtotal_nnasc ++
+                ENDIF
+                IF ! EMPTY(cons_semen[i,14])
+                        mtotal_comu ++
+                ELSE
+                        mtotal_ncomu ++
+                ENDIF
+
+        NEXT
+        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE INSEMINACOES.....: '+TRANSFORM(LEN(cons_semen),'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE PRENHES..........: '+TRANSFORM(mtotal_pren,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE NASCIMENTOS......: '+TRANSFORM(mtotal_nasc,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE COMUNICADO ASSOC.: '+TRANSFORM(mtotal_comu,'99,999'))
+        EJECT
+        SETPRC(00,00)
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('REL_INSEM.REL')
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

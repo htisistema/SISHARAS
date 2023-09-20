@@ -1,0 +1,481 @@
+*****************
+* TELA PRINCIPAL
+*****************
+#include "wvwtools.ch"
+#include "inkey.ch"              // constantes de codigos das teclas
+#include "Fileio.ch"             // funcoes de leitura/gravacao de arquivo
+#include "set.ch"                // constantes da funcao SETKEY()
+#include "wingdi.ch"
+#include "winuser.ch"
+#include "common.ch"
+#include "setcurs.ch"
+#include "getexit.ch"
+//SQLRDD***********************************
+#include "sqlrdd.ch"
+//#include "pgs.ch"          // Needed if you plan to use native connection to Postgres
+//#include "mysql.ch"        // Needed if you plan to use native connection to MySQL
+//#include "oracle.ch"       // Needed if you plan to use native connection to Oracle
+#include "firebird.ch"     // Needed if you plan to use native connection to Firebird
+#include "msg.ch"
+*******************************************
+GLOBAL oApp
+
+FUNCTION main(mmed)
+******************
+LOCAL opcao
+PRIVATE dsemana,vcor[8],apre1,apre2
+PUBLIC  mversao := 'v14.04.04',;
+        sistema := 'SISVET - Sistema de Controle Veterinario',;
+        mfone_hrb := '3735.3592',;
+        senha_acess,nivel_acess,cod_operado,mmedico,cor,;
+        memp_resa,crm,cpf,fir,ma,mesp,mold,mdata_sis,mrelatorio,impressora,;
+        mlci,mcci,mlba,mcba,mens,mn_sac0 := NIL,;
+        mcol_public :=100,;
+        mlin_public :=33,;
+        m_cfg:={},m_set:={},;
+        ncnn:=0,ncnn1:=0,;
+        m_line := 'ON',;
+        m_indiv:={}
+****************************************************
+cor := SETCOLOR()
+fir := 'HRB'
+ma := '-Informatica Ltda.'
+mdata_sis := DATE()
+************************************************
+mold := 'ÖÄ·º½ÄÓº'      // Molduras das janelas
+mol := '        '      // Molduras das janelas
+*************************************************
+// PROCESSADOR 100% EM USO
+//FreeTSlice()
+//OL_AutoYield(.t.)
+// fim
+// MODULO PRA ACESSAR ARQUIVOS .CDX
+//REQUEST DBFCDX
+//REQUEST DBFFPT
+//RDDSETDEFAULT('DBFCDX')
+//
+REQUEST SQLRDD             // SQLRDD should be linked in
+REQUEST SR_FIREBIRD        // Needed if you plan to use native connection to Firebird
+REQUEST DBFCDX
+REQUEST DBFFPT
+*************************************************************************************
+REQUEST HB_CODEPAGE_PTISO
+REQUEST HB_LANG_ES
+REQUEST HB_CODEPAGE_ES
+REQUEST HB_CODEPAGE_ESMWIN
+REQUEST HB_CODEPAGE_ESWIN
+
+WITH OBJECT ( oApp := WvW_tApplication():New( CurDrive() + ":\" + CurDir() ) )
+        :cImagePath := ''
+        :Setup()
+        :SetTitle( "SISVET " + mversao )
+        :SetIcon( "winflag.ico" )
+        //:SetIcon( "hrb.ico" )
+        :lDevelopment := .T.
+END
+
+
+WvW_SetGet( "RDD"         ,"DBFCDX")
+WvW_SetGet( "CODEPAGE"    ,255)
+WvW_SetGet( "WIN_ROWS"    ,28)
+WvW_SetGet( "WIN_COLS"    ,88)
+wvw_SetVertCaret(.F.)
+wvw_setmaincoord(.F.)
+SET EVENTMASK TO 159
+SET CONS OFF
+SET WRAP ON
+SET DATE BRITI
+SET DELE ON
+SET EPOCH TO 1950
+
+SETMODE(50,120)
+WVW_SetFont(,'lucida console',12, 7,FW_BOLD, PROOF_QUALITY )  // 800X600
+
+//SetMode(30,100)
+mcol_public := 120
+mlin_public := 50
+//WVW_SetFont(,'terminal',21,,5)  // 1024X768
+//mnum_principal := wvw_nopenwindow('',00,00,mlin_public,mcol_public)
+mn_sac0 := wvw_nopenwindow('',00,00,mlin_public,mcol_public)
+//op_tela(00,00,50,120,memp_resa+SPACE(20)+'.: SISVET '+mversao+' :.'+SPACE(20)+'Data:'+DTOC(mdata_sis)+' - '+ver_dia(mdata_sis))
+IF ! FILE('SACCFG.INI')
+        saccfg('1')
+ENDIF
+lin := MEMOLINE(MEMOREAD('SACCFG.INI'),110,1,,)
+linhas := linha := 0
+linhas := MLCOUNT(MEMOREAD('SACCFG.INI'),110)
+FOR linha = 1 TO  linhas
+        lin := MEMOLINE(MEMOREAD('SACCFG.INI'),110,linha,,)
+        IF SUBSTR(lin,5,1) = 'C'
+                AADD(m_cfg,ALLTRIM(SUBSTR(lin,30)))
+        ELSE
+                AADD(m_cfg,VAL(SUBSTR(lin,30)))
+        ENDIF
+NEXT
+IF LEN(m_cfg) = 0
+        atencao('Favor verificar o arquivo SACCFG.INI ou entrar em contato com a HRB Informatica...' )
+        RETURN NIL
+ENDIF
+
+wvw_noclose()
+wvw_maximize()
+WVW_CenterWindow(,.T.,.T.)
+wvw_noclose()
+wvw_maximize(0)
+WVW_CenterWindow(,.T.,.T.)
+ncnn := 0
+op_tela(10,15,12,85,'A T E N C A O ')
+WVW_SetFont(,"lucida console",13, 7,, PROOF_QUALITY )  // 800X600
+DEVPOS(01,01);DEVOUT('Tentando CONEXAO com o 1o. BANCO DE DADOS, Aguarde um Momento......')
+IF m_cfg[2] = 'S' .AND. ! FILE('SISCOM.GDB')
+        IF SQL_SUCCESS = FBCreateDB( 'siscom.gdb', 'SYSDBA', 'masterkey', 300, 'ISO8859_1')
+                atencao('Banco Criado com SUCESSO')
+        ENDIF
+ENDIF
+RDDSETDEFAULT('SQLRDD')
+SR_SetMultiLang( .t. )
+SR_SetBaseLang( LANG_PT_BR )
+********** CONECTANDO AO FIREBIRD *************************************************
+cConnString := 'FIREBIRD='+ALLTRIM(m_cfg[4])+';uid=SYSDBA;pwd=masterkey;charset=ISO8859_1'
+nCnn := SR_AddConnection(CONNECT_FIREBIRD,cConnString)
+If nCnn < 0
+        atencao("Nao foi possivel conectar ao BANCO DE DADOS. Verificar o Caminho do Banco de Dados no SACCFG.INI ou se o FIREBIRD estar Instalado, Caso nao tenha sucesso contactar com o Administrador da REDE")
+        Quit
+EndIf
+ATENCAO('OK')
+/*
+IF ! EMPTY(m_cfg[70])
+        DEVPOS(01,01);DEVOUT('Tentando CONEXAO com o 2o. BANCO DE DADOS, Aguarde um Momento......')
+        cConnString := 'FIREBIRD='+ALLTRIM(m_cfg[4])+';uid=SYSDBA;pwd=masterkey;charset=ISO8859_1'
+        nCnn1 := SR_AddConnection(CONNECT_FIREBIRD,cConnString)
+        If nCnn1 < 0
+                atencao("Nao foi possivel conectar ao 2o. BANCO DE DADOS. Verificar o Caminho do Banco de Dados no SACCFG.INI ou se o FIREBIRD estar Instalado, Caso nao tenha sucesso contactar com o Administrador da REDE")
+        EndIf
+ENDIF
+*/
+SR_SetActiveConnection(nCnn)
+m_indiv:={}
+sr_getconnection():exec("SELECT * FROM sacindiv WHERE terminal = "+sr_cdbvalue(SUBSTR(m_cfg[1],1,20)),,.t.,@m_indiv)
+IF LEN(m_indiv) = 0
+        atencao('Este terminal: '+SUBSTR(m_cfg[1],1,20)+' nao estar configurado favor entrar em contato com HRB Sistemas(81)3755.1489')
+ENDIF
+wvw_lclosewindow()
+mrelatorio := 'LPT1'
+impressora := 'M'
+senha_acess := SPACE(8)
+nivel_acess := SPACE(1)
+cod_operado := SPACE(3)
+
+SET KEY -1 TO f2_cli()
+SET KEY -2 TO f3_conv()
+SET KEY -3 TO f4_med()
+SET KEY -4 TO agenda()
+SET KEY -9 TO ctrl_w()
+SET KEY -40 TO calcu()         // F11 calculadora
+SET KEY -41 TO f12_cid()
+SET KEY 276 TO alt_data()       // alt + t
+SET KEY 294 TO limite_sys       // ALT+L
+SET KEY 274 TO limite_erro      // ALT+E
+
+SET MESSAGE TO 33 CENTER
+SET WRAP ON
+SET SCOREBOARD OFF
+SET DATE BRITI
+SET DELE ON
+SET INTEN ON
+SET CENTURY OFF
+SET EPOCH TO 1911
+*SET CENTURY ON
+SET KEY 287 TO alt_senhaS        // ALT+S
+mensagem('Verificando o Arquivo -> MENUFOTO.DBF')
+IF ! FILE('MENUFOTO.DBF')
+        matriz:={ }
+        AADD(matriz,{'smenu','C',40,0})
+        AADD(matriz,{'snome','C',40,0})
+        DBCREATE('menufoto',matriz,'DBFCDX')
+ENDIF
+IF m_cfg[2] = 'S'
+        smeddbf()
+        smed_dbf()
+        smedcdx()
+        sacdbf()
+        saccdx()
+        arqcfg()
+ENDIF
+m_set:={}
+sr_getconnection():exec("SELECT * FROM sacsetup",,.t.,@m_set)
+//smed_dbf()
+//IF ! abriarq('smedsetu','set');RETURN NIL;ENDIF
+****** NOME A SER COMPILADO ********************
+mmedico := ALLTRIM(m_set[1,130])
+************************************************
+        vcor[1] := 'n/w,w/B,,,b/w'          && cor PRINCIPAL
+        vcor[2] := 'b/w,x'                     && cor para os SAY
+        vcor[3] := 'b/w,x'                      && cor para os SAY
+        vcor[4] := 'b/w,x'                      && cor FUNDO
+        vcor[5] := 'b/w,x'                     && cor ABRINDO ARQUIVO
+        vcor[6] := 'w+/b+,x'                     && cor LOGOTIPO
+        vcor[7] := 'b+/w+,x'                     && cor LOGOTIPO
+        vcor[8] := 'bg+/bg+,bg+/bg+,x'          && cor p/OPCOES
+setcor(1)
+WHILE .T.
+        IF mmedico = 'HRB SISTEMAS LTDA.'
+                ***** DR.ABRAHAO GRINFELD *************
+                memp_resa := ALLTRIM(m_set[1,130])
+                crm := 'CREMEPE: XXXX'
+                mesp := 'HARAS'
+                mcgc_aux := DCRIPTO(m_set[1,123])
+                cpf := SUBSTR(mcgc_aux,1,2)+'.'+SUBSTR(mcgc_aux,3,3)+'.'+SUBSTR(mcgc_aux,6,3)+'/'+SUBSTR(mcgc_aux,9,4)+'-'+SUBSTR(mcgc_aux,13,2)
+                cab_med := ALLTRIM(m_set[1,130])
+                mmedico := ALLTRIM(m_set[1,130])
+                apre1 := ALLTRIM(m_set[1,125])
+                apre2 := ALLTRIM(m_set[1,126])
+        ELSEIF mmedico = 'ABRAHAO'
+                ***** DR.ABRAHAO GRINFELD *************
+                memp_resa := 'Dr. Abrahao Grinfeld'
+                crm := 'CREMEPE: 4148'
+                mesp := 'OTORRINOLARINGOLOGIA'
+                cpf := 'CGC: 24.132.482/0001-00'
+                cab_med := 'ABRAHAO'
+                mmedico := 'ABRAHAO'
+                apre1 := 'DR.ABRAHAO'
+                apre2 := 'GRINFELD'
+       ELSEIF mmedico = 'FERNANDO'
+                ***** DR.FERNANDO *************
+                memp_resa := 'Dr. Fernando Farias'
+                crm := 'CRMV: 2891'
+                mesp := 'VETERINARIO'
+                cpf := 'CPF: 00.000.000/0000-00'
+                cab_med := 'FERNANDO'
+                mmedico := 'FERNANDO'
+                apre1 := 'FERNANDO'
+                apre2 := 'FARIAS'
+       ELSEIF mmedico = 'CLIMEVA'
+                ***** CLIMEVA (DR.FERNANDO) *************
+                memp_resa := 'CLIMEVA Clienica Veterinaria do Agreste'
+                crm := 'CRMV: '
+                mesp := 'VETERINARIO'
+                cpf := 'CNPJ: 05.606.081.0001-91'
+                cab_med := 'CLIMEVA'
+                mmedico := 'CLIMEVA'
+                apre1 := 'CLIMEVA'
+                apre2 := 'Clinica Medica Veterinaria do Agreste'
+        ELSEIF mmedico = 'VANIA'
+                ***** DRA.VANIA LIGIA *************
+                memp_resa := 'DRA. VANIA LIGIA ARRUDA DE ARAUJO'
+                crm := 'CREMEPE: 3532'
+                cpf := 'CPF: 080.783.004/68'
+                mesp := 'GINECOLOGIA - OBSTETRICIA'
+                cab_med := 'VANIA'
+                mmedico := 'VANIA'
+                apre1 := 'DRA.'
+                apre2 := 'VANIA LIGIA'
+        ELSEIF mmedico = 'MARLI'
+                ***** DRA.MARIZETE *************
+                memp_resa := 'DRA. MARLIZETE LEOPOLDINA BEZERRA'
+                crm := 'CREMEPE: 6285'
+                cpf := 'CPF: 016.655.088/41'
+                mesp := 'TOCOGINECOLOGIA-PATOLOGIA MAMARIA'
+                mmedico := 'MARLI'
+                cab_med := 'MARLI'
+                apre1 := 'DRA.'
+                apre2 := 'MARLIZETE'
+        ELSEIF mmedico = 'MARIO'
+                ***** MARIFLAVIO ROMEIRO *************
+                memp_resa := 'DR. MARIFLAVIO ROMEIRO'
+                crm := 'CRMPE: 4529'
+                cpf := 'CPF: 152.680.124/87'
+                mesp := 'OTORRINOLARINGOLOGIA'
+                cab_med := 'MARIO'
+                mmedico := 'MARIO'
+                apre1 := 'DR.'
+                apre2 := 'MARIFLAVIO'
+        ELSEIF mmedico = 'DARLAN'
+                ***** DARLAN  *************
+                memp_resa := 'DR. DARLAN'
+                crm := 'CRMPE: 9999'
+                cpf := 'CPF: 999.999.999/99'
+                mesp := 'VETERINARIO'
+                cab_med := 'DARLAN'
+                mmedico := 'DARLAN'
+                apre1 := 'DR.'
+                apre2 := 'DARLAN'
+        ELSE
+                atencao('Nome do medico nao especificado corretamente ')
+                QUIT
+        ENDIF
+        inicializa()
+        setcor(1)
+        Wvw_SetTitle( ,'.:'+memp_resa+':.'+SPACE(40)+'.: SISVET '+mversao+' :.'+SPACE(40)+'Data:'+DTOC(mdata_sis))
+        limpa(00,00,50,120)
+        SETCOLOR('W+/B+,B/w,,,GR+/B')
+        WVW_DrawImage( ,00,00,50,120,ALLTRIM(m_indiv[1,3])+'HRBLOGO.JPG',.F.,.F.)
+        IF ! senha();fim(,'*');ENDIF    // Solicitar senha do sistema
+        IF nivel_acess = '1' .OR. mmedico = 'VANIA'
+                agenda()
+        ENDIF
+        smed0()
+ENDDO
+*************************** f i m *******************************
+* CABECALHO DE RECIBOS/RECEITAS
+********************************
+FUNCTION cabec
+**************
+LOCAL mtraco
+IF mmedico = 'ABRAHAO'
+        @ PROW()+4,00 SAY ' '
+ELSEIF mmedico = 'VANIA'
+        mtraco:=REPLI(CHR(223),80)
+        @ PROW()+3,00 SAY CHR(14)+CHR(15)
+        @ PROW(),01 SAY memp_resa
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY mtraco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),00 SAY mesp
+        @ PROW()+1,00 SAY CHR(14)+CHR(15)
+        @ PROW(),00 SAY crm
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY mtraco
+ELSEIF mmedico = 'MARLI'
+        IF FILE('\'+CURDIR()+'\'+'hrbtop.jpg')
+                DEVPOS(00,03);DEVOUT('"hrbtop.jpg"')
+        ENDIF
+        @ PROW()+10,00 SAY ' '
+ELSEIF mmedico = 'MARIO'
+        mtraco:=REPLI(CHR(223),80)
+        @ PROW()+3,02 SAY memp_resa
+        @ PROW(),02 SAY memp_resa
+        @ PROW()+1,00 SAY mtraco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),02 SAY mesp
+        @ PROW(),90 SAY CHR(18)
+        @ PROW()+1,26 SAY 'Prof.Assistente da UFPE'
+        @ PROW(),00 SAY CHR(15)
+        @ PROW()+2,03 SAY 'CONSULTORIO:'
+        @ PROW(),90 SAY 'RESIDENCIA:'
+        @ PROW()+1,03 SAY 'Rua Bartolomeu de Gusmao, 17 - Madalena'
+        @ PROW(),90 SAY 'R. Astr.N.Armstrong, 160 - Ap.801 - Parnamirim'
+        @ PROW()+1,03 SAY 'Fones: 228.4162/227.1513/445.7219/9971.7116 - Recife - PE.'
+        @ PROW(),90 SAY 'Fone: 3269.6271 - Recife - PE.'
+        @ PROW(),00 SAY CHR(18)
+        @ PROW()+2,00 SAY mtraco
+ELSEIF mmedico = 'ENOQUE'
+        DEVPOS(PROW()+05,00);DEVOUT(' ')
+        RETURN NIL
+ELSE
+        mtraco:=REPLI(CHR(223),80)
+        imprt('R','N+')
+        @ PROW()+1,01 SAY memp_resa
+        imprt('R','N')
+        @ PROW()+1,00 SAY mtraco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),00 SAY mesp
+        @ PROW()+1,00 SAY CHR(14)+CHR(15)
+        @ PROW(),00 SAY crm
+        imprt('R','N')
+        @ PROW()+1,00 SAY mtraco
+ENDIF
+RETURN NIL
+************************** F I M ***********************************
+* FUNCAO PARA O RODAPE
+*****************************************
+FUNCTIO rodape(mtp)
+*******************
+LOCAL mtraco
+IF mmedico = 'ABRAHAO'
+        @ 51,56 SAY TIME()+' Hrs.'
+        SET PRINT ON
+        @ PROW(),00 SAY CHR(15)
+        @ 55,13 SAY 'CONSULTORIO:'
+        @ 55,95 SAY 'Dr.Abrahao Grinfeld'
+        @ 56,13 SAY 'Rua Major Codeceira, 147'
+        @ 56,95 SAY 'Nariz - Ouvidos - Garganta'
+        @ 57,13 SAY 'Fones: (081)222.5451 - Santo Amaro'
+        @ 57,95 SAY 'Cremepe - 4148'
+        @ 58,13 SAY 'Recife - PE. - CEP:50.100-070'
+        @ 58,95 SAY 'Professor Assistente da UFPE.'
+        @ PROW(),00 SAY CHR(18)
+        SET PRINT OFF
+ELSEIF mmedico = 'VANIA'
+        mtraco:=REPLI(CHR(223),80)
+        DEVPOS(PROW()+1,00);DEVOUT(PADC(cpf,80))
+        IF mtp = NIL
+                DEVPOS(56,57);DEVOUT(TIME()+' Hrs.')
+        ENDIF
+        DEVPOS(57,00);DEVOUT(mtraco)
+        DEVPOS(58,02);DEVOUT('Rua Ana Camelo da Silva, 163 - Boa Viagem - Fone: (081) 3466.0144/3463.8726')
+        DEVPOS(59,02);DEVOUT('CEP.: 51111-020 - Recife - Pernambuco.')
+ELSEIF mmedico = 'FERNANDO'
+        mtraco:=REPLI(CHR(223),80)
+        DEVPOS(PROW()+1,00);DEVOUT(PADC(cpf,80))
+        IF mtp = NIL
+                DEVPOS(56,57);DEVOUT(TIME()+' Hrs.')
+        ENDIF
+        DEVPOS(57,00);DEVOUT(mtraco)
+        DEVPOS(58,02);DEVOUT('Av.Rui Barbosa, 476 - Fone: (81)9955.7511')
+        DEVPOS(59,02);DEVOUT('CEP.: 54000-000 - Caruaru - Pernambuco.')
+ELSEIF mmedico = 'UNICLINICA'
+        mtraco:=REPLI(CHR(223),80)
+        DEVPOS(57,00);DEVOUT(mtraco)
+        DEVPOS(58,02);DEVOUT('Rua Leandro Barreto, 1384 - Jardim Sao Paulo - Fone: (081) 3452.5758/3252.5805')
+        DEVPOS(59,02);DEVOUT('CEP.: 50000-000 - Recife - Pernambuco.')
+ELSEIF mmedico = 'MARLI'
+        IF FILE('\'+CURDIR()+'\'+'hrbroda.jpg')
+                DEVPOS(57,03);DEVOUT('"hrbroda.jpg"')
+        ENDIF
+        RETURN NIL
+ELSEIF mmedico = 'MARIO'
+        mtraco:=REPLI(CHR(223),80)
+        DEVPOS(58,57);DEVOUT(TIME()+' Hrs.')
+        DEVPOS(59,00);DEVOUT(mtraco)
+ELSEIF mmedico = 'NADJA'
+        DEVPOS(58,02);DEVOUT('R.JOSE OSORIO, 76 - Fone:445.3627-228.5099-227.2322 - MADALENA-RECIFE-PE.')
+ELSEIF mmedico = 'ENOQUE'
+        RETURN NIL
+ELSE
+        mtraco:=REPLI(CHR(223),80)
+        DEVPOS(57,00);DEVOUT(mtraco)
+        DEVPOS(58,02);DEVOUT(ALLTRIM(m_set[1,132])+' - '+ALLTRIM(m_set[1,133])+' - Fone: '+ALLTRIM(m_set[1,136]))
+        DEVPOS(59,02);DEVOUT('CEP.: '+m_set[1,135]+' - '+ALLTRIM(m_set[1,134]))
+ENDIF
+RETURN NIL
+************************** f i m ***************************
+FUNCTION ShowClue( ... )
+************************
+LOCAL xMessage
+STATIC lPostP, cMessage := ""
+IF ( lPostP = NIL )
+        cMessage := ""
+ENDIF
+FOR EACH xMessage IN HB_aParams()
+        lIsArray := .F.
+        SWITCH ValType( xMessage )
+        CASE "C"
+        CASE "M"
+                EXIT
+        CASE "N"
+                xMessage := LTrim( Str( xMessage ) )
+                EXIT
+        CASE "D"
+                xMessage := DToC( xMessage )
+                EXIT
+        CASE "L"
+                xMessage := IF( xMessage, ".T.", ".F." )
+                EXIT
+        CASE "O"
+                xMessage := xMessage:className + " Object"
+                EXIT
+        CASE "B"
+                xMessage := "{||...}"
+                EXIT
+        CASE "A"
+                lPostP := lIsArray := .T.
+                EXIT
+                DEFAULT
+                xMessage := "NIL"
+        END
+        cMessage += ( "/" + xMessage )
+NEXT
+WvW_SBsetText( 1, 0, "* " +  cMessage )
+lPostP := NIL
+RETURN (.T.)

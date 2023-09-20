@@ -1,0 +1,196 @@
+*********************
+* TELA PRINCIPAL
+*********************
+
+FUNCTION smed(mmed)
+******************
+
+LOCAL opcao
+
+PRIVATE dsemana,vcor[8]
+
+PUBLIC senha_acess,nivel_acess,cod_operado,mmedico,cab_med,cor
+
+PUBLIC memp,resa,crm,cpf,fir,ma,mversao,mesp,mold,mdata_sis,mrelatorio,impressora
+
+******* T I P O   D E   S I S T E M A **************
+sistema := 'Controle Medico'
+mversao := 'Ver.: 5.5'
+****************************************************
+cor := SETCOLOR()
+fir := 'INS'
+ma := 'ERCOM-Informatica Ltda.'
+mdata_sis := DATE()
+************************************************
+mold := 'ÖÄ·º½ÄÓº'      // Molduras das janelas
+*************************************************
+
+CLEAR
+
+mrelatorio := 'LPT1'
+impressora := 'M'
+senha_acess := SPACE(8)
+nivel_acess := SPACE(1)
+cod_operado := SPACE(3)
+
+SET KEY 28 TO f1_help()
+SET KEY -1 TO f2_cli()
+SET KEY -2 TO f3_conv()
+SET KEY -3 TO f4_med()
+SET KEY -4 TO agenda()
+SET KEY -9 TO ctrl_w()
+SET KEY -41 TO f12_cid()
+SET KEY 276 TO alt_data()       // alt + t
+
+SET MESSAGE TO 24 CENTER
+SET WRAP ON
+SET TALK OFF
+SET SCOREBOARD OFF
+SET INTEN OFF
+SET DATE BRITI
+SET DATE FORMAT 'dd/mm/yy'
+SET DELE ON
+SET INTEN ON
+SET KEY 287 TO alt_senhaS        // ALT+S
+*SET ESCAPE OFF
+SET DEFAULT TO
+vcor[1] := 'r/bg,bg/B,,,b/bg'          && cor PRINCIPAL
+*vcor[2] := 'b+/w,W/b+,B,,N+/w'         && cor PRINCIPAL
+*vcor[2] := 'N+/w,x'                    && cor para MENSAGEM
+vcor[2] := 'b/bg,x'                    && cor para MENSAGEM
+*vcor[3] := 'N+/w,x'                    && cor para os SAY
+vcor[3] := 'b/bg,x'                    && cor para os SAY
+*vcor[4] := 'W+/b+,x'                      && cor AMARELO
+vcor[4] := 'bg/b,x'                      && cor AMARELO
+*vcor[5] := 'W+/g+,x'                     && cor FUNDO
+vcor[5] := 'b/bg,x'                     && cor FUNDO
+vcor[6] := 'B/bg,x'                       && cor VERMELHA BRILHANTE
+*vcor[7] := 'W+/b+,x'                     && cor LOGOTIPO
+vcor[7] := 'W/b+,x'                     && cor LOGOTIPO
+vcor[8] := 'bg+/bg+,bg+/bg+,x'          && cor p/OPCOES
+
+*vcor[1] := 'rb/w,gr+/rb,rb,,gr+/w'         && cor PRINCIPAL
+*vcor[2] := 'gr+/w,x'                    && cor para MENSAGEM
+*vcor[3] := 'gr+/w,x'                    && cor para os SAY
+*vcor[4] := 'gr+/rb,x'                      && cor AMARELO
+*vcor[5] := 'W+/rb,x'                     && cor FUNDO
+*vcor[6] := 'rb/W,x'                     && cor FUNDO DO I
+*vcor[7] := 'w+/b+,x'                    && cor LOGOTIPO
+*vcor[8] := 'N/N,N/N,rb,X'              && cor p/SENHAS
+
+SETCOLOR(vcor[1])
+apaga(00,00,24,79)
+
+WHILE .T.
+        ***** MARIFLAVIO ROMEIRO *************
+        memp := 'DR. MARI'
+        resa := 'FLAVIO ROMEIRO'
+        crm := 'CRMPE: 4529'
+        cpf := 'CPF: 152.680.124/87'
+        mesp := 'OTORRINOLARINGOLOGIA'
+        cab_med := 'MARIO'
+        mmedico := 'MARIO'
+        *************************************
+        MKDIR('C:\SMED\MARIO')
+        SET DEFAULT TO C:\SMED\MARIO
+        CLEAR
+        ************** TELA DE APRESENTACAO ************
+        tela('"SMED" - Sistema de Controle Medico')
+        ************************************************
+        SETCOLOR(vcor[6])
+        num := 80
+        FOR f=1 TO 161-num
+
+                @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±Ü  ±±±±±±Ü      ',80),161-f,num)
+                @ 02,00 say SUBSTR(SPACE(num) + PADC('±±Ûß±±Û ±±Ûß±±Û      ',80),161-f,num)
+                @ 03,00 say SUBSTR(SPACE(num) + PADC('±±Û ±±Û ±±±±±Ûß      ',80),161-f,num)
+                @ 04,00 say SUBSTR(SPACE(num) + PADC('±±Û ±±Û ±±Ûß±±Ü      ',80),161-f,num)
+                @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±Ûß ±±Û ±±Û   ±±Û',80),161-f,num)
+                @ 06,00 say SUBSTR(SPACE(num) + PADC('ßßßßß   ßß  ßß     ßß',80),161-f,num)
+                @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±ÜÜ±±±Ü ±±±±±±Ü ±±±±±±Ü ±±Ü ±±±±±±Ü ±±Ü     ±±±±±±Ü ±±Ü ±±Ü ±±Ü ±±±±±±Ü',80),f,num)
+                @ 08,00 say SUBSTR(SPACE(num) + PADC('±±Û±±Û±±Û ±±Ûß±±Û ±±Ûß±±Û ±±Û ±±Ûßßßß ±±Û     ±±Ûß±±Û ±±Û ±±Û ±±Û ±±Ûß±±Û',80),f,num)
+                @ 09,00 say SUBSTR(SPACE(num) + PADC('±±Û ßß±±Û ±±±±±±Û ±±±±±Ûß ±±Û ±±±±±Ü  ±±Û     ±±±±±±Û ±±Û ±±Û ±±Û ±±Û ±±Û',80),f,num)
+                @ 10,00 say SUBSTR(SPACE(num) + PADC('±±Û   ±±Û ±±Û ±±Û ±±Ûß±±Ü ±±Û ±±Ûßßß  ±±Û     ±±Û ±±Û  ±±±±Ûß ±±Û ±±Û ±±Û',80),f,num)
+                @ 11,00 say SUBSTR(SPACE(num) + PADC('±±Û   ±±Û ±±Û ±±Û ±±Û ±±Û ±±Û ±±Û     ±±±±±±Ü ±±Û ±±Û   ±±Ûß  ±±Û ±±±±±±Û',80),f,num)
+                @ 12,00 say SUBSTR(SPACE(num) + PADC(' ßß    ßß  ßß  ßß  ßß  ßß  ßß  ßß      ßßßßßß  ßß  ßß    ßß    ßß  ßßßßßß',80),f,num)
+        NEXT f
+        SETCOLOR(vcor[7])
+        men_giro('Insercom Informatica Ltda.',21,02,20)
+        SETCOLOR('w/b*,w+/bg+,,,w+/bg')
+        DEVPOS(24,33);DEVOUT('Aguarde, Gerando Arquivos..')
+
+        SETCOLOR(vcor[1])
+        dbfs()
+ENDDO
+*************************** f i m *******************************
+********************************
+* CABECALHO DE RECIBOS/RECEITAS
+********************************
+
+FUNCTION cabec
+**************
+LOCAL mtraco:=REPLI(CHR(223),80)
+
+        @ PROW()+3,02 SAY memp_resa
+        @ PROW(),02 SAY memp_resa
+        @ PROW()+1,00 SAY mtraco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),02 SAY mesp
+        @ PROW(),90 SAY CHR(18)
+        @ PROW()+1,26 SAY 'Prof.Assistente da UFPE'
+        SET PRINT ON
+        ?? CHR(15)
+        @ PROW()+2,03 SAY 'CONSULTORIO:'
+        @ PROW(),90 SAY 'RESIDENCIA:'
+        @ PROW()+1,03 SAY 'Rua Bartolomeu de Gusmao, 17 - Madalena'
+        @ PROW(),90 SAY 'Rua Vitoria Regia, 583 - Janga'
+        @ PROW()+1,03 SAY 'Fones: 228.4162/227.1513/971.7116 - Recife - PE.'
+        @ PROW(),90 SAY 'Fone: 434.1509 - Paulista - PE.'
+        ?? CHR(18)
+        SET PRINT OFF
+        @ PROW()+2,00 SAY mtraco
+        RETURN NIL
+************************** F I M ***********************************
+*****************************************
+* FUNCAO PARA O RODAPE
+*****************************************
+
+FUNCTION rodape
+***************
+LOCAL mtraco:=REPLI(CHR(223),80)
+
+DEVPOS(59,57);DEVOUT(TIME()+' Hrs.')
+DEVPOS(60,00);DEVOUT(mtraco)
+RETURN NIL
+*********************************** F I M *************************************
+*******************
+* FUNCAO DE CORES
+*******************
+
+FUNCTION setcor(nTipCor)
+************************
+
+IF nTipCor = 1
+*       SETCOLOR('gr+/bg,gr+/b,w,,n/bg')          && cor PRINCIPAL
+        SETCOLOR('r/bg,bg/B,,,b/bg')          && cor PRINCIPAL
+*       SETCOLOR('r/w,w/b,,,N+/w')          && cor PRINCIPAL
+ELSEIF nTipCor = 2
+*       SETCOLOR('B/w,x')                   && cor para MENSAGEM
+        SETCOLOR('b/bg,x')                     && cor para os SAY
+ELSEIF nTipCor = 3
+        SETCOLOR('b/bg,x')                     && cor para os SAY
+*       SETCOLOR('n+/w,x')                     && cor para os SAY
+ELSEIF nTipCor = 4
+        SETCOLOR('bg/b,x')                     && cor FUNDO
+*       SETCOLOR('b/bg,x')                     && cor FUNDO
+ELSEIF nTipCor = 5
+*       SETCOLOR('R/w,x')                     && cor ABRINDO ARQUIVO
+        SETCOLOR('b/bg,x')                     && cor ABRINDO ARQUIVO
+ELSEIF nTipCor = 6
+        SETCOLOR('w/B+,x')                    && cor LOGOTIPO
+ELSE
+        SETCOLOR('bg+/bg+,bg+/bg+,x')          && cor p/OPCOES
+ENDIF
+RETURN .T.
+***************************** F I M ****************************************
+

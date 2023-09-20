@@ -1,0 +1,274 @@
+**************************************
+* RELATORIOS DATAS DE PARTOS
+**************************************
+
+FUNCTION smed5dat
+****************
+
+LOCAL opcao,lci,cci,lba,cba,tela510,mcont,mreg,mpag,telaprin,mcconv,mend,;
+      mdata1,mdata2
+
+PRIVATE mimp_tipo:=0,mtipo_imp:='M',mporta_imp:='LPT1',mop_dat
+
+opcao := SPACE(1)
+mcont := 0
+mreg := 0
+mpag := 1
+lci := 08
+cci := 06
+lba := 14
+cba := 65
+tela510 := SAVESCREEN(00,00,24,79)
+
+*********************************************
+CLOSE ALL
+USE smedconv ALIAS conv SHARED NEW
+* SET INDEX TO convcod
+USE smedcli ALIAS cli SHARED NEW
+* SET INDEX TO cadnome,cadreg
+*********************************************
+
+WHILE .T.
+        mcconv := SPACE(2)
+        mend := 'N'
+        apaga(23,00,23,79)
+        opcao := 0
+        mop_dat:= 0
+        mdata1 := CTOD('  /  /  ')
+        mdata2 := CTOD('  /  /  ')
+        mreg := 0
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        @ lci+2,cci+1 TO lci+2,cba-1
+        setcor(1)
+        @ lci+3,cci+1 SAY 'Digite o Cod.Convenio:'
+        @ lci+4,cci+1 SAY 'Data Inicial.........:'
+        @ lci+5,cci+1 SAY 'Data Final...........:'
+        @ lci+1,cci+1 PROMPT '    Data do Provavel Parto    ' MESSAGE '** Relatorio dos Provavel Parto no Periodo, <ESC> p/Retorno **'
+        @ lci+1,cci+31 PROMPT '     Data do Nascimento     ' MESSAGE '** Relatorio dos Nascimento no Periodo, <ESC> p/Retorno **'
+        SET INTEN ON
+        MENU TO mop_dat
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela510)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        *********************
+        SELE('smcli')
+        SET ORDER TO 1
+        *********************
+        GO TOP
+        @ lci+3,cci+24 GET mcconv PICT '99' VALID IF(EMPTY(mcconv),.T.,ver_conv(mcconv,lci+3,cci+27))
+        @ lci+4,cci+24 GET mdata1
+        @ lci+5,cci+24 GET mdata2 VALID IF(mdata2 < mdata1,.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF ! imp_arq('DAT_PARTO.REL','R')
+                LOOP
+        ENDIF
+        mpag := 0
+        WHILE ! EOF()
+                IF PROW() >= 58 .OR. mpag = 0
+                        EJECT
+                        mpag = mpag + 1
+                        cabdata(mpag)
+                        mcont = 7
+                ENDIF
+                IF ! EMPTY(mcconv) .AND. mcconv <> codconv
+                        SKIP
+                        LOOP
+                ENDIF
+                IF mop_dat = 1
+                        IF smcli->pro_nasc1 >= mdata1 .AND. smcli->pro_nasc1 <= mdata2 .AND. EMPTY(smcli->dat_nasc1)
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->ult_mest1
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc1
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->pro_nasc2 >= mdata1 .AND. smcli->pro_nasc2 <= mdata2 .AND. EMPTY(smcli->dat_nasc2)
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->ult_mest2
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc2
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->pro_nasc3 >= mdata1 .AND. smcli->pro_nasc3 <= mdata2 .AND. EMPTY(smcli->dat_nasc3)
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->ult_mest3
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc3
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->pro_nasc4 >= mdata1 .AND. smcli->pro_nasc4 <= mdata2 .AND. EMPTY(smcli->dat_nasc4)
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->ult_mest4
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc4
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->pro_nasc5 >= mdata1 .AND. smcli->pro_nasc5 <= mdata2 .AND. EMPTY(smcli->dat_nasc5)
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->ult_mest5
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc5
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ENDIF
+                        SKIP
+                ELSE
+                        IF smcli->dat_nasc1 >= mdata1 .AND. smcli->dat_nasc1 <= mdata2
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc1
+                                @ PROW(),PCOL()+1 SAY smcli->dat_nasc1
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->dat_nasc2 >= mdata1 .AND. smcli->dat_nasc2 <= mdata2
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc2
+                                @ PROW(),PCOL()+1 SAY smcli->dat_nasc2
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->dat_nasc3 >= mdata1 .AND. smcli->dat_nasc3 <= mdata2
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc3
+                                @ PROW(),PCOL()+1 SAY smcli->dat_nasc3
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->dat_nasc4 >= mdata1 .AND. smcli->dat_nasc4 <= mdata2
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc4
+                                @ PROW(),PCOL()+1 SAY smcli->dat_nasc4
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ELSEIF smcli->dat_nasc5 >= mdata1 .AND. smcli->dat_nasc5 <= mdata2
+                                @ PROW()+1,00 SAY registro
+                                @ PROW(),PCOL()+1 SAY nome
+                                @ PROW(),PCOL()+1 SAY datans
+                                @ PROW(),PCOL()+1 SAY codconv
+                                ver_conv(codconv,PROW(),PCOL()+1)
+                                @ PROW(),PCOL()+1 SAY smcli->pro_nasc5
+                                @ PROW(),PCOL()+1 SAY smcli->dat_nasc5
+                                mreg = mreg + 1
+                                mcont = mcont + 1
+                                SKIP
+                                LOOP
+                        ENDIF
+                        SKIP
+                ENDIF
+        ENDDO
+        IF mcont > 54
+                EJECT
+        ENDIF
+        @ PROW()+1,PCOL() SAY CHR(18)
+        @ PROW()+2,02 SAY 'Quantidade de Clientes Cadastrados:'
+        @ PROW(),38 SAY STR(mreg,5)
+        @ PROW()+2,02 SAY TIME()+' Hrs.'
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('DAT_PARTO.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+        SET ORDER TO 1
+        RESTSCREEN(00,00,24,79,tela510)
+ENDDO
+****************************** F I M *******************************
+**************************
+* CABECALHO LIST.GERAL
+**************************
+
+FUNCTION cabdata(cpag)
+***********************
+
+LOCAL traco
+
+traco := REPLI('=',80)
+
+WHILE .T.
+
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),34 SAY memp_resa
+        @ PROW()+1,02 SAY fir+ma
+        @ PROW(),34 SAY mesp
+        @ PROW(),72 SAY 'PAG.'
+        @ PROW(),77 SAY STRZERO(cpag,3)
+        @ PROW()+1,02 SAY 'Sistema Controle Medico'
+        IF mop_dat = 1
+                @ PROW(),30 SAY 'Relacao de Clientes Data Provavel'
+        ELSE
+                @ PROW(),30 SAY 'Relacao de Clientes Data Nascimento'
+        ENDIF
+        @ PROW(),72 SAY DATE()
+        @ PROW()+1,00 SAY traco
+        @ PROW()+1,00 SAY CHR(15)
+        @ PROW(),01 SAY 'Reg.'
+        @ PROW(),07 SAY 'Nome'
+        @ PROW(),43 SAY ' Nascim.'
+        @ PROW(),PCOL()+1 SAY 'Convenio                    '
+        IF mop_dat = 1
+                @ PROW(),PCOL()+1 SAY 'Ult.Mest'
+                @ PROW(),PCOL()+1 SAY 'Provavel'
+        ELSE
+                @ PROW(),PCOL()+1 SAY 'Provavel'
+                @ PROW(),PCOL()+1 SAY 'Nascido '
+        ENDIF
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY traco
+        @ PROW(),PCOL() SAY CHR(15)
+        RETURN .T.
+ENDDO
+************************** F I M ********************************************
+

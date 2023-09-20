@@ -1,0 +1,78 @@
+************************************
+* FUNCAO PARA ATUALIZAR OS DBF'S
+***********************************
+FUNCTION smed_dbf(mtp)
+****************
+
+LOCAL mprg:='SAC_DBF',lci:=00,cci:=01,lba:=24,cba:=78,opcao_bkp,;
+      matriz :={},mdata_mov,mdata_caixa,mdata_cli,;
+      mdata_dupr,mdata_setup,mdata_conf,mdata_cfg,;
+      mdata_senha,mdata_log,mdata_dupp,mdata_cart,mdata_med,;
+      matualiza,mmov,mconf,mcaix,mdupr,mdupp,mcart,mmed,;
+      mcli,msetup,mcheq,mcfg,minsopera,mlog,mtela,;
+      mdata_ver,matual,mtela_bkp,mdata_arq,mespe,mdata_espe,matcli:={}
+
+mdata_conf := CTOD('28/05/2004')
+mdata_cheq := CTOD('08/03/2005')
+mdata_cart := CTOD('22/09/2005')
+mdata_log  := CTOD('09/11/2005')
+mdata_dupp := CTOD('15/03/2006')
+mdata_mov  := CTOD('03/04/2006')
+mdata_caixa:= CTOD('03/04/2006')
+mdata_espe := CTOD('04/04/2006')
+mdata_senha:= CTOD('16/04/2006')
+mdata_dupr := CTOD('24/08/2006')
+mdata_cfg  := CTOD('08/04/2008')
+mdata_setup:= CTOD('07/05/2008')
+mdata_cli  := CTOD('02/10/2008')
+mdata_med  := CTOD('09/08/2009')
+matualiza := mmerc := mmov := mconf := mcaix := mdupr := mdupp := mespe :=;
+mcli := msetup:= mcheq := mcfg := minsopera := mlog := matual := mcart := mmed := ' '
+mdata_ver := CTOD(SUBSTR(m_cfg[100],7,2)+'/'+SUBSTR(m_cfg[100],4,2)+'/20'+STRZERO(VAL(SUBSTR(m_cfg[100],2,1)),2))
+IF mdata_ver < mdata_mov  ;matualiza := mmov := 'X'     ;ENDIF
+IF mdata_ver < mdata_caixa;matualiza := mcaix := 'X'    ;ENDIF
+IF mdata_ver < mdata_dupr ;matualiza := mdupr := 'X'    ;ENDIF
+IF mdata_ver < mdata_dupp ;matualiza := mdupp := 'X'    ;ENDIF
+IF mdata_ver < mdata_cli  ;matualiza := mcli := 'X'     ;ENDIF
+IF mdata_ver < mdata_setup;matualiza := msetup:= 'X'    ;ENDIF
+IF mdata_ver < mdata_cfg  ;matualiza := mcfg := 'X'     ;ENDIF
+IF mdata_ver < mdata_senha;matualiza := minsopera := 'X';ENDIF
+IF mdata_ver < mdata_log  ;matualiza := mlog := 'X'     ;ENDIF
+IF mdata_ver < mdata_cart ;matualiza  := mcart := 'X'   ;ENDIF
+IF mdata_ver < mdata_espe ;matualiza  := mespe := 'X'   ;ENDIF
+IF mdata_ver < mdata_med  ;matualiza  := mmed := 'X'    ;ENDIF
+IF m_cfg[2] = 'S'
+        IF matualiza = 'X'
+                IF minsopera = 'X' .AND. m_cfg[2] = 'S'
+                ENDIF
+                IF mmed = 'X' .AND. m_cfg[2] = 'S'
+                        mmensagem := '***** Arquivo SMEDDRO *****'
+                        mmensagem := mmensagem + '=> ** Alterar ** Campo << Nome: DOSE_QUANT Tipo: VARCHAR(50)>> - ** Alterar ** Campo << Nome: USO_MED Tipo: VARCHAR(20)>>  - ** Alterar ** Campo << Nome: NOMECOM Tipo: VARCHAR(20)>>  - ** Incluir ** Campo << Nome: DOSE_QUANT1 Tipo: VARCHAR(50)>>  - ** Incluir ** Campo << Nome: TRATAMENTO Tipo: VARCHAR(50)>>  - ** Incluir ** Campo << Nome: TRATAMENTO1 Tipo: VARCHAR(50)>>  - ** Incluir ** Campo << Nome: PRECO1 Tipo: DECIMAL(15,2)>>'
+                        atencao(mmensagem)
+                ENDIF
+                IF mcli = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mmov = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mcaix = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mdupr = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF msetup = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mconf = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mcheq = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mlog = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mdupp = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mcart = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+                IF mespe = 'X' .AND. cfg->tip_term = 'S'
+                ENDIF
+        ENDIF
+ENDIF
+RETURN NIL
+

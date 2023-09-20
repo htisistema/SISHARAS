@@ -1,0 +1,205 @@
+* RELATORIO de Semens
+********************
+FUNCTION smed490
+*****************
+LOCAL mprg:='SMED490',opcao := ' ',;
+      cons_semen:={},cons_prop:={},cons_anim:={},m_repass := {},;
+      mliberado,mprenhe,massoci,mcomando,mpag,mtotal_rep,mtotal_lib,mtotal_nlib,mtotal_com,mtotal_cer,;
+      mincl_ini,mincl_fim,mlib_ini,mlib_fim,mcom_ini,mcom_fim,mcert_ini,mcert_fim
+
+PRIVATE mcod_cli,mcod_ani,mtipo_imp,mimp_tipo:=0,marq:=SPACE(35)
+
+IF ! ver_nivel(mprg,'RELATORIO DE SEMENS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(10,0,20,80,'RELATORIO DE SEMENS',,1)
+mtipo_imp := m_indiv[1,18]
+WHILE .T.
+        mtit := 'RELATORIO DE SEMENS'
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mcod_cli := mcod_ani := mpag := ;
+        mtotal_rep:=mtotal_lib:=mtotal_nlib:=mtotal_com:=mtotal_ncom:=mtotal_cer:=mtotal_ncer:=0
+        mliberado := mprenhe := massoci := 'N'
+        mincl_ini:=mincl_fim:=mlib_ini:=mlib_fim:=mcom_ini:=mcom_fim:=mcert_ini:=mcert_fim := CTOD('  /  /  ')
+        limpa(00,00,40,120)
+        exibi_prg(mprg)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        //DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(0, 1);DEVOUT('Codigo Cliente................:')
+        @ 1,0 TO 1,80
+        //DEVPOS(1, 1);DEVOUT('Codigo da Animal.....:')
+        DEVPOS(2, 1);DEVOUT('Data inicial INCLUSAO.........:')
+        DEVPOS(2,43);DEVOUT('Data Final:')
+        DEVPOS(3, 1);DEVOUT('Data inicial LIBERACAO SEMEN..:')
+        DEVPOS(3,43);DEVOUT('Data Final:')
+        DEVPOS(4, 1);DEVOUT('Data inicial COMUNICACAO ASSOC:')
+        DEVPOS(4,43);DEVOUT('Data Final:')
+        DEVPOS(5, 1);DEVOUT('Data inicial LIBERACAO CERTIF.:')
+        DEVPOS(5,43);DEVOUT('Data Final:')
+        DEVPOS(6, 1);DEVOUT('SO Semens LIBERADO.......[S/N]:')
+        DEVPOS(7, 1);DEVOUT('SO Comunicado ASSOCIACAO [S/N]:')
+        DEVPOS(8, 1);DEVOUT('SO CERTIFICADO Liberado..[S/N]:')
+        //@ 0,22 GET mdocumento
+        //@ 0,24 GET mcod_cli PICT '99999' VALID IF(EMPTY(mcod_cli),.F.,ver_prop(mcod_cli,0,30))
+        @ 0,33 GET mcod_cli PICT '99999' VALID ver_prop(mcod_cli,0,45)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_prop(mcod_cli,0,45)
+        /*
+        @ 1,22 GET mcod_ani PICT '99999' VALID IF(EMPTY(mcod_ani),.F.,ver_animal(mcod_ani,1,30)) WHEN EMPTY(mcod_cli)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_ani,1,30)
+        */
+        @ 2,33 GET mincl_ini
+        @ 2,55 GET mincl_fim VALID IF(mincl_ini > mincl_fim,.F.,.T.) WHEN ! EMPTY(mincl_ini)
+        @ 3,33 GET mlib_ini WHEN EMPTY(mincl_ini)
+        @ 3,55 GET mlib_fim VALID IF(mlib_ini > mlib_fim,.F.,.T.) WHEN ! EMPTY(mlib_ini)
+        @ 4,33 GET mcom_ini WHEN EMPTY(mincl_ini) .AND. EMPTY(mlib_ini)
+        @ 4,55 GET mcom_fim VALID IF(mcom_ini > mcom_fim,.F.,.T.) WHEN ! EMPTY(mcom_ini)
+        @ 5,33 GET mcert_ini WHEN EMPTY(mincl_ini) .AND. EMPTY(mlib_ini) .AND. EMPTY(mcom_ini)
+        @ 5,55 GET mcert_fim VALID IF(mcert_ini > mcert_fim,.F.,.T.)  WHEN ! EMPTY(mcert_ini)
+
+        @ 6,33 GET mliberado PICT '@!' VALID mliberado $ 'S,N'
+        @ 7,33 GET mprenhe PICT '@!' VALID mprenhe $ 'S,N'
+        @ 8,33 GET massoci PICT '@!' VALID massoci $ 'S,N'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        cons_semen := {}
+        IF ! EMPTY(mcod_cli)
+                mcomando := "SELECT * FROM smedsemen WHERE cod_prop = "+sr_cdbvalue(mcod_cli)
+                //sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_prop = "+sr_cdbvalue(mcod_cli),,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_ani)
+                mcomando := "SELECT * FROM smedsemen WHERE cod_anim = "+sr_cdbvalue(mcod_ani)
+                //sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_anim = "+sr_cdbvalue(mcod_ani),,.t.,@cons_semen)
+        ELSE
+                mcomando := "SELECT * FROM smedsemen WHERE data IS NOT NULL"
+                //sr_getconnection():exec("SELECT * FROM smedsemen WHERE data IS NOT NULL",,.t.,@cons_semen)
+        ENDIF
+        IF ! EMPTY(mincl_ini)
+                mcomando := mcomando + " AND data >= "+sr_cdbvalue(mincl_ini)+" AND data <= "+sr_cdbvalue(mincl_fim)
+        ELSEIF ! EMPTY(mlib_ini)
+                mcomando := mcomando + " AND DATA_LIB >= "+sr_cdbvalue(mlib_ini)+" AND DATA_LIB <= "+sr_cdbvalue(mlib_fim)
+        ELSEIF ! EMPTY(mcom_ini)
+                mcomando := mcomando + " AND DATA_PREN >= "+sr_cdbvalue(mcom_ini)+" AND DATA_PREN <= "+sr_cdbvalue(mcom_fim)
+        ELSEIF ! EMPTY(mcert_ini)
+                mcomando := mcomando + " AND DATA_COMU >= "+sr_cdbvalue(mcert_ini)+" AND DATA_COMU <= "+sr_cdbvalue(mcert_fim)
+        ENDIF
+        mtipo := 'SEMENS'
+        IF mliberado = 'S'
+                mtipo := ' LIBERADOS -'
+                mcomando := mcomando + " AND data_lib IS NOT NULL"
+        ENDIF
+        IF mprenhe = 'S'
+                mtipo := ' COMUNICADOS -'
+                mcomando := mcomando + " AND data_pren IS NOT NULL"
+        ENDIF
+        IF massoci = 'S'
+                mtipo := ' CERTIFICADO LIBERADOS -'
+                mcomando := mcomando + " AND data_comu IS NOT NULL"
+        ENDIF
+        sr_getconnection():exec(mcomando,,.t.,@cons_semen)
+        IF LEN(cons_semen) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        IF ! imp_arq('REL_SEMENS.REL','R')
+                LOOP
+        ENDIF
+        i := 0
+        m_repass := {}
+        FOR i = 1 TO LEN(cons_semen)
+                prog_imp(i,cons_semen[i,3])
+                cons_prop:={}
+                sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        LOOP
+                ENDIF
+                /*
+                cons_anim:={}
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                IF LEN(cons_anim) = 0
+                        LOOP
+                ENDIF
+                */
+                IF mpag=0 .OR. PROW()>=57
+                        mpag := mpag+1
+                        IF mpag > 1
+                                EJECT
+                        ENDIF
+                        cabecalho(mpag,mtit,mtipo,mprg)
+                        imprt(mtipo_imp,'C')
+                        DEVPOS(PROW()+1,00);DEVOUT('  Data  ')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('Documento')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('  Cliente                                       ')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('Animal')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Liberacao')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Comunicado')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Certificado')
+                        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+                ENDIF
+                                            //      data                    doc                                   COD_PROP                      COD_ANIMAL                  LIBERACAO                   COMUNICADO            CERTIFICADO                 DOCUMENTO
+                DEVPOS(PROW()+1,00);DEVOUT(DTOC(cons_semen[i,1])+'  '+cons_semen[i,2]+'  '+STR(cons_semen[i,3],5)+'-'+cons_prop[1,1]+' '+STR(cons_semen[i,4],5)+'  '+DTOC(cons_semen[i,8])+'     '+DTOC(cons_semen[i,12])+'  '+DTOC(cons_semen[i,19])+' '+cons_semen[i,23])
+                IF ! EMPTY(cons_semen[i,8])
+                        DEVPOS(PROW()+1,0);DEVOUT('Liberado por: '+cons_semen[i,9]+' - No.Registro da Egua: '+cons_semen[i,5]+' - Obs.:'+cons_semen[i,15])
+                        mtotal_lib ++
+                ELSE
+                        mtotal_nlib ++
+                ENDIF
+                IF ! EMPTY(cons_semen[i,12])
+                        DEVPOS(PROW()+1,0);DEVOUT('Comunicador por: '+cons_semen[i,13])
+                        mtotal_com ++
+                ELSE
+                        mtotal_ncom ++
+                ENDIF
+                IF ! EMPTY(cons_semen[i,19])
+                        DEVPOS(PROW()+1,0);DEVOUT('Liberado Certificado por: '+cons_semen[i,20])
+                        mtotal_cer ++
+                ELSE
+                        mtotal_ncer ++
+                ENDIF
+
+                //IF cons_semen[i,23] = '*'
+                        m_repass:={}
+                        sr_getconnection():exec("SELECT * FROM smedrepass WHERE documento = "+sr_cdbvalue(cons_semen[i,2])+" ORDER BY data,SR_RECNO",,.t.,@m_repass)
+                        IF LEN(m_repass) > 0
+                                DEVPOS(PROW()+1,00);DEVOUT(PADC('***  R E P A S S E S  ***',137))
+                                y:=0
+                                FOR y = 1 TO LEN(m_repass)
+                                        mtotal_rep ++
+                                        DEVPOS(PROW()+1,00);DEVOUT('Data: '+DTOC(m_repass[y,1])+'  Nome: '+m_repass[y,4]+'  CPF: '+m_repass[y,5])
+                                        DEVPOS(PROW()+1,00);DEVOUT('Observacao: '+m_repass[y,17]+m_repass[y,18])
+                                NEXT
+                                DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+                        ENDIF
+                //ENDIF
+
+        NEXT
+        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE SEMENS......: '+TRANSFORM(LEN(cons_semen),'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens REPASSES......: '+TRANSFORM(mtotal_rep,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens Liberados.....: '+TRANSFORM(mtotal_lib,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens NAO Liberado..: '+TRANSFORM(mtotal_nlib,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens Comunicado....: '+TRANSFORM(mtotal_com,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens NAO Comunicado: '+TRANSFORM(mtotal_ncom,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Certificado Liberados: '+TRANSFORM(mtotal_cer,'99,999'))
+        DEVPOS(PROW()+1,00);DEVOUT('Semens NAO USADO.....: '+TRANSFORM(mtotal_ncer,'99,999'))
+        EJECT
+        SETPRC(00,00)
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('REL_SEMENS.REL')
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

@@ -1,0 +1,222 @@
+*************************************
+* EMITE RESULTADO DE EXAME COLPOSCOPIA
+*************************************
+
+FUNCTION smed5col
+
+
+LOCAL telaprin,tela,lci,cci,lba,cba,mnome,mparidade,mdata,mcod_con,mlin1,;
+      mlin2,mlin3,mlin4,mlin5,mlin6,mlin7,mlin8,mlin9,mlin10,mshil,mdiag,midade,;
+      mmedico
+
+PRIVATE traco,mrsoc
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+lci := 03
+cci := 03
+lba := 21
+cba := 78
+tela := SAVESCREEN(00,00,24,79)
+traco := REPLI('-',80)
+
+*********************************************
+CLOSE ALL
+USE smedconv ALIAS conv SHARED NEW
+* SET INDEX TO convcod
+USE smedtab ALIAS tab SHARED NEW
+USE smedcol ALIAS col SHARED NEW
+* SET INDEX TO colnome
+*********************************************
+
+WHILE .T.
+        SET INTEN ON
+        mnome := SPACE(35)
+        mmedico := SPACE(35)
+        midade := SPACE(5)
+        mparidade := SPACE(20)
+        mdata := CTOD('  /  /  ')
+        mcod_con := 0
+        mlin1 := SPACE(60)
+        mlin2 := SPACE(60)
+        mlin3 := SPACE(60)
+        mlin4 := SPACE(60)
+        mlin5 := SPACE(60)
+        mlin6 := SPACE(60)
+        mlin7 := SPACE(60)
+        mlin8 := SPACE(60)
+        mlin9 := SPACE(60)
+        mlin10 := SPACE(60)
+        mshil := SPACE(20)
+        mdiag := SPACE(20)
+
+        Mensagem('Preencha os Campos ou Tecle <ESC> p/Retornar')
+
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        janela(lci,cba,' Exame Colposcopia ')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome ............:')
+        DEVPOS(lci+1,cci+58);DEVOUT('Idade..:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Medico Requisitante:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Paridade.........:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Data - U. M. ....:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Codigo Convenio .:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Macroscopia:')
+        DEVPOS(lci+8,cci+2);DEVOUT('Achados Colposcopicos Normais:')
+        DEVPOS(lci+13,cci+2);DEVOUT('Achados Colposcopicos Anormais:')
+        DEVPOS(lci+16,cci+2);DEVOUT('Schiller.........:')
+        DEVPOS(lci+17,cci+2);DEVOUT('Diagnostico......:')
+        @ lci+1,cci+21 GET mnome PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        @ lci+1,cci+67 GET midade PICT '999'
+        @ lci+2,cci+23 GET mmedico PICT '@!'
+        @ lci+3,cci+21 GET mparidade PICT '@!'
+        @ lci+4,cci+21 GET mdata PICT '  /  /  '
+        @ lci+5,cci+21 GET mcod_con PICT '99' VALID vcconv(STRZERO(mcod_con,2),lci+5,cci+24)
+        @ lci+6,cci+15 GET mlin1
+        @ lci+7,cci+15 GET mlin2
+        @ lci+9,cci+14 GET mlin3
+        @ lci+10,cci+14 GET mlin4
+        @ lci+11,cci+14 GET mlin5
+        @ lci+12,cci+14 GET mlin6
+        @ lci+14,cci+14 GET mlin7
+        @ lci+15,cci+14 GET mlin8
+*       @ lci+14,cci+14 GET mlin9
+*       @ lci+15,cci+14 GET mlin10
+        @ lci+16,cci+21 GET mshil
+        @ lci+17,cci+21 GET mdiag
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ****************
+        SELE('col')
+        SET ORDER TO 1
+        ****************
+        IF ADIREG()
+                REPLA nome WITH mnome
+                REPLA medico WITH mmedico
+                REPLA idade WITH midade
+                REPLA paridade WITH mparidade
+                REPLA data WITH mdata
+                REPLA cod_con WITH STRZERO(mcod_con,2)
+                REPLA shil WITH mshil
+                REPLA diag WITH mdiag
+                REPLA lin1 WITH mlin1
+                REPLA lin2 WITH mlin2
+                REPLA lin3 WITH mlin3
+                REPLA lin4 WITH mlin4
+                REPLA lin5 WITH mlin5
+                REPLA lin6 WITH mlin6
+                REPLA lin7 WITH mlin7
+                REPLA lin8 WITH mlin8
+                REPLA lin9 WITH mlin9
+                REPLA lin10 WITH mlin10
+                COMMIT
+                UNLOCK
+        ELSE
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                LOOP
+        ENDIF
+        IF ! imp_arq('SMED.REL')
+                LOOP
+        ENDIF
+
+        cabec()
+        @ PROW()+1,00 SAY PADC('RESULTADO DA COLPOSCOPIA',80)
+        @ PROW(),00 SAY PADC('RESULTADO DA COLPOSCOPIA',80)
+        @ PROW()+3,02 SAY 'Nome ..........:'
+        @ PROW(),18 SAY mnome
+        @ PROW(),18 SAY mnome
+
+
+        @ PROW(),55 SAY 'Idade...:'
+        @ PROW(),65 SAY midade
+        @ PROW(),65 SAY midade
+
+        @ PROW()+2,02 SAY 'Medico Requisitante:'
+        @ PROW(),23 SAY mmedico
+        @ PROW(),23 SAY mmedico
+
+        @ PROW()+2,02 SAY 'Paridade.......:'
+        @ PROW(),18 SAY mparidade
+        @ PROW(),18 SAY mparidade
+
+        @ PROW()+2,02 SAY 'Data - U.M. ...:'
+        @ PROW(),18 SAY mdata
+        @ PROW(),18 SAY mdata
+
+        @ PROW()+2,02 SAY 'Cat.da Paciente:'
+        @ PROW(),18 SAY mrsoc
+        @ PROW(),18 SAY mrsoc
+
+        @ PROW(),50 SAY 'Exame Solicitado:'
+        @ PROW(),67 SAY 'COLPOSCOPIA'
+        @ PROW(),67 SAY 'COLPOSCOPIA'
+
+        DEVPOS(PROW()+2,02);DEVOUT('Macroscopia')
+        DEVPOS(PROW(),02);DEVOUT('Macroscopia')
+        @ PROW()+1,10 SAY mlin1
+        @ PROW()+1,10 SAY mlin2
+        DEVPOS(PROW()+2,02);DEVOUT('Achados Colposcopicos Normais')
+        DEVPOS(PROW(),02);DEVOUT('Achados Colposcopicos Normais')
+        @ PROW()+1,10 SAY mlin3
+        @ PROW()+1,10 SAY mlin4
+        @ PROW()+1,10 SAY mlin5
+        @ PROW()+1,10 SAY mlin6
+
+        DEVPOS(PROW()+2,02);DEVOUT('Achados Colposcopicos Anormais')
+        DEVPOS(PROW(),02);DEVOUT('Achados Colposcopicos Anormais')
+        @ PROW()+1,10 SAY mlin7
+        @ PROW()+1,10 SAY mlin8
+
+        pitalico(.F.)
+        @ PROW()+2,02 SAY 'Schiller.......:'
+        @ PROW(),18 SAY mshil
+        @ PROW(),18 SAY mshil
+        @ PROW(),60 SAY '     __'
+        @ PROW()+1,60 SAY '   /    \'
+
+        @ PROW()+1,02 SAY 'Diagnostico....:'
+        @ PROW(),18 SAY mdiag
+        @ PROW(),18 SAY mdiag
+        @ PROW(),60 SAY ' /        \'
+        @ PROW()+1,60 SAY ' |        |'
+        @ PROW()+1,60 SAY ' \        /'
+
+        @ PROW()+1,35 SAY 'Recife,'
+        @ PROW(),42 SAY DATE()
+        @ PROW(),60 SAY '   \    / '
+        @ PROW()+1,60 SAY '     --'
+        pitalico(.T.)
+        @ PROW()+5,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+        @ PROW()+1,00 SAY PADC(memp_resa,80)
+        @ PROW(),00 SAY PADC(memp_resa,80)
+        @ PROW()+1,00 SAY PADC(crm,80)
+        @ 59,58 SAY TIME()+' Hrs.'
+        @ 60,00 SAY traco
+        @ PROW()+1,90 SAY ' '
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        RESTSCREEN(00,00,24,79,tela)
+        CLOSE ALL
+	IF mimp_tipo = 2
+                lertexto('SMED.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+        RETURN NIL
+ENDDO
+******************************* F I M  *************************************************
+

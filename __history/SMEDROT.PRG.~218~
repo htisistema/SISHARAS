@@ -1,0 +1,3534 @@
+#INCLUDE 'INKEY.CH'
+FUNCTION relatori(mrec)
+*************************
+LOCAL mrecibo,mreceita,mpedido,tela,mquant,mqtd_rece
+
+mrecibo := SPACE(1)
+mreceita := SPACE(1)
+mpedido := SPACE(1)
+mquant := 1
+mqtd_rece := 1
+tela := SAVESCREEN(00,00,24,79)
+
+WHILE .T.
+
+        IF mrec = 'S'
+                setcor(3)
+                botao(10,25,18,65)
+                setcor(1)
+                DEVPOS(11,27);DEVOUT('Deseja Emitir Recibo:')
+                DEVPOS(13,27);DEVOUT('Deseja Emitir Receita:')
+                DEVPOS(13,52);DEVOUT('Qtd.:')
+                DEVPOS(15,27);DEVOUT('Deseja Emitir Exames:')
+                DEVPOS(15,52);DEVOUT('Qtd.:')
+                SETCOLOR(vcor[2])
+                DEVPOS(17,27);DEVOUT('Marque com um <X> as opcoes p/imprimir')
+                setcor(1)
+                SET INTEN ON
+                @ 11,50 GET mrecibo PICT '@!' VALID mrecibo $ 'X, '
+                @ 13,50 GET mreceita PICT '@!' VALID mreceita $ 'X, '
+                @ 13,58 GET mqtd_rece PICT '99' WHEN mreceita = 'X'
+                @ 15,50 GET mpedido PICT '@!' VALID mpedido $ 'X, '
+                @ 15,58 GET mquant PICT '99' WHEN mpedido = 'X'
+                READ
+                IF mrecibo = 'X'
+                        recibo(mnome,mdata,mvalor)
+                ENDIF
+
+                IF mreceita = 'X'
+                        smed540(mnome,mdata,mqtd_rece)
+                ENDIF
+                IF mpedido = 'X'
+                        smedexa(mnome,mdata,mquant)
+                ENDIF
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ELSE
+                setcor(3)
+                botao(10,25,16,62)
+                setcor(1)
+                DEVPOS(11,27);DEVOUT('Deseja Emitir Receita:')
+                DEVPOS(11,52);DEVOUT('Qtd.:')
+                DEVPOS(13,27);DEVOUT('Deseja Emitir Exames:')
+                DEVPOS(13,52);DEVOUT('Qtd.:')
+                SETCOLOR(vcor[2])
+                DEVPOS(17,27);DEVOUT('Marque com um <X> as opcoes p/imprimir')
+                setcor(1)
+                SET INTEN ON
+                @ 11,50 GET mreceita PICT '@!' VALID mreceita $ 'X, '
+                @ 11,58 GET mqtd_rece PICT '99' WHEN mreceita = 'X'
+                @ 13,50 GET mpedido PICT '@!' VALID mpedido $ 'X, '
+                @ 13,58 GET mquant PICT '99' WHEN mpedido = 'X'
+                READ
+                IF mreceita = 'X'
+                        smed540(mnome,mdata,mqtd_rece)
+                ENDIF
+                IF mpedido = 'X'
+                        smedexa(mnome,mdata,mquant)
+                ENDIF
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ENDIF
+ENDDO
+*********************************** F I M ************************************
+***********************
+* VERIFICA COD.CONV.
+***********************
+
+FUNCTION vcconv(vconv,li,ci,pr)
+***********************************
+
+LOCAL teleconv,tela,msele,morde
+
+tela := SAVESCREEN(24,00,24,79)
+
+IF vconv = '00'
+        RETURN .T.
+ENDIF
+
+msele := SELE()
+morde := INDEXORD()
+************
+SELE('conv');ORDSETFOCUS(1)
+GO TOP
+************
+WHILE .T.
+
+        SEEK vconv
+
+        IF ! FOUND()
+                IF pr = NIL
+                        atencao('Codigo nao Existe no Arquivo !!!')
+                        RESTSCREEN(24,00,24,79,tela)
+                ENDIF
+                vconv = SPACE(2)
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ENDIF
+        mrsoc := rsocial
+        mmod := modalidade
+        mfator := fator
+        mprazo := prazo
+        mvalor := valor_con
+        RESTSCREEN(24,00,24,79,tela)
+        IF li <> NIL
+                setcor(3)
+                DEVPOS(li,ci);DEVOUT(mrsoc)
+                setcor(1)
+        ENDIF
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .T.
+ENDDO
+***************************  F I M ***********************
+***********************
+* VERIFICA COD.ESPECIALIDADE
+***********************
+
+FUNCTION ver_espe(vconv,li,ci)
+***********************************
+
+LOCAL msele,morde
+
+IF EMPTY(vconv)
+        RETURN .T.
+ENDIF
+
+msele := SELE()
+morde := INDEXORD()
+************
+SELE('espe');ORDSETFOCUS(1)
+GO TOP
+************
+IF ! espe->(DBSEEK(STRZERO(vconv,3)))
+        atencao('Codigo nao Existe no Arquivo !!!')
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(espe->espe)
+        setcor(1)
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .T.
+ELSE
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .T.
+ENDIF
+RETURN NIL
+************************** F I M ******************************
+***********************
+* VERIFICA COD.CONV.
+***********************
+
+FUNCTION ver_conv(vconv,li,ci,v,p)
+***********************************
+
+LOCAL msele,morde
+
+IF EMPTY(VAL(vconv))
+        RETURN .T.
+ENDIF
+mprazo := 0
+msele := SELE()
+morde := INDEXORD()
+************
+SELE('conv');ORDSETFOCUS(1)
+GO TOP
+************
+WHILE .T.
+
+        SEEK vconv
+
+        IF ! FOUND() .AND. p = NIL
+                atencao('Codigo nao Existe no Arquivo !!!')
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ENDIF
+        IF v = NIL
+                mvlr_cirur := valor_op
+                mprazo := conv->prazo
+        ENDIF
+        IF li <> NIL
+                setcor(3)
+                DEVPOS(li,ci);DEVOUT(LEFT(rsocial,25))
+                setcor(1)
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .T.
+        ELSE
+                mrsocial := rsocial
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .T.
+        ENDIF
+ENDDO
+************************** F I M ******************************
+FUNCTION ver_prop(vcod,li,ci,p)
+*******************************
+IF EMPTY(vcod)
+        RETURN .T.
+ENDIF
+cons_cli := {}
+cComm  := "SELECT * FROM saccli WHERE cod_cli = "+sr_cdbvalue(vcod)
+sr_getconnection():exec(ccomm,,.t.,@cons_cli)
+IF LEN(cons_cli) = 0
+        IF p = NIL
+                atencao('Codigo Proprietario nao Existe no Arquivo !!!')
+                vcod := 0
+                RETURN .F.
+        ELSE
+                RETURN .F.
+        ENDIF
+ELSE
+        IF li = NIL .AND. ci = NIL
+                RETURN .T.
+        ENDIF
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(cons_cli[1,3])
+        setcor(1)
+ENDIF
+RETURN .T.
+************************** F I M ******************************
+***********************
+FUNCTION ver_raca(vcod,li,ci,p)
+***********************
+
+LOCAL msele,morde
+MEMVAR mcliente,mcpf,mcgc
+
+msele := SELE()
+morde := INDEXORD()
+
+IF EMPTY(vcod)
+        RETURN .T.
+ENDIF
+
+IF ! AbriArq('smedraca','raca');RETURN NIL;ENDIF
+*************
+SELE('raca');ORDSETFOCUS(2)
+GO TOP
+*************
+
+SEEK STRZERO(vcod,5)
+
+IF ! FOUND()
+        IF p = NIL
+                atencao('Codigo da Raça nao Existe no Arquivo !!!')
+                vcod := 0
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ELSE
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ENDIF
+ELSE
+        IF li = NIL .AND. ci = NIL
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .T.
+        ENDIF
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(raca->descricao)
+        setcor(1)
+ENDIF
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+RETURN .T.
+************************** F I M ******************************
+***********************
+FUNCTION ver_pela(vcod,li,ci,p)
+***********************
+
+LOCAL msele,morde
+MEMVAR mcliente,mcpf,mcgc
+
+msele := SELE()
+morde := INDEXORD()
+
+IF EMPTY(vcod)
+        RETURN .T.
+ENDIF
+
+IF ! AbriArq('smedpela','pela');RETURN NIL;ENDIF
+*************
+SELE('pela');ORDSETFOCUS(2)
+GO TOP
+*************
+
+SEEK STRZERO(vcod,5)
+
+IF ! FOUND()
+        IF p = NIL
+                atencao('Codigo da Pelagem nao Existe no Arquivo !!!')
+                vcod := 0
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ELSE
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ENDIF
+ELSE
+        IF li = NIL .AND. ci = NIL
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .T.
+        ENDIF
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(pela->descricao)
+        setcor(1)
+ENDIF
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+RETURN .T.
+******************************** f i m **********************************
+FUNCTION ver_especie(vcod,li,ci,p)
+***********************
+LOCAL msele,morde
+MEMVAR mcliente,mcpf,mcgc
+
+msele := SELE()
+morde := INDEXORD()
+
+IF EMPTY(vcod)
+        RETURN .T.
+ENDIF
+
+IF ! AbriArq('smedespecie','espe');RETURN NIL;ENDIF
+*************
+SELE('espe');ORDSETFOCUS(2)
+GO TOP
+*************
+
+SEEK STRZERO(vcod,5)
+
+IF ! FOUND()
+        IF p = NIL
+                atencao('Codigo da Raça nao Existe no Arquivo !!!')
+                vcod := 0
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ELSE
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ENDIF
+ELSE
+        IF li = NIL .AND. ci = NIL
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .T.
+        ENDIF
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(espe->descricao)
+        setcor(1)
+ENDIF
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+RETURN .T.
+******************************** f i m **********************************
+* VERIFICA COD.ANIMAL
+**********************
+FUNCTION ver_animal(vcli,li,ci)
+**********************************
+MEMVAR cons_animal
+
+IF EMPTY(vcli)
+        RETURN .T.
+ENDIF
+cons_animal := {}
+cComm  := "SELECT * FROM smedcli WHERE registro = "+sr_cdbvalue(vcli)
+sr_getconnection():exec(ccomm,,.t.,@cons_animal)
+IF LEN(cons_animal) = 0
+        atencao('Codigo nao Existe no Arquivo !!!')
+        cons_animal := {}
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(cons_animal[1,2])
+        setcor(1)
+        RETURN .T.
+ENDIF
+RETURN .T.
+************************** F I M ******************************
+* VERIFICA COD.ANIMAL
+***********************
+FUNCTION ver_proc(vcli,li,ci)
+***********************************
+MEMVAR cons_proc
+
+IF EMPTY(vcli)
+        RETURN .T.
+ENDIF
+cons_proc := {}
+cComm  := "SELECT * FROM smeddro WHERE cod_med = "+sr_cdbvalue(STRZERO(vcli,5))
+sr_getconnection():exec(ccomm,,.t.,@cons_proc)
+IF LEN(cons_proc) = 0
+        atencao('Codigo nao Existe no Arquivo !!!')
+        cons_proc := {}
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(cons_proc[1,4])
+        setcor(1)
+        RETURN .T.
+ENDIF
+RETURN .T.
+************************** F I M ******************************
+***********************
+* VERIFICA COD.CLI
+***********************
+
+FUNCTION vercli(vcli,li,ci)
+***********************************
+
+LOCAL msele,morde
+MEMVAR mnome,mfone,mdatans
+IF EMPTY(vcli)
+        RETURN .T.
+ENDIF
+mprazo := 0
+msele := SELE()
+morde := INDEXORD()
+************
+SELE('smcli')
+ORDSETFOCUS(2)
+GO TOP
+************
+WHILE .T.
+
+        SEEK vcli
+
+        IF ! FOUND()
+                atencao('Codigo nao Existe no Arquivo !!!')
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ENDIF
+        mcod_conv := codconv
+        IF li <> NIL
+                setcor(3)
+                DEVPOS(li,ci);DEVOUT(LEFT(nome,35))
+                setcor(1)
+                mnome := smcli->nome
+                mfone := smcli->fone
+                mdatans := smcli->datans
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .T.
+        ENDIF
+ENDDO
+************************** F I M ******************************
+***********************
+* VERIFICA COD.CIRUR
+***********************
+
+FUNCTION ver_cirur(vcirur,li,ci)
+***********************************
+
+LOCAL msele,morde
+
+IF vcirur = '000'
+        RETURN .T.
+ENDIF
+msele := SELE()
+morde := INDEXORD()
+************
+SELE('cirur')
+ORDSETFOCUS(1)
+GO TOP
+************
+WHILE .T.
+
+        SEEK vcirur
+
+        IF ! FOUND()
+                atencao('Codigo nao Existe no Arquivo !!!')
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ENDIF
+        IF li <> NIL
+                setcor(3)
+                DEVPOS(li,ci);DEVOUT(descricao)
+                setcor(1)
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .T.
+        ENDIF
+ENDDO
+************************** F I M ******************************
+***********************
+* VERIFICA COD.MEDICO
+***********************
+
+FUNCTION ver_med(vcod_med,li,ci)
+***********************************
+
+LOCAL msele,morde
+
+IF EMPTY(vcod_med)
+        RETURN .T.
+ENDIF
+msele := SELE()
+morde := INDEXORD()
+IF ! abriarq('smedmed','med');RETURN NIL;ENDIF
+************
+SELE('med');ORDSETFOCUS(3)
+GO TOP
+************
+SEEK STRZERO(vcod_med,5)
+
+IF ! FOUND()
+        atencao('Codigo nao Existe no Arquivo !!!')
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(med->profission)
+        setcor(1)
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .T.
+ENDIF
+**************************** F I M ************************************
+********************************
+* FUNCAO P/CONSULTAR CLIENTES
+********************************
+FUNCTION f2_cli
+*****************
+
+LOCAL tela,tela1,lci,cci,lba,cba,pode,point,msele,morde,men,m_codigo:={},m_posicao:={}
+
+lci := 07
+cci := 08
+lba := 22
+cba := 65
+
+tela := SAVESCREEN(00,00,24,79)
+
+msele := SELE()
+morde := INDEXORD()
+men := SAVESCREEN(24,00,24,79)
+setcor(3)
+botao(lci,cci,lba,cba)
+setcor(1)
+DEVPOS(lci+1,cci+1);DEVOUT(' Cod. ')
+DEVPOS(lci+1,cci+09);DEVOUT(' Cliente ')
+DEVPOS(lci+1,cci+47);DEVOUT('Data Nasc.')
+@ lci+2,cci+1 TO lci+2,cba-1
+@ lci+2,cci+08 TO lba-1,cci+08
+@ lci+2,cci+08 SAY CHR(194)
+@ lba,cci+08 SAY CHR(193)
+@ lci+2,cci+46 TO lba-1,cci+46
+@ lci+2,cci+46 SAY CHR(194)
+@ lba,cci+46 SAY CHR(193)
+
+*************
+SELE('smcli');ORDSETFOCUS(1)
+GO TOP
+*************
+IF LASTREC() = 0
+        atencao('Nao existe nenhum Cliente Cadastrado !!!')
+        SELE(msele);ORDSETFOCUS(morde)
+        RESTSCREEN(24,00,24,79,men)
+        RESTSCREEN(00,00,24,79,tela)
+        RETURN NIL
+ENDIF
+mensagem('Aguarde um momento OK !!!')
+ASIZE(m_codigo,0)
+WHILE ! EOF()
+        AADD(m_codigo,' '+registro+' '+CHR(179)+' '+nome+' '+CHR(179)+' '+DTOC(datans))
+        AADD(m_posicao,RECNO())
+        SKIP
+ENDDO
+
+pode=.T.
+
+WHILE .T.
+        mensagem("< ou > Consulta  -  <ESC> Retorna  -  <ENTER> p/Confirma" )
+        point := ACHOICE(lci+3,cci+1,lba-1,cba-1,m_codigo)
+
+        DO CASE
+                CASE LASTKEY()=5
+                        IF ! BOF()
+                                SKIP -1
+                                pode=.T.
+                        ENDIF
+                CASE LASTKEY()=24
+                        IF ! EOF() .AND. pode=.T.
+                                SKIP
+                        ENDIF
+                CASE LASTKEY()=27
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+                CASE LASTKEY() = 13
+                        GO m_posicao[point]
+                        mnome := nome
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+
+        ENDCASE
+ENDDO
+
+******************************* f i m *********************************************
+********************************
+* FUNCAO P/CONSULTAR CONVENIOS
+********************************
+
+FUNCTION f3_conv
+*****************
+
+LOCAL tela,tela1,lci,cci,lba,cba,pode,point,msele,morde,men,m_codigo:={},m_posicao:={}
+
+lci := 07
+cci := 08
+lba := 22
+cba := 45
+
+tela := SAVESCREEN(00,00,24,79)
+
+msele := SELE()
+morde := INDEXORD()
+men := SAVESCREEN(24,00,24,79)
+setcor(3)
+botao(lci,cci,lba,cba)
+setcor(1)
+DEVPOS(lci+1,cci+1);DEVOUT('Cod')
+DEVPOS(lci+1,cci+07);DEVOUT('Convenio')
+@ lci+2,cci+1 TO lci+2,cba-1
+@ lci+2,cci+05 TO lba-1,cci+05
+@ lci+2,cci+05 SAY CHR(194)
+@ lba,cci+05 SAY CHR(193)
+
+*************
+SELE('conv');ORDSETFOCUS(1)
+GO TOP
+*************
+IF LASTREC() = 0
+        atencao('Nao existe nenhum Convenios Cadastrado !!!')
+        SELE(msele);ORDSETFOCUS(morde)
+        RESTSCREEN(24,00,24,79,men)
+        RESTSCREEN(00,00,24,79,tela)
+        RETURN NIL
+ENDIF
+mensagem('Aguarde um momento OK !!!')
+ASIZE(m_codigo,0)
+WHILE ! EOF()
+        AADD(m_codigo,' '+codconv+' '+CHR(179)+' '+rsocial+' ')
+        AADD(m_posicao,RECNO())
+        SKIP
+ENDDO
+
+pode=.T.
+
+WHILE .T.
+        mensagem("< ou > Consulta  -  <ESC> Retorna  -  <ENTER> p/Confirma" )
+        point := ACHOICE(lci+3,cci+1,lba-1,cba-1,m_codigo)
+
+        DO CASE
+                CASE LASTKEY()=5
+                        IF ! BOF()
+                                SKIP -1
+                                pode=.T.
+                        ENDIF
+                CASE LASTKEY()=24
+                        IF ! EOF() .AND. pode=.T.
+                                SKIP
+                        ENDIF
+                CASE LASTKEY()=27
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+                CASE LASTKEY() = 13
+                        GO m_posicao[point]
+                        mcconv := codconv
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+
+        ENDCASE
+ENDDO
+
+******************************* f i m *********************************************
+* FUNCAO P/CONSULTAR MEDICAMENTOS
+********************************
+FUNCTION f4_med
+*****************
+LOCAL tela,tela1,lci,cci,lba,cba,pode,point,msele,morde,men,m_codigo:={},m_posicao:={}
+
+lci := 07
+cci := 08
+lba := 22
+cba := 65
+
+tela := SAVESCREEN(00,00,24,79)
+
+msele := SELE()
+morde := INDEXORD()
+men := SAVESCREEN(24,00,24,79)
+setcor(3)
+botao(lci,cci,lba,cba)
+setcor(1)
+DEVPOS(lci+1,cci+1);DEVOUT(' Cod.')
+DEVPOS(lci+1,cci+10);DEVOUT('Nome Com.')
+DEVPOS(lci+1,cci+28);DEVOUT('Nome Droga')
+@ lci+2,cci+1 TO lci+2,cba-1
+@ lci+2,cci+08 TO lba-1,cci+08
+@ lci+2,cci+26 TO lba-1,cci+26
+@ lci+2,cci+08 SAY CHR(194)
+@ lba,cci+08 SAY CHR(193)
+@ lci+2,cci+26 SAY CHR(194)
+@ lba,cci+26 SAY CHR(193)
+
+*************
+SELE('dro');ORDSETFOCUS(1)
+GO TOP
+*************
+IF LASTREC() = 0
+        atencao('Nao existe nenhum Medicamento Cadastrado !!!')
+        SELE(msele);ORDSETFOCUS(morde)
+        RESTSCREEN(24,00,24,79,men)
+        RESTSCREEN(00,00,24,79,tela)
+        RETURN NIL
+ENDIF
+mensagem('Aguarde um momento OK !!!')
+ASIZE(m_codigo,0)
+WHILE ! EOF()
+        AADD(m_codigo,' '+cod_med+' '+CHR(179)+' '+nomecom+' '+CHR(179)+' '+nomedroga+' ')
+        AADD(m_posicao,RECNO())
+        SKIP
+ENDDO
+
+pode=.T.
+
+WHILE .T.
+        mensagem("< ou > Consulta  -  <ESC> Retorna  -  <ENTER> p/Confirma" )
+        point := ACHOICE(lci+3,cci+1,lba-1,cba-1,m_codigo)
+
+        DO CASE
+                CASE LASTKEY()=5
+                        IF ! BOF()
+                                SKIP -1
+                                pode=.T.
+                        ENDIF
+                CASE LASTKEY()=24
+                        IF ! EOF() .AND. pode=.T.
+                                SKIP
+                        ENDIF
+                CASE LASTKEY()=27
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+                CASE LASTKEY() = 13
+                        GO m_posicao[point]
+                        mcod_med := cod_med
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RESTSCREEN(24,00,24,79,men)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RETURN NIL
+
+        ENDCASE
+ENDDO
+
+*********************************** f i m *************************************
+**********************
+* INCLUSAO DE CONVENIO
+**********************
+
+FUNCTION convenio
+****************
+
+LOCAL lci,cci,lba,cba,opcao,mcconv,mmod,mrsoc,mend,mfonec,mcod;
+      ,mfat,mdata,tela212,tela1
+
+lci := 12
+cci := 12
+lba := 21
+cba := 63
+tela212 := SAVESCREEN(00,00,24,79)
+*********************************************
+IF ! AbriArq('smedconv','conv');RETURN NIL;ENDIF
+*********************************************
+
+WHILE .T.
+        SET CURSOR ON
+        opcao := 0
+        mcod := 0
+        mdata := CTOD('  /  /  ')
+        mcconv := SPACE(2)
+        mrsoc := SPACE(30)
+        mmod := SPACE(2)
+        mend := SPACE(35)
+        mfonec := SPACE(13)
+        mfat := 0
+
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        @ lba-2,cci+1 TO lba-2,cba-1
+        SETCOLOR(vcor[2])
+        DEVPOS(lba-1,cci+1);DEVOUT('Modalid.<CR>C/Recibo <SR>S/Recibo <CH>C/Honorarios')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod.Conv..:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Modalidade:')
+        DEVPOS(lci+2,cci+22);DEVOUT('Data:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Fator.....:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Raz.Social:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Endereco..:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Fone......:')
+
+        *************
+        SELE('conv');ORDSETFOCUS(1)
+        *************
+        GO BOTT
+        mcod := VAL(codconv)
+        mcod := mcod + 1
+        mdata := DATE()
+        DEVPOS(lci+1,cci+13);DEVOUT('['+STRZERO(mcod,2,0)+']')
+
+        SET INTEN ON
+        @ lci+2,cci+14 GET mmod PICT '@!' VALID mmod $ 'CR,CH,SR'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF EMPTY(mmod)
+                LOOP
+        ENDIF
+        apaga(23,00,23,79)
+        @ lci+2,cci+28 GET mdata PICT '  /  /  '
+        @ lci+3,cci+14 GET mfat PICT '9.9'
+        @ lci+4,cci+14 GET mrsoc PICT '@!'
+        @ lci+5,cci+14 GET mend PICT '@!'
+        @ lci+6,cci+14 GET mfonec PICT '(999)999-9999'
+        READ
+
+        tela1 := SAVESCREEN(17,42-1,21+1,59)
+        WHILE .T.
+
+                setcor(3)
+                botao(17,42,21,59)
+                @ 19,43 TO 19,58 DOUBLE
+                setcor(1)
+                DEVPOS(18,44);DEVOUT('Confirma Incl.')
+                @ 20,46 PROMPT ' Sim '
+                @ 20,53 PROMPT ' Nao '
+                SET INTEN ON
+                MENU TO opcao
+                IF LASTKEY() = 27
+                        LOOP
+                ENDIF
+
+                DO CASE
+                        CASE opcao = 1
+                                IF ADIREG()
+                                        REPLA codconv WITH STRZERO(mcod,2)
+                                        REPLA modalidade WITH mmod
+                                        REPLA fator WITH mfat,dataini WITH mdata
+                                        REPLA rsocial WITH mrsoc,endereco WITH mend
+                                        REPLA foneconv WITH mfonec
+                                        COMMIT
+                                        UNLOCK
+                                ELSE
+                                        atencao('Nao foi Possivel Acessar o Arquivo !!!')
+                                        LOOP
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,tela212)
+                                setcor(1)
+                                CLOSE ALL
+                                RETURN NIL
+                        CASE opcao = 2
+                                EXIT
+                ENDCASE
+        ENDDO
+ENDDO
+CLOSE ALL
+RETURN NIL
+
+
+************************** F I M ********************************************
+
+**************************
+* ALTERACAO DE TABELA PRECO
+**************************
+
+FUNCTION tabpreco
+****************
+
+LOCAL lci,cci,lba,cba,opcao,mvlcr,mvlch,mdata,tela226,tela1
+
+lci := 12
+cci := 15
+lba := 18
+cba := 51
+tela226 := SAVESCREEN(00,00,24,79)
+
+*********************************************
+IF ! AbriArq('smedtab','tab');RETURN NIL;ENDIF
+*********************************************
+WHILE .T.
+        *************
+        SELE('tab')
+        *************
+        GO BOTT
+        SET CURSOR ON
+        mvlcr = 0
+        mvlch = 0
+        mdata = CTOD('  /  /  ')
+        opcao := 0
+        apaga(23,00,23,79)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        @ lba-2,cci+1 TO lba-2,cba-1
+        SETCOLOR(vcor[2])
+        DEVPOS(lba-1,cci+1);DEVOUT('Valor "CR" e "CH" nao pode ser = 0 ')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Data da Alteracao :')
+        DEVPOS(lci+2,cci+2);DEVOUT('Valor c/Honorario.:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Valor c/Recibo....:')
+
+        SET INTEN ON
+        mdata := DATE()
+        mvlch := valch
+        mvlcr := valcr
+
+        @ lci+1,cci+22 GET mdata PICT '  /  /  '
+        @ lci+2,cci+22 GET mvlch PICT '999.99' VALID IIF(mvlch = 0,.F.,.T.)
+        @ lci+3,cci+22 GET mvlcr PICT '9,999,999.99' VALID IIF(mvlcr = 0,.F.,.T.)
+        READ
+
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        tela1 := SAVESCREEN(17,42-1,21+1,59)
+
+        WHILE .T.
+
+                setcor(3)
+                botao(17,42,21,59)
+                @ 19,43 TO 19,58 DOUBLE
+                setcor(1)
+                DEVPOS(18,44);DEVOUT('Confirma Alte.')
+                @ 20,46 PROMPT ' Sim '
+                @ 20,53 PROMPT ' Nao '
+                SET INTEN ON
+                MENU TO opcao
+
+                IF LASTKEY() = 27
+                        LOOP
+                ENDIF
+
+                DO CASE
+                        CASE opcao = 1
+                                IF ADIREG()
+                                        REPLA valcr WITH mvlcr
+                                        REPLA valsr WITH mvlcr
+                                        REPLA valch WITH mvlch
+                                        REPLA dataalt WITH mdata
+                                        COMMIT
+                                        UNLOCK
+                                ELSE
+                                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                                        LOOP
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,tela226)
+                                setcor(1)
+                                CLOSE ALL
+                                RETURN NIL
+                        CASE opcao = 2
+                                EXIT
+                ENDCASE
+        ENDDO
+ENDDO
+RETURN NIL
+********************************** F I M **********************************
+****************************
+* EMITE RECIBOS
+****************************
+
+FUNCTION recibo(rnome,rdata,rvalor)
+
+LOCAL lci,cci,lba,cba,lin,lin1,lin2,lin3,rpreco,rrecibo,linhas := 0;
+      ,opcao,telarec,telaprin,mref,mref1,mref2,mref3,mref4,mref5,mref6
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+PRIVATE traco
+
+lin1 := '          Recebi do Sr.(a) '
+lin2 := ' a importancia de R$ '
+lin3 := ' referente a ' 
+opcao := SPACE(1)
+traco := REPLI('-',80)
+lci := cci := 0
+lba := 21
+cba := 73
+
+*********************************************
+IF ! AbriArq('smedrec','rec');RETURN NIL;ENDIF
+*********************************************
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(10,05,21,73,'RECIBO')
+WHILE .T.
+        **************
+        SELE('rec');ORDSETFOCUS(1)
+        **************
+        mref := 'servico medico                                    '
+        mref1 := SPACE(50)
+        mref2 := SPACE(50)
+        mref3 := SPACE(50)
+        mref4 := SPACE(50)
+        mref5 := SPACE(50)
+        mref6 := SPACE(35)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        SETCOLOR(vcor[2])
+        DEVPOS(lci,cci+2);DEVOUT(' R E C I B O ')
+        setcor(1)
+        SET INTEN ON
+        DEVPOS(lci+1,cci+2);DEVOUT('Data.......:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome.......:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Valor......:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Referente a:')
+        DEVPOS(lci+10,cci+2);DEVOUT('Prestados a:')
+        @ lci+1,cci+15 GET rdata PICT '99/99/99'
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                CLOSE rec
+                RETURN NIL
+        ENDIF
+        @ lci+2,cci+15 GET rnome PICT '@!' VALID IF(EMPTY(rnome),.F.,.T.)
+        @ lci+3,cci+15 GET rvalor PICT '9,999,999.99' VALID IF(EMPTY(rvalor),.F.,.T.)
+        @ lci+4,cci+15 GET mref
+        @ lci+5,cci+15 GET mref1
+        @ lci+6,cci+15 GET mref2
+        @ lci+7,cci+15 GET mref3
+        @ lci+8,cci+15 GET mref4
+        @ lci+9,cci+15 GET mref5
+        @ lci+10,cci+15 GET mref6 VALID IF(EMPTY(mref6),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        IF EMPTY(rnome)
+                LOOP
+        ENDIF
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('RECIBO.REL')
+                LOOP
+        ENDIF
+        rrecibo := lin1+RTRIM(rnome)+lin2+LTRIM(TRANSFORM(rvalor,'@E 9,999,999.99'))+' '+'('+extenso(rvalor,.T.)+')'+lin3+RTRIM(mref) + RTRIM(mref1) + RTRIM(mref2) + RTRIM(mref3) + RTRIM(mref4) + RTRIM(mref5) + ' prestados por '+ RTRIM(mref6) + ' nesta data'
+        IF cab_med = 'ENOQUE'
+                cabec()
+                imprt(impressora,'E',4)
+                @ PROW(),12 SAY 'R E C I B O'
+                imprt(impressora,'N')
+                @ PROW()+4,35 SAY 'R$ '
+                @ PROW(),39 SAY LTRIM(TRANSFORM(rvalor,'@E 9,999,999.99'))
+                @ PROW()+3,01 SAY ' '
+
+                linhas := MLCOUNT(rrecibo,50)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(rrecibo,50,linha,,10)
+                        @ PROW()+1,02 SAY PADR(RTRIM(LIN),50)
+                NEXT
+
+                @ PROW()+3,20 SAY 'Recife,'
+                @ PROW(),27 SAY rdata
+                @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),50)
+                @ PROW()+1,00 SAY PADC(memp_resa,50)
+                @ PROW(),00 SAY PADC(memp_resa,50)
+                @ PROW()+1,00 SAY PADC(crm,50)
+                @ PROW()+1,00 SAY PADC(cpf,50)
+                rodape()
+                @ PROW()+1,90 SAY ' '
+        ELSE
+                cabec()
+                imprt(impressora,'E',4)
+                @ PROW(),15 SAY 'R E C I B O'
+                imprt(impressora,'N')
+                @ PROW()+4,45 SAY 'R$ '
+                @ PROW(),49 SAY LTRIM(TRANSFORM(rvalor,'@E 9,999,999.99'))
+                @ PROW()+4,01 SAY ' '
+
+                linhas := MLCOUNT(rrecibo,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(rrecibo,60,linha,,10)
+                        @ PROW()+1,10 SAY PADR(RTRIM(LIN),60)
+                        @ PROW()+1,10 SAY ' '
+                NEXT
+
+                @ PROW()+5,30 SAY 'Recife,'
+                @ PROW(),37 SAY rdata
+                @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW(),00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                IF cab_med <> 'VANIA'
+                        @ PROW()+1,00 SAY PADC(cpf,80)
+                ENDIF
+                rodape()
+                @ PROW()+1,90 SAY ' '
+        ENDIF
+        EJECT
+        SETPRC(00,00)
+        SET DEVICE TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('RECIBO.REL')
+        *****************
+        SELE('rec');ORDSETFOCUS(1)
+        *****************
+        IF ADIREG()
+                rec->cliente := mref6
+                rec->nome := rnome
+                rec->valor := rvalor
+                rec->data := rdata
+                rec->operador := cod_operado
+                COMMIT
+                UNLOCK
+        ELSE
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                LOOP
+        ENDIF
+        wvw_lclosewindow()
+        CLOSE rec
+        RETURN NIL
+ENDDO
+******************************** f i m **************************************
+* EMITE RECEITAS
+**************************
+FUNCTION receita(rnome,rdata,rquantd)
+****************
+LOCAL mprg:='SMEDROT'
+LOCAL lci,cci,lba,cba,opcao,ml1,mquantd:=1,y:=0,i:=0
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+PRIVATE traco
+
+lci := cci := 0
+lba := 22
+cba := 73
+traco := REPLI('-',80)
+opcao := SPACE(1)
+IF rnome = NIL
+        rnome := SPACE(35)
+        rdata := DATE()
+        rquantd := 1
+ENDIF
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(04,06,29,73,'EMITE RECEITAS')
+FOR y = 1 TO rquantd
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        mquantd := 1
+        IF cab_med = 'ENOQUE'
+                ml1 = SPACE(50)
+        ELSE
+                ml1 = SPACE(60)
+        ENDIF
+        mensagem('Tecle <F10> p/Imprimir    -   <ESC> p/Abandonar')
+  	setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Para:')
+        DEVPOS(lci+1,cci+44);DEVOUT('Data:')
+        @ lci+1,cci+7 GET rnome PICT '@!'
+        @ lci+1,cci+49 GET rdata
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        mreceita := ml1
+
+        rreceita := MEMOEDIT(mreceita,lci+2,cci+07,lba-1,cba-1)
+
+        DEVPOS(23,00);DEVOUT('Quantidades de Copias:')
+        @ 23,COL()+1 GET mquantd PICT '999' VALID IF(EMPTY(mquantd),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('RECEITA.REL')
+                LOOP
+        ENDIF
+        IF cab_med = 'ENOQUE'
+                FOR i = 1 TO mquantd
+                        cabec()
+                        imprt(impressora,'N',4)
+                        @ PROW(),02 SAY 'Para o Sr.(a).:'
+                        @ PROW(),18 SAY rnome
+                        @ PROW(),18 SAY rnome
+                        @ PROW()+2,03 SAY ' '
+                        linhas := MLCOUNT(rreceita,50)
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(rreceita,50,linha,,0)
+                                @ PROW()+1,05 SAY IMPAC(LIN)
+                        NEXT
+
+                        @ PROW()+3,20 SAY 'Recife,'
+                        @ PROW(),27 SAY rdata
+                        @ PROW()+4,00 SAY PADC(REPLI('-',LEN(memp_resa)),50)
+                        @ PROW()+1,00 SAY PADC(memp_resa,50)
+                        @ PROW(),00 SAY PADC(memp_resa,50)
+                        @ PROW()+1,00 SAY PADC(crm,50)
+                        rodape()
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+        ELSE
+                FOR i = 1 TO mquantd
+                        cabec()
+*                       imprt(impressora,'E',4)
+*                       @ PROW(),14 SAY 'R E C E I T A'
+                        imprt(impressora,'N',1)
+                        @ PROW(),05 SAY 'Para o Sr.(a).'
+                        @ PROW()+2,05 SAY rnome
+                        @ PROW(),05 SAY rnome
+                        @ PROW()+2,05 SAY ' '
+                        linhas := MLCOUNT(rreceita,60)
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(rreceita,60,linha,,)
+                                @ PROW(),10 SAY LIN
+                                @ PROW()+1,10 SAY ' '
+                        NEXT
+
+                        @ PROW()+3,30 SAY 'Recife,'
+                        @ PROW(),37 SAY rdata
+                        @ PROW()+4,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW(),00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC(crm,80)
+                        rodape()
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+        ENDIF
+        SET DEVICE TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('RECEITA.REL')
+NEXT
+wvw_lclosewindow()
+RETURN NIL
+*****************************************
+* CONSULTA DA AGENDA DE COMPROMISSO
+*****************************************
+FUNCTION agenda
+****************
+LOCAL lci,cci,lba,cba,mdatac,mlin1,mlin2,mlin4,mlin5,mlin6,mlin7;
+      ,mlin8,mlin9,mlin10,tela
+
+mdatac := CTOD('  /  /  ')
+lci := cci := 0
+lba := 18
+cba := 70
+*********************************************
+CLOSE ALL
+USE smedagen ALIAS agen SHARED NEW
+*********************************************
+op_tela(06,10,18,80,'COMPROMISSO DO DIA - AGENDA PESSOAL')
+WHILE .T.
+        mensagem('Pressione Qualquer Tecla p/Continuar')
+
+        DEVPOS(lci+1,cci+2);DEVOUT('Data:')
+
+        *************
+        SELE('agen');ORDSETFOCUS(1)
+        GO TOP
+        *************
+        SET INTEN ON
+
+        mdatac = DATE()
+
+        SEEK DTOS(mdatac)
+
+        datseman(mdatac)
+
+        IF ! FOUND()
+                DEVPOS(lci+1,cci+7);DEVOUT('['+DTOC(mdatac)+']')
+                DEVPOS(lci+1,cba-20);DEVOUT(datseman(mdatac))
+                @ lci+4,cci+17 TO lci+6,cci+46 DOUBLE
+                SETCOLOR('n*/w,x')
+                DEVPOS(lci+5,cci+19);DEVOUT('SEM COMPROMISSO P/ HOJE !!!')
+                INKEY(0)
+                setcor(1)
+                SET CURSOR ON
+                EXIT
+        ENDIF
+        setcor(3)
+        DEVPOS(lci+1,cci+7);DEVOUT('['+DTOC(mdatac)+']')
+        DEVPOS(lci+1,cba-20);DEVOUT(dsemana)
+        DEVPOS(lci+2,cci+7);DEVOUT('['+agen->lin1+']')
+        DEVPOS(lci+3,cci+7);DEVOUT('['+agen->lin2+']')
+        DEVPOS(lci+4,cci+7);DEVOUT('['+agen->lin3+']')
+        DEVPOS(lci+5,cci+7);DEVOUT('['+agen->lin4+']')
+        DEVPOS(lci+6,cci+7);DEVOUT('['+agen->lin5+']')
+        DEVPOS(lci+7,cci+7);DEVOUT('['+agen->lin6+']')
+        DEVPOS(lci+8,cci+7);DEVOUT('['+agen->lin7+']')
+        DEVPOS(lci+9,cci+7);DEVOUT('['+agen->lin8+']')
+        DEVPOS(lci+10,cci+7);DEVOUT('['+agen->lin9+']')
+        DEVPOS(lci+11,cci+7);DEVOUT('['+agen->lin10+']')
+        setcor(1)
+        INKEY(0)
+        SET CURSOR ON
+        EXIT
+ENDDO
+CLOSE ALL
+wvw_lclosewindow()
+RETURN NIL
+************************** f i m **************************8
+********************************
+* FUNCAO P/CONSULTAR TABELA CID
+********************************
+FUNCTION f12_cid
+****************
+LOCAL lci,cci,lba,cba,mcodigo,mdesc,msele,morde,point,tela
+
+*********************************************
+USE smedcli ALIAS cli SHARED NEW
+msele := SELE()
+morde := INDEXORD()
+USE smedcid ALIAS cid SHARED NEW
+*********************************************
+
+lci := 07
+cci := 02
+lba := 19
+cba := 79
+tela := SAVESCREEN(00,00,24,79)
+CLEAR GETS
+WHILE .T.
+        mensagem("Digite o Codigo do DIAGNOSTICO ou DESCRICAO - <ESC> Retorna" )
+        mcodigo := SPACE(11)
+        mdesc := SPACE(60)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(1)
+        janela(lci,cba,' CONSULTA Diagnostico da C.I.D. ')
+        DEVPOS(lci+1,cci+2);DEVOUT('Codigo')
+        DEVPOS(lci+1,cci+20);DEVOUT('Diagnostico')
+        @ lci+2,cci+1 TO lci+2,cba-1
+        @ lci+2,cci+15 SAY CHR(194)
+        @ lba,cci+15 SAY CHR(193)
+        @ lci+3,cci+15 TO lba-1,cci+15
+
+        pode=.T.
+
+        *************
+        SELE('cid');ORDSETFOCUS(1)
+        *************
+        @ lci+3,cci+2 GET mcodigo PICT '9999.9/9'
+        @ lci+3,cci+16 GET mdesc PICT '@!' WHEN mcodigo = SPACE(8)
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela)
+                CLEAR GETS
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN NIL
+        ENDIF
+        IF EMPTY(mcodigo) .AND. EMPTY(mdesc)
+                LOOP
+        ENDIF
+        IF ! EMPTY(mcodigo)
+                ORDSETFOCUS(2)
+                GO TOP
+                SEEK 'D'+mcodigo
+        ELSE
+                ORDSETFOCUS(1)
+                GO TOP
+                SEEK 'D'+RTRIM(mdesc)
+        ENDIF
+        IF ! FOUND()
+                atencao('Diagnostico nao cadastrado !!!')
+                LOOP
+        ENDIF
+        WHILE .T.
+                mensagem("< ou > Consulta  <ENTER> outro DIAGNOSTICO  <ESC> Retorna" )
+                point=RECNO()
+                FOR f=1 TO 9
+                        IF tipo = 'P'
+                                WHILE tipo = 'P' .OR. ! EOF()
+                                        SKIP
+                                ENDDO
+                        ENDIF
+                        IF ! EOF()
+                                setcor(3)
+                                @ lci+2+f,cci+2 SAY codigo
+                                @ lci+2+f,cci+16 SAY nome
+                                setcor(1)
+                                SKIP
+                        ELSE
+                                setcor(3)
+                                @ lci+2+f,cci+2 SAY SPACE(11)
+                                @ lci+2+f,cci+16 SAY SPACE(60)
+                                setcor(1)
+                        ENDIF
+                NEXT F
+                IF EOF()
+                        pode=.F.
+                ENDIF
+                GO POINT
+                INKEY(0)
+                DO CASE
+                        CASE LASTKEY()=5
+                                IF ! BOF()
+                                        SKIP -1
+                                        pode=.T.
+                                ENDIF
+                        CASE LASTKEY()=24
+                                IF ! EOF() .AND. pode=.T.
+                                        SKIP
+                                ENDIF
+                        CASE LASTKEY()=18
+                                IF ! BOF()
+                                        SKIP -10
+                                        pode=.T.
+                                ENDIF
+                        CASE LASTKEY()=3
+                                IF ! EOF() .AND. pode=.T.
+                                        SKIP 10
+                                ENDIF
+                        CASE LASTKEY()=13
+                                EXIT
+                        CASE LASTKEY()=27
+                                RESTSCREEN(00,00,24,79,tela)
+                                CLOSE cid
+                                CLEAR GETS
+                                SELE(msele);ORDSETFOCUS(morde)
+                                RETURN NIL
+                ENDCASE
+        ENDDO
+ENDDO
+****************************  F I M ****************************************
+**************************
+* EMITE TEXTOS
+*************************
+
+FUNCTION textosmed
+****************
+
+LOCAL lci,cci,lba,cba,opcao,tela570,mtexto,mquantd
+
+PRIVATE traco
+
+lci := 06
+cci := 10
+lba := 21
+cba := 73
+tela570 := SAVESCREEN(00,00,24,79)
+traco := REPLI('=',80)
+opcao := SPACE(1)
+*----------------------------------------------------
+CLOSE ALL
+USE texto ALIAS tex SHARED NEW
+*----------------------------------------------------
+SET KEY -9 TO ctrl_w()
+WHILE .T.
+        ***********
+        SELE('tex')
+        ***********
+        IF ! BLOQREG()
+                LOOP
+        ENDIF
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(2)
+        janela(lci,cba,'  T E X T O  ')
+        setcor(1)
+        Mensagem('Tecle <F10> Imprimir - <Ctrl+Y>Apagar linha p/linha - <ESC> p/Abandonar')
+
+        IF cab_med <> 'VANIA'
+                tex-> texto := MEMOEDIT(texto,lci+1,cci+2,lba-1,cba-1,,,,,,7)
+        ENDIF
+        mtexto := MEMOEDIT(texto,lci+1,cci+2,lba-1,cba-1,,,,,,7)
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela570)
+                UNLOCK
+                RETURN NIL
+        ENDIF
+        opcao := op_simnao('S','Confirma Impressao [S/n]:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                LOOP
+        ENDIF
+        mquantd := 1
+        mensagem('Quantidade de Copias:')
+        @ 23,COL()+1 GET mquantd PICT '999' VALID IF(EMPTY(mquantd),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF opcao = 'S'
+                IF ! impress()
+                        LOOP
+                ENDIF
+                WHILE .T.
+                        mensagem('Espere o Final da Impressao OK')
+                        FOR i = 1 TO mquantd
+                                SET DEVI TO PRINT
+                                cabec()
+                                @ PROW()+2,01 SAY ' '
+                                linhas := MLCOUNT(mtexto,60)
+
+                                FOR linha = 1 TO  linhas
+                                        LIN := MEMOLINE(mtexto,60,linha,,)
+                                        @ PROW()+1,10 SAY IMPAC(LIN)
+                                        IF PROW() >= 58
+                                                EJECT
+                                                mcont = 0
+                                        ENDIF
+                                NEXT
+                                @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                @ PROW()+1,00 SAY PADC(crm,80)
+                                rodape()
+                                @ PROW()+1,90 SAY ' '
+                                EJECT
+                                SETPRC(00,00)
+                                SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+                        NEXT
+                        RESTSCREEN(00,00,24,79,tela570)
+                        EXIT
+                ENDDO
+        ELSE
+                LOOP
+        ENDIF
+ENDDO
+RETURN NIL
+******************************** F I M *************************************
+* FUNCAO P/VERIFICAR AUTORIZACAO
+********************************
+FUNCTION aut_sen(men)
+****************
+
+LOCAL msele,morde,mcont,li,ci,lba,cba,tela,tela1
+
+msele := SELE()
+morde := INDEXORD()
+
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+
+tela := SAVESCREEN(24,00,24,79)
+*mensagem('Digite a senha de Autorizacao:')
+*****************
+SELE('sen');ORDSETFOCUS(1)
+*****************
+mcont := 0
+WHILE mcont <= 3
+        mensagem(men)
+        GO TOP
+        msenha = ''
+        pegasenha(@msenha,24,COL()+1)
+        IF msenha = 'NAO'
+                EXIT
+/*
+                atencao('Senha nao Autorizada !!!')
+                mcont ++
+                LOOP
+*/
+        ENDIF
+        IF EMPTY(msenha)
+                atencao('Senha nao Autorizada !!!')
+                mcont ++
+                IF mcont = 3
+                        atencao('Senha nao Autorizada !!!')
+                        EXIT
+                ENDIF
+                LOOP
+        ENDIF
+
+        WHILE ! EOF()
+                IF msenha == DCRIPTO(ssenha)
+                        EXIT
+                ENDIF
+                SKIP
+        ENDDO
+        IF ! EOF() .AND. msenha == DCRIPTO(ssenha)
+                IF snivel = '1'
+                        EXIT
+                ENDIF
+                atencao('Senha nao Autorizada !!!')
+                mcont ++
+                LOOP
+        ELSE
+                atencao('Senha nao Autorizada !!!')
+                mcont ++
+                IF mcont = 3
+                        EXIT
+                ENDIF
+                LOOP
+        ENDIF
+ENDDO
+IF mcont = 3 .OR. EOF() .OR. snivel <> '1'
+        atencao('Senha nao Autorizada !!!')
+        *********************
+        SELE(msele);ORDSETFOCUS(morde)
+        *********************
+        RETURN .F.
+ELSE
+        mautoriza := SPACE(3)
+        mautoriza := scod_op
+        *********************
+        SELE(msele);ORDSETFOCUS(morde)
+        *********************
+        RESTSCREEN(24,00,24,79,tela)
+        RETURN .T.
+ENDIF
+RETURN NIL
+***************************** F I M ****************************************
+**********************************
+* TESTE DE EXISTENCIA DE DESPESAS
+**********************************
+
+FUNCTION ver_desp(mcod_des,li,ci)
+
+LOCAL msele,morde
+
+IF EMPTY(mcod_des); RETURN .T.;END
+
+msele := SELE()
+morde := INDEXORD()
+mnome_ven = SPACE(30)
+
+WHILE .T.
+        **************
+        SELE('desp');ORDSETFOCUS(1)
+        GO TOP
+        **************
+        SEEK STRZERO(mcod_des,3)
+        IF .NOT. FOUND()
+                atencao('Despesa nao Cadastrada !!!')
+                mcod_des = 0
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ELSE
+                IF li = NIL
+                        mdescri1 = desc1
+                        mdescri2 = desc2
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RETURN .T.
+                ELSE
+                        mdescri1 = desc1
+                        mdescri2 = desc2
+                        setcor(3)
+                        DEVPOS(li,ci);DEVOUT(mdescri1)
+                        DEVPOS(li+1,ci);DEVOUT(mdescri2)
+                        setcor(1)
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RETURN .T.
+                ENDIF
+        ENDIF
+ENDDO
+********************************** f i m **************************************
+* VERIFICA SENHAS
+**********************
+FUNCTION senhaS
+
+LOCAL mcont,msenha
+
+PUBLIC senha_acess,nivel_acess,cod_operado
+
+mcont:=0
+*-----------------------------------------------------
+CLOSE ALL
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+*-----------------------------------------------------
+WHILE .T.
+        *************
+        SELE('sen');ORDSETFOCUS(1)
+        *************
+        WHILE mcont <= 3
+                GO TOP
+                setcor(1)
+                DEVPOS(24,31);DEVOUT('Digite sua Senha:')
+                msenha = ''
+                pegasenha(@msenha,24,48,setcor(3))
+                setcor(1)
+                mcont ++
+                IF msenha = 'NAO'
+                        SETCOLOR(cor)
+                        RETURN .F.
+                ENDIF
+                IF EMPTY(msenha)
+                        limpa(24,31,24,79)
+                        DEVPOS(24,31);DEVOUT('Senha Incorreta Tente Novamente')
+                        TONE(100,6)
+                        TONE(1600,6)
+                        INKEY(2)
+                        limpa(24,31,24,79)
+                        IF mcont = 3
+                                SETCOLOR(cor)
+                                RETURN .F.
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                WHILE ! EOF()
+                        IF msenha == DCRIPTO(ssenha)
+                                EXIT
+                        ENDIF
+                        SKIP
+                ENDDO
+                IF ! EOF() .AND. msenha == DCRIPTO(ssenha)
+                        IF BLOQREG()
+                                sen-> sult_ent := mdata_sis
+                                sen-> shora_ini := TIME()
+                                nivel_acess := snivel
+                                cod_operado := scod_op
+                                senha_acess := msenha
+                                COMMIT
+                                UNLOCK
+                                CLOSE sen
+                                RETURN .T.
+                        ELSE
+                                atencao('Nao foi Possivel Acessar o Arquivo')
+                                LOOP
+                        ENDIF
+                ELSE
+                        limpa(24,31,24,79)
+                        DEVPOS(24,31);DEVOUT('Senha Incorreta Tente Novamente')
+                        TONE(100,6)
+                        TONE(1600,6)
+                        INKEY(2)
+                        limpa(24,31,24,79)
+                        IF mcont = 3
+                                SETCOLOR(cor)
+                                RETURN .F.
+                        ENDIF
+                        LOOP
+                ENDIF
+
+        ENDDO
+ENDDO
+********************************** f i m **************************************
+* ALTERA A SENHA
+**********************
+FUNCTION alt_senhaS
+
+LOCAL mcont,msenha,lci,cci,lba,cba,tela,msele,morde,mmen,mcor
+
+mcont:=0
+lci := 10
+cci := 20
+lba := 14
+cba := 60
+mmen := SAVESCREEN(24,00,24,79)
+tela := SAVESCREEN(00,00,24,79)
+mcor := SETCOLOR()
+msele := SELE()
+morde := INDEXORD()
+*-----------------------------------------------------
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+*-----------------------------------------------------
+WHILE .T.
+        *************
+        SELE('sen');ORDSETFOCUS(1)
+        GO TOP
+        *************
+
+        SEEK CRIPTO(senha_acess)
+
+        IF FOUND()
+                IF BLOQREG()
+                        sen-> sult_ent := mdata_sis
+                        sen-> shora_fim := TIME()
+                        COMMIT
+                        UNLOCK
+                        setcor(4)
+                        DEVPOS(04,67);DEVOUT('Operador: '+cod_operado)
+                        setcor(1)
+                ELSE
+                        atencao('Nao foi Possivel Acessar o Arquivo')
+                        LOOP
+                ENDIF
+        ENDIF
+
+        WHILE mcont <= 3
+                setcor(4)
+                botao(lci,cci,lba,cba)
+                botao(lci+1,cci+1,lba-1,cba-1)
+                limpa(lci+2,cci+2,lci+2,cba-2)
+                DEVPOS(lci+2,cci+2);DEVOUT('Digite a Senha de Acesso:')
+                msenha = ''
+                pegasenha(@msenha,lci+2,COL()+1,setcor(3))
+                setcor(1)
+                IF msenha = 'NAO'
+                        EXIT
+                ENDIF
+                mcont ++
+                GO TOP
+
+                SEEK CRIPTO(msenha)
+
+                IF FOUND()
+                        IF BLOQREG()
+                                sen-> sult_ent := mdata_sis
+                                sen-> shora_ini := TIME()
+                                nivel_acess := snivel
+                                cod_operado := scod_op
+                                senha_acess := msenha
+                                COMMIT
+                                UNLOCK
+                                setcor(4)
+                                DEVPOS(04,67);DEVOUT('Operador: '+cod_operado)
+                                setcor(1)
+                                RESTSCREEN(00,00,24,79,tela)
+                                RESTSCREEN(24,00,24,79,mmen)
+                                SETCOLOR(mcor)
+*                               CLOSE sen
+                                SELE(msele);ORDSETFOCUS(morde)
+                                RETURN .T.
+                        ELSE
+                                atencao('Nao foi Possivel Acessar o Arquivo')
+                                LOOP
+                        ENDIF
+                ELSE
+                        limpa(lci+2,cci+2,lci+2,cba-2)
+                        DEVPOS(lci+2,cci+2);DEVOUT('Senha Incorreta Tente Novamente')
+                        TONE(100,6)
+                        TONE(1600,6)
+                        INKEY(2)
+                        IF mcont = 3
+                                EXIT
+                        ENDIF
+                        LOOP
+                ENDIF
+
+        ENDDO
+
+        SEEK CRIPTO(senha_acess)
+
+        IF FOUND()
+                IF BLOQREG()
+                        sen-> sult_ent := mdata_sis
+                        sen-> shora_ini := TIME()
+                        COMMIT
+                        UNLOCK
+                        setcor(4)
+                        DEVPOS(04,67);DEVOUT('Operador: '+cod_operado)
+                        setcor(1)
+                        RESTSCREEN(00,00,24,79,tela)
+                        RESTSCREEN(24,00,24,79,mmen)
+                        SETCOLOR(mcor)
+*                       CLOSE sen
+                        SELE(msele);ORDSETFOCUS(morde)
+                        RETURN .T.
+                ELSE
+                        atencao('Nao foi Possivel Acessar o Arquivo')
+                        LOOP
+                ENDIF
+        ENDIF
+
+ENDDO
+********************************** f i m **************************************
+*********************************************
+*** SENHA1.PRG:  Menu de Operadores
+*********************************************
+
+FUNCTION senha1S
+***************
+
+LOCAL tela,tela1,mcod_ven,desc,lci,cci,lba,cba,li,ci,lb,cb,pode,point
+
+lci := 07
+cci := 19
+lba := 18
+cba := 76
+
+li := 20
+ci := 19
+lb := 22
+cb := 76
+
+tela := SAVESCREEN(lci,cci,lba,cba)
+
+tela1 := SAVESCREEN(li,ci,lb,cb)
+*-----------------------------------------------------
+CLOSE ALL
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+*-----------------------------------------------------
+mcod_ven := 0
+desc := SPACE(20)
+setcor(3)
+botao(lci,cci,lba,cba)
+@ lci+1,cci+1 TO lci+1,cba-1
+@ lci+1,cci+14 SAY CHR(194)
+@ lba,cci+14 SAY CHR(193)
+@ lci+2,cci+14 TO lba-1,cci+14
+setcor(1)
+@ lci,cci+1 SAY " Operadores "
+
+DEVPOS(lci+2,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+2,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+3,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+3,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+4,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+4,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+5,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+5,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+6,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+6,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+7,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+7,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+8,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+8,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+9,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+9,cci+16);DEVOUT('Operador:')
+DEVPOS(lci+10,cci+2);DEVOUT('Cod.:')
+DEVPOS(lci+10,cci+16);DEVOUT('Operador:')
+
+**************
+SELE('sen');ORDSETFOCUS(2)
+**************
+
+GO TOP
+
+pode=.T.
+
+WHILE .T.
+        mensagem("<I>nclus„o  <A>ltera‡„o  <E>xclus„o  < ou > Consulta  <ESC> Retorna" )
+        point=RECNO()
+        FOR f=1 TO 9
+                IF ! EOF() .AND. scod_op <> '999'
+                        setcor(3)
+                        @ lci+1+f,cci+8 SAY scod_op
+                        @ lci+1+f,cci+26 SAY snome
+                        setcor(1)
+                        SKIP
+                ELSE
+                        setcor(3)
+                        @ lci+1+f,cci+8 SAY "   "
+                        @ lci+1+f,cci+26 SAY SPACE(30)
+                        setcor(1)
+                ENDIF
+        NEXT F
+        IF EOF()
+                pode=.F.
+        ENDIF
+        GO POINT
+        INKEY(0)
+        DO CASE
+                CASE LASTKEY()=ASC("I") .OR. LASTKEY()=ASC("i")
+                        IF ! nivel('1')
+                                atencao('Acesso nao Autorizado !!!')
+                                IF ! aut_sen('Senha de Liberacao de Ambiente:')
+                                        UNLOCK
+                                        LOOP
+                                ENDIF
+                        ENDIF
+                        senha2S()
+                        GO TOP
+                        SKIP
+                CASE LASTKEY()=5
+                        IF ! BOF()
+                                SKIP -1
+                                pode=.T.
+                        ENDIF
+                CASE LASTKEY()=24
+                        IF ! EOF() .AND. pode=.T.
+                                SKIP
+                        ENDIF
+                CASE LASTKEY()=ASC("A") .OR. LASTKEY()=ASC("a")
+                        ****************************************************
+                        * VERIFICAR NIVEL DE ACESSO DA SENHA
+                        ****************************************************
+                        IF ! nivel('1')
+                                atencao('Acesso nao Autorizado !!!')
+                                IF ! aut_sen('Senha de Liberacao de Ambiente:')
+                                        UNLOCK
+                                        LOOP
+                                ENDIF
+                        ENDIF
+                        ****************************************************
+                        setcor(1)
+                        senha3S()
+                        GO TOP
+                        SKIP
+                CASE LASTKEY()=ASC("E") .OR. LASTKEY()=ASC("e")
+                        IF ! nivel('1')
+                                atencao('Acesso nao Autorizado !!!')
+                                IF ! aut_sen('Senha de Liberacao de Ambiente:')
+                                        UNLOCK
+                                        LOOP
+                                ENDIF
+                        ENDIF
+                        senha4S()
+                        GO TOP
+                        SKIP
+                CASE LASTKEY()=27
+                        RESTSCREEN(li,ci,lb,cb,tela1)
+                        RESTSCREEN(lci,cci,lba,cba,tela)
+                        CLOSE ALL
+                        RETURN NIL
+        ENDCASE
+ENDDO
+************************ F I M ************************************************************************
+*************************
+* MENU INCLUSAO DE SENHAS
+*************************
+
+FUNCTION senha2S
+***************
+
+LOCAL opcao,mcod_vend,mnome,vsenha1,vsenha,mdata_cad,vnivel,mcomissao
+
+PRIVATE lci,cci,lba,cba
+
+lci:=10
+cci:=23
+lba:=17
+cba:=72
+tela:=SAVESCREEN(00,00,24,79)
+
+WHILE .T.
+        mcod_vend = 0
+        mnome = SPACE(30)
+        vsenha = ''
+        vnivel = SPACE(1)
+        mcomissao := 0
+        opcao = 'S'
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(1)
+        janela(lci,cba,' Inclusao ')
+        mensagem('Preencha os Campos - <ESC> p/Retornar')
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod.Operador__:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome__________:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nivel_________:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Comissao %____:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Data__________:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Senha_________:')
+        @ lci+1,cci+18 GET mcod_vend PICT '999'
+        READ
+        IF LASTKEY() = 27
+                SET CURSOR ON
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ENDIF
+
+        SET INTEN ON
+        ***********
+        SELE('sen');ORDSETFOCUS(2)
+        ***********
+        GO TOP
+
+        SEEK STRZERO(mcod_vend,3)
+
+        IF FOUND()
+                atencao('Codigo ja Existe no cadastro !!!')
+                LOOP
+        ENDIF
+
+        SET INTEN ON
+        setcor(3)
+        mdata_cad = mdata_sis
+        DEVPOS(lci+1,cci+18);DEVOUT(STRZERO(mcod_vend,3))
+        DEVPOS(lci+5,cci+18);DEVOUT(mdata_cad)
+        setcor(1)
+        @ lci+2,cci+18 GET mnome PICT '@!'
+        @ lci+3,cci+18 GET vnivel PICT '9' VALID vnivel $ '1,2,3,4,5,6,7,8,9'
+        @ lci+4,cci+18 GET mcomissao PICT '99.99'
+        READ
+
+        IF LASTKEY() = 27
+                SET CURSOR ON
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ENDIF
+        ***********
+        SELE('sen');ORDSETFOCUS(1)
+        ***********
+        WHILE .T.
+                GO TOP
+                vsenha = ''
+                vsenha1 = ''
+                mensagem('Digite sua Senha')
+                pegasenha(@vsenha,lci+6,cci+18,setcor(3))
+                setcor(1)
+                IF LEN(vsenha) <= 1
+                        LOOP
+                ENDIF
+                IF vsenha = 'NAO'
+                        EXIT
+                ENDIF
+                IF EMPTY(vsenha)
+                        LOOP
+                ENDIF
+
+                WHILE ! EOF()
+                        IF vsenha == DCRIPTO(ssenha)
+                                EXIT
+                        ENDIF
+                        SKIP
+                ENDDO
+                IF ! EOF() .AND. vsenha == DCRIPTO(ssenha)
+                        atencao('Senha Invalida, Tente novamente')
+                        LOOP
+                ENDIF
+                mensagem('Digite Novamente sua Senha')
+                pegasenha(@vsenha1,lci+6,cci+18,setcor(3))
+                setcor(1)
+                IF LEN(vsenha1) <= 1
+                        LOOP
+                ENDIF
+                IF vsenha1 = 'NAO'
+                        EXIT
+                ENDIF
+                IF vsenha == vsenha1
+                        opcao := op_simnao('S','Confirma a Inclusao do Operador [S/n]:')
+                        IF LASTKEY() = 27
+                                EXIT
+                        ENDIF
+                        IF opcao = 'N'
+                                EXIT
+                        ELSE
+                                ADIREG()
+                                sen-> scod_op := STRZERO(mcod_vend,3)
+                                sen-> snome := mnome
+                                sen-> ssenha := CRIPTO(vsenha)
+                                sen-> sdata_cad := mdata_sis
+                                sen-> snivel := vnivel
+                                sen-> scomissao := mcomissao
+                                COMMIT
+                                UNLOCK
+                                EXIT
+                        ENDIF
+                ELSE
+                        atencao('Senha Digitada Errada, Tente novamente !!!')
+                        LOOP
+                ENDIF
+        ENDDO
+ENDDO
+RETURN NIL
+*********************** f i m ************************************
+
+*************************
+* MENU ALTERACAO DE SENHAS
+*************************
+
+FUNCTION senha3S
+***************
+
+LOCAL opcao,mcod_vend,mnome,vsenha1,vsenha,mdata_cad,vnivel,mcomissao
+
+lci:=10
+cci:=23
+lba:=17
+cba:=72
+tela:=SAVESCREEN(00,00,24,79)
+
+WHILE .T.
+        mcod_vend = 0
+        mnome = SPACE(30)
+        vnivel = SPACE(1)
+        opcao = SPACE(1)
+        mcomissao := 0
+        vsenha = ''
+        vsenha1 = ''
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(1)
+        janela(lci,cba,' Alteracao ')
+        mensagem('Digite o Codigo do Operador a ser Alterado - <ESC> p/Abandonar')
+        ***********
+        SELE('sen');ORDSETFOCUS(2)
+        ***********
+        GO TOP
+
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod.Operador__:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome__________:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nivel_________:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Comissao %____:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Data__________:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Senha_________:')
+
+        @ lci+1,cci+18 GET mcod_vend PICT '999'
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ENDIF
+        IF EMPTY(mcod_vend)
+                LOOP
+        ENDIF
+
+        SEEK STRZERO(mcod_vend,3)
+
+        IF ! FOUND()
+                atencao('Codigo nao Cadastrado !!!')
+                LOOP
+        ENDIF
+        IF ! BLOQREG()
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                LOOP
+        ENDIF
+        vsenha := ''
+        mnome := snome
+        vnivel := snivel
+        mcomissao := scomissao
+        setcor(3)
+        DEVPOS(lci+1,cci+18);DEVOUT(STRZERO(mcod_vend,3))
+        DEVPOS(lci+5,cci+18);DEVOUT(sdata_cad )
+        setcor(1)
+        @ lci+2,cci+18 GET mnome PICT '@!'
+        @ lci+3,cci+18 GET vnivel PICT '9' VALID vnivel $ '1,2,3,4,5,6,7,8,9'
+        @ lci+4,cci+18 GET mcomissao PICT '99.99'
+        READ
+        IF LASTKEY() = 27
+                UNLOCK
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Deseja alterar a senha [s/N]:')
+        IF LASTKEY() = 27
+                UNLOCK
+                LOOP
+        ENDIF
+        IF opcao = 'S'
+                WHILE .T.
+                        vsenha = ''
+                        vsenha1 = ''
+                        mensagem('Digite sua Senha')
+                        pegasenha(@vsenha,lci+6,cci+18,setcor(3))
+                        setcor(1)
+                        IF LEN(vsenha) <= 1
+                                LOOP
+                        ENDIF
+                        IF vsenha = 'NAO'
+                                vsenha := ''
+                                EXIT
+                        ENDIF
+                        IF EMPTY(vsenha)
+                                LOOP
+                        ENDIF
+                        mensagem('Digite Novamente sua Senha')
+                        pegasenha(@vsenha1,lci+6,cci+18,setcor(3))
+                        setcor(1)
+                        IF LEN(vsenha1) <= 1
+                                LOOP
+                        ENDIF
+                        IF vsenha1 = 'NAO'
+                                vsenha := ''
+                                EXIT
+                        ENDIF
+                        IF vsenha == vsenha1
+                                EXIT
+                        ELSE
+                                atencao('Senha Digitada Errada, Tente novamente !!!')
+                                LOOP
+                        ENDIF
+                ENDDO
+        ENDIF
+        opcao := op_simnao('S','Confirma a Alteracao [S/n]:')
+        IF LASTKEY() = 27
+                UNLOCK
+                LOOP
+        ENDIF
+        IF opcao = 'N'
+                UNLOCK
+                LOOP
+        ELSE
+                IF vsenha == ''
+                        sen-> snome := mnome
+                        sen-> snivel := vnivel
+                        sen-> scomissao := mcomissao
+                ELSE
+                        sen-> snome := mnome
+                        sen-> snivel := vnivel
+                        sen-> scomissao := mcomissao
+                        sen-> ssenha := CRIPTO(vsenha)
+                ENDIF
+                COMMIT
+                UNLOCK
+                LOOP
+        ENDIF
+ENDDO
+RETURN NIL
+*********************** f i m ************************************
+
+*************************
+* MENU EXCLUSAO DE SENHAS
+*************************
+
+FUNCTION senha4S
+***************
+
+LOCAL opcao,mcod_vend,vsenha
+
+lci:=10
+cci:=23
+lba:=17
+cba:=72
+tela:=SAVESCREEN(00,00,24,79)
+
+WHILE .T.
+        mcod_vend = 0
+        mnome = SPACE(30)
+        vsenha := SPACE(8)
+        opcao = SPACE(1)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(1)
+        janela(lci,cba,' Exclusao ')
+        mensagem('Digite o Codigo do Operador a ser Excluido - <ESC> p/Abandonar')
+        ***********
+        SELE('sen');ORDSETFOCUS(2)
+        ***********
+        GO TOP
+
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod.Operador__:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome__________:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nivel_________:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Comissao %____:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Data__________:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Senha_________:')
+
+        @ lci+1,cci+18 GET mcod_vend PICT '999'
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela)
+                RETURN NIL
+        ENDIF
+        IF EMPTY(mcod_vend)
+                LOOP
+        ENDIF
+
+        SEEK STRZERO(mcod_vend,3)
+
+        IF ! FOUND()
+                atencao('Codigo nao Cadastrado !!!')
+                LOOP
+        ENDIF
+        setcor(3)
+        DEVPOS(lci+1,cci+18);DEVOUT(STRZERO(mcod_vend,3))
+        DEVPOS(lci+2,cci+18);DEVOUT(snome)
+        DEVPOS(lci+3,cci+18);DEVOUT(snivel)
+        DEVPOS(lci+4,cci+18);DEVOUTPICT(scomissao,'99.99')
+        DEVPOS(lci+5,cci+18);DEVOUT(sdata_cad )
+        DEVPOS(lci+6,cci+18);DEVOUT(vsenha)
+        setcor(1)
+        opcao := op_simnao('S','Confirma a Exclusao [S/n]:')
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF opcao = 'N'
+                LOOP
+        ELSE
+                IF BLOQARQ()
+                        DELE
+                        COMMIT
+                        UNLOCK
+                        LOOP
+                ELSE
+                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                        LOOP
+                ENDIF
+        ENDIF
+ENDDO
+RETURN NIL
+********************************* F I M **************************
+*******************************************
+** LIMITE DE DATA P/FUNCIONAMENTO DO SISTEMA
+*******************************************
+
+FUNCTION limite_sys
+
+LOCAL mdata,mdata_aux,lci,cci,lba,cba,mtela,msenha
+
+lci := 23
+cci := 71
+lba := 23
+cba := 79
+msenha := ''
+pegasenha(@msenha,25,COL()+1,setcor(3))
+setcor(1)
+IF msenha = 'NAO'
+        RETURN NIL
+        RESTSCREEN(24,00,24,79,mlinha)
+ENDIF
+IF msenha = 'SYSDAT'
+        mtela := SAVESCREEN(lci,cci,lba,cba)
+        USE smedsetu ALIAS set SHARED NEW
+        IF ! EMPTY(SUBSTR(set->sysdatlm,1,6))
+                mdata = CTOD(DCRIPTO(SUBSTR(set->sysdatlm,1,2))+'/'+DCRIPTO(SUBSTR(set->sysdatlm,3,2))+'/'+DCRIPTO(SUBSTR(set->sysdatlm,5,2)))
+        ELSE
+                mdata := CTOD('  /  /  ')
+        ENDIF
+        @ lci,cci GET mdata PICT '99/99/99'
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(lci,cci,lba,cba,mtela)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        IF ! EMPTY(mdata)
+                mdata_aux := CRIPTO(SUBSTR(DTOC(mdata),1,2))+CRIPTO(SUBSTR(DTOC(mdata),4,2))+CRIPTO(SUBSTR(DTOC(mdata),7,2)) + SUBSTR(set->sysdatlm,7,6)
+        ELSE
+                mdata_aux := SPACE(6) + SUBSTR(set->sysdatlm,7,6)
+        ENDIF
+        IF ! BLOQREG()
+                atencao('Nao foi possivel acessar o registro')
+                RETURN NIL
+        ENDIF
+        set->sysdatlm := mdata_aux
+        RESTSCREEN(lci,cci,lba,cba,mtela)
+        CLOSE ALL
+        RETURN NIL
+ELSEIF msenha = 'NAO'
+        RETURN NIL
+        RESTSCREEN(24,00,24,79,mlinha)
+ENDIF
+RETURN NIL
+********************************* F I M **************************
+*******************************************
+** LIMITE DE DATA P/FUNCIONAMENTO DO SISTEMA
+*******************************************
+
+FUNCTION limite_erro
+
+LOCAL mdata,mdata_aux,lci,cci,lba,cba,mtela,msenha
+
+lci := 23
+cci := 71
+lba := 23
+cba := 79
+msenha := ''
+pegasenha(@msenha,25,COL()+1,setcor(3))
+setcor(1)
+IF msenha = 'NAO'
+        RETURN NIL
+        RESTSCREEN(24,00,24,79,mlinha)
+ENDIF
+IF msenha = 'SYSDAT'
+        mtela := SAVESCREEN(lci,cci,lba,cba)
+        USE smedsetu ALIAS set SHARED NEW
+        IF ! EMPTY(SUBSTR(set->sysdatlm,7,6))
+                mdata = CTOD(DCRIPTO(SUBSTR(set->sysdatlm,7,2))+'/'+DCRIPTO(SUBSTR(set->sysdatlm,9,2))+'/'+DCRIPTO(SUBSTR(set->sysdatlm,11,2)))
+        ELSE
+                mdata := CTOD('  /  /  ')
+        ENDIF
+        @ lci,cci GET mdata PICT '99/99/99'
+        READ
+        IF LASTKEY() = 27
+                RESTSCREEN(lci,cci,lba,cba,mtela)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        IF ! EMPTY(mdata)
+                mdata_aux :=SUBSTR(set->sysdatlm,1,6) + CRIPTO(SUBSTR(DTOC(mdata),1,2))+CRIPTO(SUBSTR(DTOC(mdata),4,2))+CRIPTO(SUBSTR(DTOC(mdata),7,2))
+        ELSE
+                mdata_aux := SUBSTR(set->sysdatlm,1,6) + SPACE(6)
+        ENDIF
+        IF ! BLOQREG()
+                atencao('Nao foi possivel acessar o registro')
+                RETURN NIL
+        ENDIF
+        set->sysdatlm := mdata_aux
+        RESTSCREEN(lci,cci,lba,cba,mtela)
+        CLOSE ALL
+        RETURN NIL
+ELSEIF msenha = 'NAO'
+        RETURN NIL
+        RESTSCREEN(24,00,24,79,mlinha)
+ENDIF
+RETURN NIL
+***************************** F I M ****************************************
+***************
+FUNCTION vencim(mv,t,dup,memi)
+***************
+
+IF memi = NIL
+        memi := memissao
+ENDIF
+
+IF t = NIL
+        IF mv=ctod("  /  /  ")
+                atencao('Data de Vencimento deve ser preenchida! [ÄÙ] Continua.')
+                RETURN .F.
+        ENDIF
+ENDIF
+IF dup = NIL .OR. ! EMPTY(dup)
+        IF DTOS(mv)<DTOS(memi)
+*       IF DTOS(mv)<DTOS(memissao)
+                atencao('Data de Vencimento menor que Data de Emissao! [ÄÙ] Continua.')
+                RETURN .F.
+        ENDIF
+ENDIF
+IF dow(mv)=7 .OR. dow(mv)=1
+        atencao('Data de Vencimento cai no fim-de-semana!.')
+        ?? chr(7)
+ENDIF
+RETURN .T.
+
+************************** F I M ***************************************
+***************************************************************************
+* Recebe um arquivo texto, cria um dbf, grava  neste arquivo e mostra na
+* tela, quando sair os arquivos temporarios criados serao apagados.
+***************************************************************************
+FUNCTION lertexto(arquivo)
+*Para arquivo
+*#INCLUDE "INKEY.CH"
+#INCLUDE "SETCURS.CH"
+LOCAL local1:= {}
+LOCAL acamp:=[15]
+LOCAL cor_ant := setcolor()    // Salva cor antiga
+LOCAL dbf_veio := select()      // Salva arquivo que estava selecionado
+//LOCAL tela_con := SAVESCREEN(00,00,24,79)
+op_tela(00,00,32,100,'TELA DE CONSULTA')
+ aadd(Local1, {"TELA01", "C", 13, 0})
+ aadd(Local1, {"TELA02", "C", 13, 0})
+ aadd(Local1, {"TELA03", "C", 13, 0})
+ aadd(Local1, {"TELA04", "C", 13, 0})
+ aadd(Local1, {"TELA05", "C", 13, 0})
+ aadd(Local1, {"TELA06", "C", 13, 0})
+ aadd(Local1, {"TELA07", "C", 13, 0})
+ aadd(Local1, {"TELA08", "C", 13, 0})
+ aadd(Local1, {"TELA09", "C", 13, 0})
+ aadd(Local1, {"TELA10", "C", 13, 0})
+ aadd(Local1, {"TELA11", "C", 13, 0})
+ aadd(Local1, {"TELA12", "C", 13, 0})
+ aadd(Local1, {"TELA13", "C", 13, 0})
+ aadd(Local1, {"TELA14", "C", 13, 0})
+ aadd(Local1, {"TELA15", "C", 13, 0})
+ dbcreate("tela", Local1)
+ sele 99  // ou comando de rede 
+ use tela alias tela
+*append from &(ALLTRIM(arquivo)) sdf   //nomecompl_arq sdf
+append from &arquivo sdf   //nomecompl_arq sdf
+ goto top
+ set cursor off
+*botao(00,00,24,79)
+ @ 00,00 to 31,99 colo 'w+/n' //BOX CHR(219)
+ //               /-------------> Cor do TBrowse
+ //              /    /---------> Cor da barra em destaque
+ //             /    /      /---> Cor da barra luminosa
+ set color to "w+/N,n/w,,,g+/b"
+*set color to "w+/b,n/w,,,g+/b"
+
+//oTab := TBrowseDB(02,01,24,78)
+oTab := TBrowseDB(00,00,31,99)
+oTab:colsep := ""  // CHR(219)+" "
+OTAB:HEADSEP:= 'Ä' // CHR(205)+CHR(203)+CHR(205)
+OTAB:COLSEP := ''  // CHR(032)+CHR(186)+CHR(032)
+OTAB:FOOTSEP:= 'Ä' // CHR(205)+CHR(202)+CHR(205)
+
+for i = 1 to fcount()
+ OTAB:ADDCOLUMN(TBCOLUMNNEW("", FIELDWBLOCK(FIELDNAME(i),SELE() )))
+next
+
+*@ 01,01 say 'Mensagem: Tecle <C> para congelar as colunas que estao … direita do cursor     ' colo 'w-/b'
+@ 01,01 say 'Mensagem: Tecle <C> para congelar as colunas que estao … direita do cursor' colo 'w-/n'
+lin_br=30
+Do while .T.
+   nRow := ROW()
+   nCol := COL()
+
+   do while !oTab:Stabilize() ; enddo
+
+   oTAB:hilite()
+
+   setpos( nRow, nCol )
+   nKey := inkey()
+
+   IF oTAB:stable
+      setpos( nRow, nCol )
+      nKey := Inkey(0)
+   endif
+   if nKey == K_F1
+   elseif nKey == K_F2
+   elseif nKey == K_F3
+   elseif nKey == K_F4
+   elseif nKey == K_F5
+   elseif nKey == K_F6
+   elseif nKey == K_F7
+   elseif nKey == K_UP         ; oTab:UP()
+   elseif nKey == K_DOWN       ; oTab:DOWN()
+   elseif nKey == K_LEFT       ; oTab:LEFT()
+   elseif nKey == K_CTRL_LEFT  ; oTab:PANLEFT()
+   elseif nKey == K_RIGHT      ; oTab:RIGHT()
+   elseif nKey == K_CTRL_RIGHT ; oTab:PANRIGHT()
+   elseif nKey == K_PGUP       ; oTab:PAGEUP()
+   elseif nKey == K_CTRL_PGUP  ; oTab:GOTOP()
+   elseif nKey == K_PGDN       ; oTab:PAGEDOWN()
+   elseif nKey == K_CTRL_PGDN  ; oTab:GOBOTTOM()
+   elseif nKey == K_HOME       ; oTab:HOME()
+   elseif nKey == K_CTRL_HOME  ; oTab:PANHOME()
+   elseif nKey == K_END        ; oTab:END()
+   elseif nKey == K_CTRL_END   ; oTab:PANEND()
+   elseif nKey == K_ESC        ; EXIT
+   elseif nkey == 99 .or. nkey==67
+    if otab:freeze=0
+     otab:freeze := otab:colpos -1
+     lin_br=21
+    else
+     otab:freeze = 0    
+     lin_br= 30
+     otab:panhome()
+     otab:refreshall()
+    endif
+   endif
+
+   oTab:colorRect({1,1,lin_br,oTab:freeze},{2,5})
+
+  enddo
+ SET CURSOR ON
+   arq=dbf()
+   use
+   arq_dbf=alltrim(arq)+'.DBF'
+   erase &arq_dbf   // apaga o arquivo dbf que mostra na tela a impressao.
+**********  erase &arquivo   // apaga o arquivo prn que mostra na tela a impressao.
+   sele &dbf_veio   // seleciona novamente o arquivo que estava aberto
+   SETCOR(1)
+   wvw_lclosewindow()
+   //RESTSCREEN(00,00,24,79,tela_con)
+*  set color to '&cor_ant.'
+
+***************************** F I M ****************************************
+***********************
+FUNCTION ver_cl(vcod,li,ci,p)
+***********************
+
+LOCAL msele,morde
+
+msele := SELE()
+morde := INDEXORD()
+
+IF EMPTY(vcod)
+        mcliente := SPACE(40)
+        RETURN .T.
+ENDIF
+
+*************
+SELE('smcli');ORDSETFOCUS(2)
+GO TOP
+*************
+
+SEEK STRZERO(vcod,5)
+
+IF ! FOUND()
+        IF p = NIL
+                atencao('Codigo Cliente nao Existe no Arquivo !!!')
+                vcod := 0
+                mcliente := SPACE(40)
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ELSE
+                mcliente := SPACE(40)
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .F.
+        ENDIF
+ELSE
+        IF li = NIL .AND. ci = NIL
+                mcliente := nome
+                SELE(msele);ORDSETFOCUS(morde)
+                RETURN .T.
+        ENDIF
+        mcliente := nome
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(nome)
+        setcor(1)
+        SELE(msele);ORDSETFOCUS(morde)
+        RETURN .T.
+ENDIF
+RETURN .T.
+******************************** f i m **********************************
+***************************************
+* FUNCAO PARA RENOMEAR ARQUIVOS
+***************************************
+FUNCTION ren_arq(marq1,marq2,mali)
+WHILE LASTKEY() <> 27
+        USE (marq1) ALIAS (mali) EXCLUSIVE NEW
+        IF ! NETERR()
+                (mali)->(DBCLOSEAREA())
+                rename (marq1) TO (marq2)
+        ELSE
+                atencao('** Nao foi possivel RENOMEAR o ARQUIVO: '+marq1+' ele pode estar sendo USADO por outro TERMINAL  -  <<< Pressione a Tecla [ESC] p/ Abandonar >>> **',2)
+                LOOP
+        ENDIF
+        RETURN .T.
+ENDDO
+WHILE LASTKEY() <> 13
+        mensagem('Tecle <ENTER> p/Continuar !!!')
+        INKEY(0)
+ENDDO
+RETURN .F.
+******************************* F I M ***********************************
+*********************************** F I M ************************************
+**********************************
+* TESTE DE EXISTENCIA DE VENDEDOR
+**********************************
+
+FUNCTION ven(mcod_ven,li,ci,p)
+
+LOCAL msele,morde
+MEMVAR mnome_vend,mcom_ap,mcom_ven
+
+IF EMPTY(mcod_ven); RETURN .T.;END
+
+msele := SELE()
+morde := INDEXORD()
+mnome_vend = SPACE(30)
+
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+
+WHILE .T.
+        **************
+        SELECT('sen');ORDSETFOCUS(2)
+        GO TOP
+        **************
+
+        IF ! sen->(DBSEEK(STRZERO(mcod_ven,3)))
+                IF p = NIL
+                        atencao('Operador ou MEDIDO nao Cadastrado !!!')
+                ENDIF
+                mcod_ven = 0
+                SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                RETURN .F.
+        ELSE
+                IF li = NIL
+                        mnome_vend = sen->snome
+                        mcom_ven := sen->scomissao
+                        mcom_ap := sen->scom_praz
+                        SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                        RETURN .T.
+                ELSE
+                        mnome_vend = sen->snome
+                        mcom_ven := sen->scomissao
+                        mcom_ap := sen->scom_praz
+                        setcor(3)
+                        DEVPOS(li,ci);DEVOUT(mnome_vend)
+                        setcor(1)
+                        SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+                        RETURN .T.
+                ENDIF
+        ENDIF
+ENDDO
+RETURN NIL
+******************************* f i m *********************************************
+* FUNCAO P/CONSULTAR ANIMAIS
+********************************
+FUNCTION f7_animal(mop)
+***********************
+LOCAL f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,;
+      oconsprod,ocolprod[7],f7i,f7nkey,f7opcao,mcodcli,mponto,stop:=' ' ,;
+      mdesc_pela,mdesc_espe,cons_pela,cons_espe
+
+MEMVAR mcod_animal
+
+f7lci := f7cci := 0
+f7lba := 39
+f7cba := 120
+
+f7msele := SELE()
+f7morde := INDEXORD()
+IF ! AbriArq('smedcli','smcli');RETURN NIL;ENDIF
+IF ! AbriArq('sacdupr','dupr');RETURN NIL;ENDIF
+*************
+SELE('smcli');ORDSETFOCUS(1)
+*************
+mponto := RECNO()
+*************
+SELE('smcli');ORDSETFOCUS(2)
+GO BOTT
+mcodcli:=STR(smcli->registro,5)
+*************
+*************
+SELE('smcli');ORDSETFOCUS(1)
+GO mponto
+*************
+
+op_tela(00,00,51,120,' ANIMAIS                 Ult.ANIMAL:'+mcodcli+'        Quantidades: '+TRANSFORM(LASTREC(),'999,999'),,'*')
+oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+ocolprod[1] := TBCOLUMNNEW('Razao Social',{||smcli->nome})
+ocolprod[2] := TBCOLUMNNEW('Cod.',{||STR(smcli->registro,5)})
+ocolprod[3] := TBCOLUMNNEW('No.Registro',{||smcli->cod_abqm})
+ocolprod[4] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(smcli->datans)})
+ocolprod[5] := TBCOLUMNNEW('Sexo',{||smcli->sexo})
+ocolprod[6] := TBCOLUMNNEW('Dat.Cad.',{||smcli->data})
+ocolprod[7] := TBCOLUMNNEW('Proprietario',{||smcli->prop})
+f7i:=0
+FOR f7i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[f7i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+WVW_SetMousePos(,00,00)
+WVW_SetMouseMove(,.F.)
+
+WHILE .T.
+        exibi_prg('F7_ANIMAL')
+        IF mop = '*'
+                mensagem('<P>esquisa <I>nclusao <ENTER>p/Alterar e Excluir <ALT+F>Album de fotos <ESC>Retornar')
+        ELSE
+                mensagem('<PGUP> <PGDN> <P>esquisa <I>nclusao <ENTER> Conf. <ALT+F>Album de fotos <ESC>Retornar')
+        ENDIF
+        f7nkey := 0
+        WHILE f7nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                botao(f7lba+1,f7cci,f7lba+13,f7cba,,' Detalhe ')
+                setcor(1)
+                DEVPOS(f7lba+2,f7cci+1);DEVOUT('Proprietario.:')
+                DEVPOS(f7lba+3,f7cci+1);DEVOUT('Raca.........:')
+                DEVPOS(f7lba+4,f7cci+1);DEVOUT('Pelagem......:')
+                DEVPOS(f7lba+5,f7cci+1);DEVOUT('Especie......:')
+                DEVPOS(f7lba+6,f7cci+1);DEVOUT('Data Cadastro:')
+                DEVPOS(f7lba+6,f7cci+31);DEVOUT('Data Nasc:')
+                DEVPOS(f7lba+6,f7cci+54);DEVOUT('Idade:')
+                DEVPOS(f7lba+7,f7cci+1);DEVOUT('Convenio:')
+                DEVPOS(f7lba+8,f7cci+1);DEVOUT('Ult.Consulta:')
+                DEVPOS(f7lba+8,f7cci+30);DEVOUT('Prox.Consulta:')
+                mdesc_pela := mdesc_espe := ' '
+                IF ! EMPTY(smcli->cod_pela)
+                        cons_pela := {}
+                        sr_getconnection():exec("SELECT * FROM smedpela WHERE codigo = "+sr_cdbvalue(smcli->cod_pela),,.t.,@cons_pela)
+                        IF LEN(cons_pela) > 0
+                                mdesc_pela := cons_pela[1,3]
+                        ENDIF
+                ENDIF
+                IF ! EMPTY(smcli->cod_espe)
+                        cons_espe := {}
+                        sr_getconnection():exec("SELECT * FROM smedespecie WHERE codigo = "+sr_cdbvalue(smcli->cod_espe),,.t.,@cons_espe)
+                        IF LEN(cons_espe) > 0
+                                mdesc_espe := cons_espe[1,3]
+                        ENDIF
+                ENDIF
+                //ver_pela(VAL(smcli->cod_pela),f7lba+4,f7cci+25)
+                //ver_especie(VAL(smcli->cod_espe),f7lba+5,f7cci+25)
+                setcor(3)
+                DEVPOS(f7lba+2,f7cci+17);DEVOUT(STRZERO(smcli->cod_prop,5)+' - '+smcli->prop)
+                //DEVPOS(f7lba+3,f7cci+17);DEVOUT(smcli->cod_raca+' - '+smcli->raca)
+                DEVPOS(f7lba+3,f7cci+17);DEVOUT(smcli->cod_raca)
+                DEVPOS(f7lba+4,f7cci+17);DEVOUT(smcli->cod_pela+' - '+mdesc_pela)
+                DEVPOS(f7lba+5,f7cci+17);DEVOUT(smcli->cod_espe+' - '+mdesc_espe)
+                DEVPOS(f7lba+6,f7cci+17);DEVOUT(DTOC(smcli->data))
+                DEVPOS(f7lba+6,f7cci+42);DEVOUT(DTOC(smcli->datans))
+                DEVPOS(f7lba+6,f7cci+61);DEVOUT(STR(INT((DATE() - smcli->datans)/365),2))
+                //ver_prop(VAL(smcli->cod_prop),f7lba+2,f7cci+23)
+                //ver_raca(VAL(smcli->cod_prop),f7lba+2,f7cci+23)
+                IF FILE(ALLTRIM(m_indiv[1,8])+'A'+STRZERO(smcli->registro,5)+'.jpg')
+                        botao(41,70,49,88)
+                        WVW_DrawImage( ,41,70,49,88,ALLTRIM(m_indiv[1,8])+'A'+STRZERO(smcli->registro,5)+'.jpg',.T.,.F.)
+                        DEVPOS(50,70);DEVOUT('<ALT+F>p/Ampliar')
+                        DEVPOS(51,70);DEVOUT(ALLTRIM(m_indiv[1,8])+'A'+STRZERO(smcli->registro,5)+'.jpg')
+                ENDIF
+                setcor(1)
+                f7nkey := INKEY(0)
+        ENDDO
+        IF f7nkey == K_ESC
+                EXIT
+        ELSEIF f7nkey = 289
+                smedalbum('A',STRZERO(smcli->registro,5),smcli->nome,ALLTRIM(m_indiv[1,8]),m_indiv[1,8]+'\ANIMAL\')
+                WVW_SetMouseMove(,.F.)
+        ELSEIF f7nkey = 105 .OR. f7nkey = 73
+                smed211()
+                oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                ocolprod[1] := TBCOLUMNNEW('Razao Social',{||smcli->nome})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||STR(smcli->registro,5)})
+                ocolprod[3] := TBCOLUMNNEW('No.Registro',{||smcli->cod_abqm})
+                ocolprod[4] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(smcli->datans)})
+                ocolprod[5] := TBCOLUMNNEW('Sexo',{||smcli->sexo})
+                ocolprod[6] := TBCOLUMNNEW('Dat.Cad.',{||smcli->data})
+                ocolprod[7] := TBCOLUMNNEW('Proprietario',{||smcli->prop})
+                f7i:=0
+                FOR f7i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f7i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSEIF f7nkey == K_ENTER
+                mcod_animal := smcli->registro
+                mcod_ani := smcli->registro
+                mcod_doa := smcli->registro
+                mcod_rec := smcli->registro
+                IF mop = '*'
+                        f7opcao := mensagem1("[A]lteracao - [E]xclusao ",'A','A,E')
+                        IF LASTKEY() = 27
+                                LOOP
+                        ELSEIF f7opcao = 'A'
+                                smed212()
+                        ELSEIF f7opcao = 'E'
+                                smed213()
+                        ENDIF
+                ELSE
+                        mcod_animal := smcli->registro
+                        CLEAR GETS
+                        EXIT
+                ENDIF
+                oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                ocolprod[1] := TBCOLUMNNEW('Razao Social',{||smcli->nome})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||STR(smcli->registro,5)})
+                ocolprod[3] := TBCOLUMNNEW('No.Registro',{||smcli->cod_abqm})
+                ocolprod[4] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(smcli->datans)})
+                ocolprod[5] := TBCOLUMNNEW('Sexo',{||smcli->sexo})
+                ocolprod[6] := TBCOLUMNNEW('Dat.Cad.',{||smcli->data})
+                ocolprod[7] := TBCOLUMNNEW('Proprietario',{||smcli->prop})
+                f7i:=0
+                FOR f7i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f7i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSE
+                IF genkey(oconsprod,f7nkey,'smcli')
+                        oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                        ocolprod[1] := TBCOLUMNNEW('Razao Social',{||smcli->nome})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||STR(smcli->registro,5)})
+                        ocolprod[3] := TBCOLUMNNEW('No.Registro',{||smcli->cod_abqm})
+                        ocolprod[4] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(smcli->datans)})
+                        ocolprod[5] := TBCOLUMNNEW('Sexo',{||smcli->sexo})
+                        ocolprod[6] := TBCOLUMNNEW('Dat.Cad.',{||smcli->data})
+                        ocolprod[7] := TBCOLUMNNEW('Proprietario',{||smcli->prop})
+                        f7i:=0
+                        FOR f7i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f7i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+END
+WVW_SetMouseMove(,.T.)
+SELE(f7msele);IF(f7morde>0,ORDSETFOCUS(f7morde),)
+wvw_lclosewindow()
+IF f7nkey == K_ESC
+        RELEASE f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        RETURN NIL
+ELSE
+        RELEASE f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        CLEAR GETS
+        RETURN mcod_animal
+ENDIF
+RETURN NIL
+******************************* f i m *********************************************
+********************************
+* FUNCAO P/CONSULTAR NIVEIS
+********************************
+
+FUNCTION f3_nivel(mop)
+*****************
+LOCAL mprg:='F3_NIVEL'
+LOCAL lci,cci,lba,cba,msele,morde,mnivel
+
+LOCAL oconsprod,ocolprod[5],i,nkey,opcao
+MEMVAR nivel_acess
+IF ! ver_nivel(mprg,'NIVEL DE ACESSOS','1',nivel_acess)
+        RETURN NIL
+ENDIF
+
+lci := 02
+cci := 05
+lba := MAXROW()-3
+cba := 75
+
+msele := SELE()
+morde := INDEXORD()
+*************
+IF ! AbriArq('sacconf','conf');RETURN NIL;ENDIF
+SELE('conf');ORDSETFOCUS(1)
+GO TOP
+*************
+botao(lci-1,cci-1,lba,cba+1)
+oconsprod := TBROWSEDB(lci,cci,lba-1,cba)
+ocolprod[1] := TBCOLUMNNEW('Descricao',{||conf->descri})
+ocolprod[2] := TBCOLUMNNEW('Niveis',{||conf->nivel})
+ocolprod[3] := TBCOLUMNNEW('Modulo',{||conf->modulo})
+ocolprod[4] := TBCOLUMNNEW('Data Alt.',{||conf->data_alt})
+ocolprod[5] := TBCOLUMNNEW('Oper.Alt.',{||conf->oper_alt})
+i:=0
+FOR i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+WHILE .T.
+        mensagem('<P>esquisa <ENTER>p/Alterar Niveis  <ESC>Retornar')
+        nkey := 0
+        WHILE nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                nkey := INKEY(0)
+        END
+        IF nkey == K_ESC
+                EXIT
+        ELSEIF nkey == K_ENTER
+                CLEAR GETS
+                mnivel := conf->nivel
+                @ ROW(),66 GET mnivel PICT '9999999999'
+*               @ ROW(),COL()+61 GET mnivel PICT '9999999999'
+                READ
+                IF LASTKEY() = 27
+                        LOOP
+                ENDIF
+                opcao := op_simnao('S','Confirma a Alteracao do Niveis [S/n]:')
+                IF LASTKEY() = 27 .OR. opcao = 'N'
+                        LOOP
+                ELSE
+                        BLOQREG()
+                        conf->nivel := mnivel
+                        conf->data_alt  := mdata_sis
+                        conf->oper_alt  := cod_operado
+                        DBUNLOCK()
+                        DBCOMMIT()
+                ENDIF
+                oconsprod := TBROWSEDB(lci,cci,lba-1,cba)
+                ocolprod[1] := TBCOLUMNNEW('Descricao',{||conf->descri})
+                ocolprod[2] := TBCOLUMNNEW('Niveis',{||conf->nivel})
+                ocolprod[3] := TBCOLUMNNEW('Modulo',{||conf->modulo})
+                ocolprod[4] := TBCOLUMNNEW('Data Alt.',{||conf->data_alt})
+                ocolprod[5] := TBCOLUMNNEW('Oper.Alt.',{||conf->oper_alt})
+                i:=0
+                FOR i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSE
+                IF genkey(oconsprod,nkey,'conf')
+                        oconsprod := TBROWSEDB(lci,cci,lba-1,cba)
+                        ocolprod[1] := TBCOLUMNNEW('Descricao',{||conf->descri})
+                        ocolprod[2] := TBCOLUMNNEW('Niveis',{||conf->nivel})
+                        ocolprod[3] := TBCOLUMNNEW('Modulo',{||conf->modulo})
+                        ocolprod[4] := TBCOLUMNNEW('Data Alt.',{||conf->data_alt})
+                        ocolprod[5] := TBCOLUMNNEW('Oper.Alt.',{||conf->oper_alt})
+                        i:=0
+                        FOR i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+END
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+IF nkey == K_ESC
+        CLOSE conf
+        RETURN NIL
+ELSE
+        CLOSE conf
+        RETURN NIL
+ENDIF
+RETURN NIL
+******************************* f i m *********************************************
+******************************
+* APAGA
+******************************
+FUNCTION apaga(lci,cci,lba,cba)
+**************
+@ lci,cci CLEAR TO lba,cba
+RETURN NIL
+******************************* f i m *********************************************
+********************************
+* FUNCAO P/CONSULTAR MEDICO
+********************************
+FUNCTION f8_med(mop)
+*****************
+LOCAL f8tela,f8tela1,f8lci,f8cci,f8lba,f8cba,f8msele,f8morde,f8men,;
+      oconsprod,ocolprod[6],f8i,f8nkey,f8opcao,mcodcli,mponto
+MEMVAR mcod_med
+
+f8lci := f8cci := 0
+f8lba := 25
+f8cba := 80
+
+f8msele := SELE()
+f8morde := INDEXORD()
+IF ! AbriArq('smedmed','med');RETURN NIL;ENDIF
+*************
+SELE('med');ORDSETFOCUS(2)
+*************
+mponto := RECNO()
+*************
+SELE('med');ORDSETFOCUS(3)
+GO BOTT
+mcod_med:=med->cod_espe
+*************
+*************
+SELE('med');ORDSETFOCUS(2)
+GO mponto
+*************
+f8men := SAVESCREEN(24,00,24,79)
+
+op_tela(01,01,25,80,' MEDICOS                  Ult.Medico:'+mcod_med+'        Quantidades: '+TRANSFORM(LASTREC(),'999,999'))
+oconsprod := TBROWSEDB(f8lci,f8cci,f8lba-1,f8cba)
+ocolprod[1] := TBCOLUMNNEW('Medico',{||med->profission})
+ocolprod[2] := TBCOLUMNNEW('Cod.',{||med->cod_espe})
+ocolprod[3] := TBCOLUMNNEW('Especialidade',{||med->especialid})
+ocolprod[4] := TBCOLUMNNEW('Telefone',{||med->fone})
+ocolprod[5] := TBCOLUMNNEW('Cidade',{||med->cidade})
+ocolprod[6] := TBCOLUMNNEW('Endereco',{||med->endereco})
+f8i:=0
+FOR f8i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[f8i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+WHILE .T.
+        exibi_prg('F8_MED')
+        IF mop = '*'
+                mensagem('<P>esquisa <I>nclusao <ENTER>p/Alterar e Excluir <ESC>Retornar')
+        ELSE
+                mensagem('<PGUP> <PGDN> <P>esquisa <I>nclusao <ENTER> Conf. <ESC>Retornar')
+        ENDIF
+        f8nkey := 0
+        WHILE f8nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                f8nkey := INKEY(0)
+        ENDDO
+        IF f8nkey == K_ESC
+                EXIT
+        ELSEIF f8nkey == K_ENTER
+                mcod_med := VAL(med->cod_espe)
+                IF mop = '*'
+                        op_tela(25,10,27,40)
+                        DEVPOS(01,00);DEVOUT('Deseja <A>lterar <E>xcluir:')
+                        f8opcao := 'A'
+                        @ 01,COL()+1 GET f8opcao PICT '@!' VALID f8opcao $ 'A,E'
+                        READ
+                        wvw_lclosewindow()
+                        IF LASTKEY() = 27
+                                LOOP
+                        ELSEIF f8opcao = 'A'
+                                smed232()
+                        ELSEIF f8opcao = 'E'
+                                smed233()
+                        ENDIF
+                ELSE
+                        CLEAR GETS
+                        EXIT
+                ENDIF
+*               GO TOP
+                oconsprod := TBROWSEDB(f8lci,f8cci,f8lba-1,f8cba)
+                ocolprod[1] := TBCOLUMNNEW('Medico',{||med->profission})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||med->cod_espe})
+                ocolprod[3] := TBCOLUMNNEW('Especialidade',{||med->especialid})
+                ocolprod[4] := TBCOLUMNNEW('Telefone',{||med->fone})
+                ocolprod[5] := TBCOLUMNNEW('Cidade',{||med->cidade})
+                ocolprod[6] := TBCOLUMNNEW('Endereco',{||med->endereco})
+                f8i:=0
+                FOR f8i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f8i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSE
+                IF genkey(oconsprod,f8nkey,'med')
+                        oconsprod := TBROWSEDB(f8lci,f8cci,f8lba-1,f8cba)
+                        ocolprod[1] := TBCOLUMNNEW('Medico',{||med->profission})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||med->cod_espe})
+                        ocolprod[3] := TBCOLUMNNEW('Especialidade',{||med->especialid})
+                        ocolprod[4] := TBCOLUMNNEW('Telefone',{||med->fone})
+                        ocolprod[5] := TBCOLUMNNEW('Cidade',{||med->cidade})
+                        ocolprod[6] := TBCOLUMNNEW('Endereco',{||med->endereco})
+                        f8i:=0
+                        FOR f8i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f8i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+END
+SELE(f8msele);IF(f8morde>0,ORDSETFOCUS(f8morde),)
+wvw_lclosewindow()
+IF f8nkey == K_ESC
+        RELEASE f8tela,f8tela1,f8lci,f8cci,f8lba,f8cba,f8msele,f8morde,f8men,oconsprod,ocolprod[8],f8i,f8nkey,f8opcao
+        RETURN NIL
+ELSE
+        RELEASE f8tela,f8tela1,f8lci,f8cci,f8lba,f8cba,f8msele,f8morde,f8men,oconsprod,ocolprod[8],f8i,f8nkey,f8opcao
+        CLEAR GETS
+        RETURN mcod_med
+ENDIF
+RETURN NIL
+******************************* f i m *********************************************
+/*
+***********************************
+* FUNCAO P/CONSULTAR ESPECIALIDADE
+***********************************
+
+FUNCTION f9_espe(mop)
+*****************
+LOCAL f9tela,f9tela1,f9lci,f9cci,f9lba,f9cba,f9msele,f9morde,f9men,;
+      oconsprod,ocolprod[3],f9i,f9nkey,f9opcao,mcodcli,mponto
+
+MEMVAR mcod_espe
+
+f9lci := f9cci := 0
+f9lba := 20
+f9cba := 40
+
+f9msele := SELE()
+f9morde := INDEXORD()
+IF ! AbriArq('smedespe','espe');RETURN NIL;ENDIF
+*************
+SELE('espe');ORDSETFOCUS(2)
+*************
+mponto := RECNO()
+*************
+SELE('espe');ORDSETFOCUS(1)
+GO BOTT
+mcod_espe:=espe->cod_espe
+*************
+*************
+SELE('espe');ORDSETFOCUS(2)
+GO mponto
+*************
+op_tela(04,20,20,60,' ESPECIALIDADES')
+oconsprod := TBROWSEDB(f9lci,f9cci,f9lba-1,f9cba)
+ocolprod[1] := TBCOLUMNNEW('Especialidade',{||espe->espe})
+ocolprod[2] := TBCOLUMNNEW('Cod.',{||espe->cod_espe})
+ocolprod[3] := TBCOLUMNNEW('    Valor',{||TRANSFORM(espe->valor,'999,999.99')})
+f9i:=0
+FOR f9i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[f9i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+WHILE .T.
+        exibi_prg('F9_ESPE')
+        IF mop = '*'
+                mensagem('<P>esquisa <I>nclusao <ENTER>p/Alterar e Excluir <ESC>Retornar')
+        ELSE
+                mensagem('<PGUP> <PGDN> <P>esquisa <I>nclusao <ENTER> Conf. <ESC>Retornar')
+        ENDIF
+        f9nkey := 0
+        WHILE f9nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                f9nkey := INKEY(0)
+        ENDDO
+        IF f9nkey == K_ESC
+                EXIT
+        ELSEIF f9nkey == K_ENTER
+                mcod_espe := VAL(espe->cod_espe)
+                IF mop = '*'
+                        op_tela(25,10,27,40)
+                        DEVPOS(01,00);DEVOUT('Deseja <A>lterar <E>xcluir:')
+                        f9opcao := 'A'
+                        @ 01,COL()+1 GET f9opcao PICT '@!' VALID f9opcao $ 'A,E'
+                        READ
+                        wvw_lclosewindow()
+                        IF LASTKEY() = 27
+                                LOOP
+                        ELSEIF f9opcao = 'A'
+                                smed272()
+                        ELSEIF f9opcao = 'E'
+                                smed273()
+                        ENDIF
+                ELSE
+                        CLEAR GETS
+                        EXIT
+                ENDIF
+*               GO TOP
+                oconsprod := TBROWSEDB(f9lci,f9cci,f9lba-1,f9cba)
+                ocolprod[1] := TBCOLUMNNEW('Especialidade',{||espe->espe})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||espe->cod_espe})
+                ocolprod[3] := TBCOLUMNNEW('    Valor',{||TRANSFORM(espe->valor,'999,999.99')})
+                f9i:=0
+                FOR f9i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f9i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSE
+                IF genkey(oconsprod,f9nkey,'espe')
+                        oconsprod := TBROWSEDB(f9lci,f9cci,f9lba-1,f9cba)
+                        ocolprod[1] := TBCOLUMNNEW('Especialidade',{||espe->espe})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||espe->cod_espe})
+                        ocolprod[3] := TBCOLUMNNEW('    Valor',{||TRANSFORM(espe->valor,'999,999.99')})
+                        f9i:=0
+                        FOR f9i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f9i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+END
+SELE(f9msele);IF(f9morde>0,ORDSETFOCUS(f9morde),)
+wvw_lclosewindow()
+IF f9nkey == K_ESC
+        RELEASE f9tela,f9tela1,f9lci,f9cci,f9lba,f9cba,f9msele,f9morde,f9men,oconsprod,ocolprod[8],f9i,f9nkey,f9opcao
+        RETURN NIL
+ELSE
+        RELEASE f9tela,f9tela1,f9lci,f9cci,f9lba,f9cba,f9msele,f9morde,f9men,oconsprod,ocolprod[8],f9i,f9nkey,f9opcao
+        CLEAR GETS
+        RETURN mcod_espe
+ENDIF
+RETURN NIL
+*/
+*************************** f i m *******************************************
+* VER NUMERO DA SERIE
+*****************************
+FUNCTION ver_serie
+******************
+RETURN SUBSTR(m_set[1,123],15,6)
+**************************** F I M ****************************************
+* VERIFICA CARTAO DE CREDITO
+****************************
+FUNCTION ver_cartao(mcod,li,ci,t)
+*******************************
+
+LOCAL msele,morde
+MEMVAR mdesc_cart,mprazo_cart,mcartao
+
+
+msele := SELE()
+morde := INDEXORD()
+IF ! AbriArq('saccarta','car');RETURN NIL;ENDIF
+
+IF EMPTY(mcod) .AND. t = NIL
+        RETURN .T.
+ENDIF
+*************
+SELE('car');ORDSETFOCUS(1)
+GO TOP
+*************
+
+IF ! car->(DBSEEK(STRZERO(mcod,3)))
+        SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+        IF li <> NIL
+                atencao('Cartao nao Cadastrado !!!')
+                setcor(3)
+                DEVPOS(li,ci);DEVOUT(' - '+SPACE(20))
+                setcor(1)
+                RETURN .F.
+        ENDIF
+        RETURN 'CARTAO NAO IDENTIFICADO'
+ENDIF
+IF li <> NIL
+        mdesc_cart := car->desconto
+        mprazo_cart := car->prazo
+        mcartao := car->cartao
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(' - '+mcartao)
+        setcor(1)
+        SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+        RETURN .T.
+ENDIF
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+RETURN car->cartao
+************************ F I M **************************************
+FUNCTION dias_atras
+RETURN NIL
+************************ F I M **************************************
+FUNCTION VER_FINAN
+RETURN NIL
+************************ F I M **************************************
+FUNCTION QTD_CHQ
+RETURN NIL
+************************ F I M **************************************
+//FUNCTION SPC
+//RETURN NIL
+************************ F I M **************************************
+FUNCTION FECHA_TP
+RETURN NIL
+************************ F I M **************************************
+FUNCTION SAC5CAD1
+RETURN NIL
+************************ F I M **************************************
+FUNCTION VER_FAB
+RETURN NIL
+************************ F I M **************************************
+FUNCTION VER_EMP
+RETURN NIL
+************************ F I M **************************************
+FUNCTION VALOR_PED
+RETURN NIL
+************************ F I M **************************************
+FUNCTION SET_KEY
+RETURN NIL
+************************ F I M **************************************
+//FUNCTION cliprod
+//RETURN NIL
+************************ F I M **************************************
+FUNCTION f8_cep
+RETURN NIL
+************************ F I M **************************************
+* VERIFICA A UF DO ESTADO
+********************************
+FUNCTION v_uf(ve_uf)
+*********************
+IF EMPTY(ve_uf) .OR. AT(ve_uf,'AC,AL,AP,AM,BA,CE,ES,GO,MA,MT,MS,MG,PA,PB,PR,PE,PI,RN,RS,RR,RO,RJ,SC,SE,SP,TO,DF,EX') > 0
+        RETURN .T.
+ELSE
+        RETURN .F.
+ENDIF
+RETURN NIL
+************************ F I M **************************************
+FUNCTION mcli
+RETURN NIL
+************************ F I M **************************************
+FUNCTION dup_sot
+RETURN NIL
+************************ F I M **************************************
+FUNCTION dup_sam
+RETURN NIL
+************************ F I M **************************************
+FUNCTION getparm
+RETURN NIL
+************************ F I M **************************************
+FUNCTION bright
+RETURN NIL
+************************ F I M **************************************
+FUNCTION ver_cpf(ncpf)
+RETURN NIL
+******************************* f i m *********************************************
+FUNCTION ver_cgc(ncgc)
+RETURN NIL
+********************************** F I M ***********************************
+FUNCTION alt_caixa
+RETURN NIL
+********************************** F I M ***********************************
+FUNCTION chq_corre
+RETURN NIL
+********************************** F I M ***********************************
+FUNCTION aredonda
+RETURN NIL
+******************************* f i m *********************************************
+FUNCTION ver_ven(mcod_ven,p,tip,li,ci)
+********************
+
+LOCAL men,msele,morde,point,mnome
+
+msele := SELE()
+morde := INDEXORD()
+point := RECNO()
+IF ! AbriArq('insopera','sen');RETURN NIL;ENDIF
+IF tip <> NIL
+        IF mcod_ven = '000';RETURN .T.;ENDIF
+ENDIF
+
+*****************
+SELE('sen');ORDSETFOCUS(2)
+GO TOP
+*****************
+
+IF ! sen->(DBSEEK(mcod_ven))
+        IF p = NIL
+                atencao('Codigo do OPERADOR/VENDEDOR nao encontrado')
+        ENDIF
+        SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(sen->snome)
+        setcor(1)
+ENDIF
+SELE(msele);IF(morde>0,ORDSETFOCUS(morde),)
+RETURN .T.
+************************************ F I M ************************************
+* VER CIDADE
+*************************
+FUNCTION ver_cidade(mcid,t)
+*********************
+LOCAL cid_sele,cid_orde
+cid_sele := SELE()
+cid_orde := INDEXORD()
+********************
+SELE('cid');ORDSETFOCUS(1)
+GO TOP
+********************
+cid->(DBSEEK(mcid))
+IF t = .T.
+        IF FOUND()
+                atencao('Cidade ja Cadastrada')
+                SELE(cid_sele);ORDSETFOCUS(cid_orde)
+                RELEASE cid_sele,cid_orde
+                RETURN .F.
+        ENDIF
+        SELE(cid_sele);ORDSETFOCUS(cid_orde)
+        RELEASE cid_sele,cid_orde
+        RETURN .T.
+ENDIF
+IF ! FOUND()
+        atencao('Cidade nao Cadastrada em nosso arquivos....')
+        SELE(cid_sele);ORDSETFOCUS(cid_orde)
+        RELEASE cid_sele,cid_orde
+        RETURN .F.
+ENDIF
+SELE(cid_sele);ORDSETFOCUS(cid_orde)
+RELEASE cid_sele,cid_orde
+RETURN .T.
+************************** F I M ******************************
+***********************
+* VERIFICA COD.PRODUTO
+***********************
+FUNCTION ver_prod(vcli,li,ci)
+***********************************
+MEMVAR cons_prod
+
+IF EMPTY(vcli)
+        RETURN .T.
+ENDIF
+cons_prod := {}
+cComm  := "SELECT * FROM smedprod WHERE cod_prod = "+sr_cdbvalue(STRZERO(vcli,5))
+sr_getconnection():exec(ccomm,,.t.,@cons_prod)
+IF LEN(cons_prod) = 0
+        atencao('Codigo nao Existe no Arquivo !!!')
+        cons_proc := {}
+        RETURN .F.
+ENDIF
+IF li <> NIL
+        setcor(3)
+        DEVPOS(li,ci);DEVOUT(cons_prod[1,3])
+        setcor(1)
+        RETURN .T.
+ENDIF
+RETURN .T.
+********************** F I M ********************************
+* GERAR NUMERO DE AUTORIZACAO
+*****************************
+FUNCTION gera_num
+*****************
+LOCAL mnum_co,mhora
+mhora := TIME()
+mnum_co := SUBSTR(mhora,7,2)+STRZERO(VAL(SUBSTR(mhora,4,1))+VAL(SUBSTR(mhora,5,1)),2)+STRZERO(VAL(SUBSTR(mhora,1,1))+VAL(SUBSTR(mhora,2,1))+VAL(SUBSTR(mhora,7,2)),2)
+RETURN mnum_co
+********************************** F I M ***********************************

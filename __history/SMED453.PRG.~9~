@@ -1,0 +1,150 @@
+* COMUNICAR A ASSOCIACAO
+************************
+FUNCTION smed453
+****************
+LOCAL mprg:='SMED452',mdocumento,opcao := ' ',;
+      m_dupr:={},cons_semen:={},point:=0,cons_prop:={},cons_anim:={},cons_doa :={},cons_rec :={},;
+      mobs_comu,m_doc := {}
+
+PRIVATE mcod_cli,mcod_ani,mcod_doa,mcod_rec
+
+IF ! ver_nivel(mprg,'COMUNICACAO A ASSOCIACAO','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(0,0,40,120,'COMUNICAR A ASSOCIACAO',,1)
+WHILE .T.
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mdocumento := SPACE(10)
+        mcod_cli := mcod_ani := mcod_doa := mcod_rec := 0
+        mobs_comu := SPACE(60)
+        limpa(00,00,40,120)
+        exibi_prg(mprg)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(1, 1);DEVOUT('Codigo Cliente.....:')
+        DEVPOS(2, 1);DEVOUT('Codigo do Garanhao.:')
+        DEVPOS(3, 1);DEVOUT('Codigo do Doadora..:')
+        DEVPOS(4, 1);DEVOUT('Codigo do Receptora:')
+        @ 5,0 TO 5,MAXCOL()
+        WVW_DrawLabel(,6,7,'Cliente',,,240,, 'times new roman',15,8,,,,,)
+        WVW_DrawLabel(,6,28,'Garanhao',,,240,, 'times new roman',15,8,,,,,)
+        WVW_DrawLabel(,6,50,'Doadora',,,240,, 'times new roman',15,8,,,,,)
+        WVW_DrawLabel(,6,72,'Receptora',,,240,, 'times new roman',15,8,,,,,)
+        WVW_DrawLabel(,6,90,'Emissao',,,240,, 'times new roman',15,8,,,,,)
+        WVW_DrawLabel(,6,100,'Documento',,,240,, 'times new roman',15,8,,,,,)
+        @ 7,0 TO 7,MAXCOL()
+        @ 0,22 GET mdocumento
+        @ 1,22 GET mcod_cli PICT '99999' VALID ver_prop(mcod_cli,1,28) WHEN EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_prop(mcod_cli,1,28)
+        @ 2,22 GET mcod_ani PICT '99999' VALID ver_animal(mcod_ani,2,28) WHEN EMPTY(mcod_cli) .AND. EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_ani,2,28)
+        @ 3,22 GET mcod_doa PICT '99999' VALID ver_animal(mcod_doa,3,28) WHEN EMPTY(mcod_ani) .AND. EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_doa,3,28)
+        @ 4,22 GET mcod_rec PICT '99999' VALID ver_animal(mcod_rec,4,28) WHEN EMPTY(mcod_doa) .AND. EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_rec,4,28)
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        cons_semen := {}
+        IF ! EMPTY(mdocumento)
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE documento = "+sr_cdbvalue(mdocumento)+" AND data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_cli)
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE cod_prop = "+sr_cdbvalue(mcod_cli)+" AND data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_ani)
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE cod_garan = "+sr_cdbvalue(mcod_ani)+" AND data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_doa)
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE cod_doado = "+sr_cdbvalue(mcod_doa)+" AND data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_rec)
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE cod_recpt = "+sr_cdbvalue(mcod_rec)+" AND data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ELSE
+                sr_getconnection():exec("SELECT * FROM smedinsem WHERE data_pren IS NOT NULL AND data_nasc IS NOT NULL",,.t.,@cons_semen)
+        ENDIF
+        IF LEN(cons_semen) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        i := 0
+        m_dupr := {}
+        m_doc := {}
+        FOR i = 1 TO LEN(cons_semen)
+                cons_prop:={}
+                cons_anim:={}
+                cons_doa :={}
+                cons_rec :={}
+                /*
+                sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,5]),,.t.,@cons_doa )
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,6]),,.t.,@cons_rec )
+                */
+                sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        atencao('Nao foi possivel encontra este CLIENTE')
+                        LOOP
+                ENDIF
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                IF LEN(cons_anim) = 0
+                        atencao('Nao foi possivel encontra este GARANHAO')
+                        LOOP
+                ENDIF
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,5]),,.t.,@cons_doa )
+                IF LEN(cons_doa) = 0
+                        atencao('Nao foi possivel encontra este DOADORA')
+                        LOOP
+                ENDIF
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,6]),,.t.,@cons_rec )
+                IF LEN(cons_rec) = 0
+                        atencao('Nao foi possivel encontra este RECEPTORA')
+                        LOOP
+                ENDIF
+
+                                //  COD_PROP                    COD_ANIMAL                   DATA EMISSAO            DOCUMENTO
+                AADD(m_dupr,STR(cons_semen[i,3],5)+'-'+SUBSTR(cons_prop[1,1],1,15)+' '+STR(cons_semen[i,4],5)+'-'+SUBSTR(cons_anim[1,1],1,15)+' '+STR(cons_semen[i,5],5)+'-'+SUBSTR(cons_doa[1,1],1,15)+' '+STR(cons_semen[i,5],5)+'-'+SUBSTR(cons_rec[1,1],1,15)+'  '+DTOC(cons_semen[i,1])+'  '+cons_semen[i,2])
+                AADD(m_doc,{cons_semen[i,3],cons_semen[i,2]})
+        NEXT
+        point := ACHOICE(8,1,39,119,m_dupr,,,point)
+        DO CASE
+                CASE LASTKEY()=27
+                        LOOP
+                CASE LASTKEY() = 13
+                        op_tela(0,0,3,90,'COMUNICACAO A ASSOCIACAO',,1)
+                        DEVPOS(0, 1);DEVOUT('Data de COMUNICACAO:')
+                        DEVPOS(1, 1);DEVOUT('Observacao.........:')
+                        setcor(1)
+                        @ 0,22 GET mdata
+                        @ 1,22 GET mobs_comu
+                        READ
+                        IF LASTKEY() = 27
+                                wvw_lclosewindow()
+                                EXIT
+                        ENDIF
+                        opcao := op_simnao('S','COMUNICACAO A ASSOCIACAO:')
+                        wvw_lclosewindow()
+                        IF opcao = "N"
+                                LOOP
+                        ENDIF
+                        sr_getconnection():exec("UPDATE smedinsem SET data_comu = "+sr_cdbvalue(mdata)+",oper_comu = "+sr_cdbvalue(cod_operado)+",obs_nasc = "+sr_cdbvalue(mobs_comu)+" WHERE documento = "+sr_cdbvalue(m_doc[point,2]),,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+        ENDCASE
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

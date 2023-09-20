@@ -1,0 +1,103 @@
+******************************
+* LISTAGEM DE MEDICAMENTOS
+******************************
+
+FUNCTION smed5cnv
+***********************
+
+LOCAL mpag,mtraco,mcont,mmedica,mopcao
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+mtraco := REPLI('-',80)
+*********************************************
+CLOSE ALL
+USE smedconv ALIAS conv SHARED NEW
+*********************************************
+WHILE .T.
+        mpag := 1
+        mmedica := mcont := opcao := 0
+        mopcao := SPACE(1)
+        mopcao := op_simnao('S','Confirma Impressao [S/n]:')
+        IF LASTKEY() = 27 .OR. mopcao = 'N'
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        IF ! imp_arq('SMED5CNV.REL')
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+        mensagem('Aguarde o Final da Impressao OK')
+        SET DEVI TO PRINT
+        SET PRINT ON
+        *************
+        SELE('conv');ORDSETFOCUS(1)
+        *************
+
+        cabcvn(mpag)
+        @ PROW()+1,00 SAY 'Codigo'
+        @ PROW(),08 SAY 'Descricao'
+        @ PROW(),40 SAY '  Valor'
+        @ PROW()+1,00 SAY mtraco
+
+        WHILE ! EOF()
+                @ PROW()+1,02 SAY codconv
+                @ PROW(),08 SAY rsocial
+                @ PROW(),40 SAY valor_con PICT '9,999.99'
+                mmedica = mmedica + 1
+                mcont = mcont + 1
+                IF PROW() > 57
+                        EJECT
+                        mpag = mpag + 1
+                        cabcvn(mpag)
+                        @ PROW()+1,00 SAY 'Codigo'
+                        @ PROW(),08 SAY 'Descricao'
+                        @ PROW(),40 SAY '  Valor'
+                        @ PROW()+1,00 SAY mtraco
+                ENDIF
+                SKIP
+        ENDDO
+        IF mcont = 6
+                EJECT
+                mpag = mpag + 1
+                cabcvn(mpag)
+        ENDIF
+        @ PROW()+3,02 SAY 'Convenios Cadastrados : '+LTRIM(STR(mmedica))
+        @ PROW()+2,56 SAY TIME()+' Hrs.'
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('SMED5CNV.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+        RETURN NIL
+ENDDO
+RETURN NIL
+
+************************** F I M ********************************************
+
+FUNCTION cabcvn(rpag)
+********************
+
+LOCAL traco
+
+traco := REPLI('=',80)
+
+
+WHILE .T.
+        @ PROW()+1,34 SAY memp_resa
+        @ PROW(),34 SAY memp_resa
+        @ PROW()+1,02 SAY fir+ma
+        @ PROW(),34 SAY mesp
+        @ PROW(),72 SAY 'PAG.'
+        @ PROW(),77 SAY STRZERO(rpag,3)
+        @ PROW()+1,02 SAY 'Sistema Controle Medico'
+        @ PROW(),31 SAY 'Relacao de Convenios Cadastrado'
+        @ PROW(),72 SAY DATE()
+        @ PROW()+1,00 SAY traco
+        RETURN NIL
+ENDDO
+

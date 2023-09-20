@@ -1,0 +1,128 @@
+**************************
+* INCLUSAO DE MEDICAMENTOS
+**************************
+
+FUNCTION smed241
+****************
+
+LOCAL lci,cci,lba,cba,opcao,mnomedr,mnomecom,mdose,mposo,mefei,mprec,tela214,mcod,;
+      muso,tela2,mdias_prox:=0
+
+lci := cci := 0
+lba := 21
+cba := 87
+op_tela(13,10,25,90,'INCLUSAO DE MEDICAMENTOS')
+WHILE .T.
+        limpa(00,00,30,100)
+        *************
+        SELE('dro')
+        SET ORDER TO 2
+        *************
+        GO BOTT
+        mcod := STRZERO(VAL(cod_med)+1,5)
+        muso := SPACE(20)
+        opca := SPACE(1)
+        opcao := SPACE(1)
+        mnomedr := SPACE(20)
+        mnomecom := SPACE(20)
+        mdose  := SPACE(50)
+        mdose1 := SPACE(50)
+        mposo  := SPACE(50)
+        mefei  := SPACE(50)
+        mprec  := SPACE(50)
+        mtratamento  := SPACE(50)
+        mtratamento1 := SPACE(50)
+        mdias_prox := 0
+        Mensagem('Preencha os Campos ou Tecle <ESC> P/Retornar')
+
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod. Medicamento..:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome Comercial....:')
+        DEVPOS(lci+2,cci+50);DEVOUT('Uso ...:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nome da Droga.....:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Quantd.Dose.......:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Posologia.........:')
+        DEVPOS(lci+7,cci+2);DEVOUT('Efeitos Colaterais:')
+        DEVPOS(lci+8,cci+2);DEVOUT('Precaucoes........:')
+        DEVPOS(lci+9,cci+2);DEVOUT('Tratamento........:')
+        DEVPOS(lci+11,cci+2);DEVOUT('Proxima Aplicacao.:       Dias')
+
+        setcor(3)
+        DEVPOS(lci+1,cci+22);DEVOUT(mcod)
+        setcor(1)
+        @ lci+2,cci+22 GET mnomecom PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                SET ORDER TO 1
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+
+        IF EMPTY(mnomecom)
+                LOOP
+        ENDIF
+
+        *****************
+        SEEK mnomecom
+        *****************
+
+        IF FOUND()
+                tela2 := SAVESCREEN(00,00,24,79)
+                setcor(3)
+                botao(15,08,20,48)
+                @ 17,09 TO 17,47 DOUBLE
+                setcor(1)
+                SETCOLOR('w+*/n,x')
+                DEVPOS(16,12);DEVOUT('Medicamento Existente no Arquivo !!!')
+                SETCOLOR(vcor[1])
+                DEVPOS(18,10);DEVOUT('Nome Comercial:')
+                DEVPOS(19,10);DEVOUT('Nome da Droga.:')
+                SETCOLOR(vcor[3])
+                DEVPOS(18,26);DEVOUT(nomecom)
+                DEVPOS(19,26);DEVOUT(nomedroga)
+                SETCOLOR(vcor[1])
+                INKEY(3)
+                RESTSCREEN(00,00,24,79,tela2)
+                LOOP
+        ENDIF
+        @ lci+2,cci+59 GET muso PICT '@!'
+        @ lci+3,cci+22 GET mnomedr PICT '@!'
+        @ lci+4,cci+22 GET mdose PICT '@!'
+        @ lci+5,cci+22 GET mdose1 PICT '@!'
+        @ lci+6,cci+22 GET mposo PICT '@!'
+        @ lci+7,cci+22 GET mefei PICT '@!'
+        @ lci+8,cci+22 GET mprec PICT '@!'
+        @ lci+9,cci+22 GET mtratamento PICT '@!'
+        @ lci+10,cci+22 GET mtratamento1 PICT '@!'
+        @ lci+11,cci+22 GET mdias_prox PICT '9,999'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Confirma Inclusao [S/n]:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                LOOP
+        ENDIF
+        IF ADIREG()
+                dro-> cod_med := mcod
+                dro-> uso_med := muso
+                dro-> nomedroga := mnomedr
+                dro-> nomecom := mnomecom
+                dro-> dose_quant := mdose
+                dro-> dose_quant1 := mdose1
+                dro-> posologia := mposo
+                dro-> efeito_col := mefei
+                dro-> precaucoes := mprec
+                dro-> dias_prox  := mdias_prox
+                dro-> tratamento  := mtratamento
+                dro-> tratamento1  := mtratamento1
+                COMMIT
+                UNLOCK
+                LOOP
+        ELSE
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                LOOP
+        ENDIF
+ENDDO
+RETURN NIL
+

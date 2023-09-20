@@ -1,0 +1,107 @@
+*****************
+* MENU CONSULTA
+*****************
+
+FUNCTION smed300
+****************
+LOCAL mprg:='SMED300',;
+      opcao,lci,cci,lba,cba,tela300
+lci := 05
+cci := 14
+lba := 13
+cba := 34
+IF cab_med = 'MARLI'
+        lba := 14
+ENDIF
+tela300 := SAVESCREEN(00,00,24,79)
+opcao := 0
+****************************************************
+* VERIFICAR NIVEL DE ACESSO DA SENHA
+****************************************************
+* Niveis de acesso: 1 e 2
+****************************************************
+IF ! nivel('1','2')
+        atencao('Acesso nao Autorizado !!!')
+        RETURN NIL
+ENDIF
+****************************************************
+
+WHILE .T.
+        exibi_prg(mprg)
+        apaga(23,00,23,79)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+*       botao(lci,cci,lba,cba)
+        setcor(9)
+        @ lci+1,cci+1 PROMPT ' ^Clientes          ' MESSAGE '** Consulta, Retorno de Consulta e Uso Medico, <ESC> p/Retorno **'
+        @ lci+2,cci+1 PROMPT ' C^onvenios         ' MESSAGE '** Consulta de CONVENIOS, <ESC> p/Retorno **'
+        @ lci+3,cci+1 PROMPT ' ^Especialista      ' MESSAGE '** Consulta de ESPECIALISTAS, <ESC> p/Retorno **'
+        @ lci+4,cci+1 PROMPT ' ^Medicamentos      ' MESSAGE '** Consulta de MEDICAMENTOS, <ESC> p/Retorno **'
+        @ lci+5,cci+1 PROMPT ' E^xclusao          ' MESSAGE '** Exclusao de CONSULTAS por periodo, <ESC> p/Retorno **'
+        @ lci+6,cci+1 PROMPT ' Co^nsulta CEP      ' MESSAGE '** Consulta de CEP, <ESC> p/Retorno **'
+        @ lci+7,cci+1 PROMPT ' Con^sulta Cirurgia ' MESSAGE '** Consulta de Cirurgias, <ESC> p/Retorno **'
+        IF cab_med = 'MARLI'
+                @ lci+8,cci+1 PROMPT '    Col^poscopia    ' MESSAGE '** Consulta do Exame de Colposcopia, <ESC> p/Retorno **'
+        ENDIF
+        SET INTEN ON
+        MENU TO opcao
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela300)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+
+        DO CASE
+                CASE opcao = 1
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+*                       f7_cli()
+                        smed310()       && CONSULTA CLIENTES
+                CASE opcao = 2
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed320()       && CONSULTA CONVENIOS
+                CASE opcao = 3
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed330()       && CONSULTA ESPECIALISTA
+                CASE opcao = 4
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed340()       && CONSULTA MEDICAMENTOS
+                CASE opcao = 5
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed350()       && EXCLUSAO DE CONSULTA
+                CASE opcao = 6
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        saccep()       && CONSULTA CEP'S
+                CASE opcao = 7
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed370()       && CONSULTA CIRURGIAS
+                CASE opcao = 8
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed360()       && CONSULTA COLPOSCOPIA
+       ENDCASE
+ENDDO
+RETURN NIL
+

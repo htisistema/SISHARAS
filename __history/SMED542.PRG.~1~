@@ -1,0 +1,148 @@
+*************************************
+* EMISSAO RECEITAS POR CODIGO
+*************************************
+
+FUNCTION smed542(mnome,mdata,mqtd_rece)
+****************
+LOCAL mprg:='SMED542'
+LOCAL opcao,mrece,msele,mcod_rece,y:=0
+
+PRIVATE mcod1,mcod2,mcod3,mcod4,mcod5,mcod6,muso1,muso2,muso3,muso4,muso5,muso6,;
+        mdose1,mdose2,mdose3,mdose4,mdose5,mdose6,mposo1,mposo2,mposo3,mposo4,mposo5,;
+        mposo6,mnome1,mnome2,mnome3,mnome4,mnome5,mnome6,lci,cci,lba,cba,traco,;
+        mquantd
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+
+traco := REPLI('-',80)
+
+lci := cci := 0
+lba := 22
+cba := 77
+muso1 := muso2 := muso3 := muso4 := muso5 := muso6 := SPACE(7)
+mcod1 := mcod2 := mcod3 := mcod4 := mcod5 := mcod6 := SPACE(5)
+mnome1 := mnome2 := mnome3 := mnome4 := mnome5 := mnome6 := SPACE(15)
+mdose1 := mdose2 := mdose3 := mdose4 := mdose5 := mdose6 := SPACE(24)
+mposo1 := mposo2 := mposo3 := mposo4 := mposo5 := mposo6 := SPACE(50)
+IF mnome = NIL
+        mdata := DATE()
+        mnome := SPACE(35)
+        mqtd_rece := 1
+ENDIF
+mcod_rece := SPACE(5)
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(03,02,22,77,'EMISSAO RECEITAS POR CODIGO')
+FOR y = 1 TO mqtd_rece
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        *************
+        SELE('rece');ORDSETFOCUS(1)
+        GO TOP
+        *************
+        mquantd := 1
+        opcao := SPACE(1)
+        Mensagem('Preencha os Codigo - <ESC> p/Abandonar')
+        setcor(1)
+
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome Cliente:')
+        DEVPOS(lci+1,cci+53);DEVOUT('Data:')
+        @ lci+2,cci+1 TO lci+2,cba-1
+        DEVPOS(lci+3,cci+2);DEVOUT('Cod.da Receita:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Codigo')
+        DEVPOS(lci+4,cci+11);DEVOUT('Uso')
+        DEVPOS(lci+4,cci+20);DEVOUT('Nome Med.')
+        DEVPOS(lci+4,cci+40);DEVOUT('Dosagem:')
+        DEVPOS(lci+5,cci+10);DEVOUT('Posologia:')
+        DEVPOS(lci+19,cci+2);DEVOUT('Quantidades de Copias:')
+        @ lci+6,cci+1 TO lci+6,cba-1
+        @ lci+1,cci+16 GET mnome PICT '@!'
+        @ lci+1,cci+59 GET mdata PICT '99/99/99'
+        @ lci+3,cci+18 GET mcod_rece PICT '99999'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+
+        SEEK mcod_rece
+
+        IF ! FOUND()
+                atencao('Codigo da Receita Invalido !!!')
+                LOOP
+        ENDIF
+        Mensagem('<ENTER> Confirma - <'+setcim+'> Prox.Reg.- <'+setbaix+'> Reg.Ant. - <ESC> bandonar')
+        WHILE .T.
+                mcod_rece := cod_rece
+                mcod1 := codigo1
+                mcod2 := codigo2
+                mcod3 := codigo3
+                mcod4 := codigo4
+                mcod5 := codigo5
+                mcod6 := codigo6
+                setcor(3)
+                DEVPOS(lci+3,cci+18);DEVOUT(mcod_rece)
+                DEVPOS(lci+7,cci+2);DEVOUT(mcod1)
+                DEVPOS(lci+9,cci+2);DEVOUT(mcod2)
+                DEVPOS(lci+11,cci+2);DEVOUT(mcod3)
+                DEVPOS(lci+13,cci+2);DEVOUT(mcod4)
+                DEVPOS(lci+15,cci+2);DEVOUT(mcod5)
+                DEVPOS(lci+17,cci+2);DEVOUT(mcod6)
+                setcor(1)
+                med(mcod1,1)
+                med(mcod2,2)
+                med(mcod3,3)
+                med(mcod4,4)
+                med(mcod5,5)
+                med(mcod6,6)
+                INKEY(0)
+                IF LASTKEY() = 5
+                        SKIP
+                        IF EOF()
+                                SKIP -1
+                                atencao('Fim do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 24
+                        SKIP -1
+                        IF BOF()
+                                atencao('Inicio do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 13
+                        SET CURSOR ON
+                        EXIT
+                ENDIF
+                IF LASTKEY() = 27
+                        SET CURSOR ON
+                        wvw_lclosewindow()
+                        RETURN NIL
+                ENDIF
+        ENDDO
+        @ lci+19,cci+22 GET mquantd PICT '999' VALID IF(EMPTY(mquantd),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('SMED542.REL')
+                LOOP
+        ENDIF
+        prinrece(mnome,mdata)
+	IF mimp_tipo = 2
+                lertexto('SMED542.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+NEXT
+wvw_lclosewindow()
+RETURN NIL
+********************** f i m ***********************************

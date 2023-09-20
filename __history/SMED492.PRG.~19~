@@ -1,0 +1,113 @@
+* RELATORIO de PROCEDIMENTOS
+****************************
+FUNCTION smed492
+*****************
+LOCAL mprg:='SMED492',opcao := ' ',;
+      cons_proc:={},cons_prop:={},cons_anim:={},;
+      mcomando,mpag,mproc_ini,mproc_fim,mprox_ini,mprox_fim
+
+PRIVATE mcod_ani,mcod_dro,mtipo_imp,mimp_tipo:=0,marq:=SPACE(35)
+IF ! ver_nivel(mprg,'RELATORIO DE PROCEDIMENTO','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(10,0,15,90,'RELATORIO DE PROCEDIMENTO',,1)
+mtipo_imp := m_indiv[1,18]
+WHILE .T.
+        mtit := 'RELATORIO DE PROCEDIMENTO'
+        exibi_prg(mprg)
+        mproc_ini := mproc_fim := mprox_ini := mprox_fim := CTOD('  /  /  ')
+        mcod_ani := mcod_dro := mpag := 0
+        limpa(00,00,40,120)
+        exibi_prg(mprg)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        //DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(0, 1);DEVOUT('Codigo do ANIMAL................:')
+        DEVPOS(1, 1);DEVOUT('Codigo do PROCEDIMENTO..........:')
+        DEVPOS(2, 1);DEVOUT('Data inicial do PROCEDIMENTOS...:')
+        DEVPOS(2,45);DEVOUT('Data Final:')
+        DEVPOS(3, 1);DEVOUT('Data inicial PROXIMA APLICACAO..:')
+        DEVPOS(3,45);DEVOUT('Data Final:')
+        //@ 0,22 GET mdocumento
+        //@ 0,24 GET mcod_ani PICT '99999' VALID IF(EMPTY(mcod_ani),.F.,ver_prop(mcod_ani,0,30))
+        @ 0,35 GET mcod_ani PICT '99999' VALID ver_animal(mcod_ani,0,41)
+        @ 1,35 GET mcod_dro PICT '99999' VALID ver_proc(mcod_dro,1,41)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_animal(mcod_ani,0,41)
+        ver_proc(mcod_dro,1,41)
+
+        @ 2,35 GET mproc_ini
+        @ 2,57 GET mproc_fim VALID IF(mproc_ini > mproc_fim,.F.,.T.) WHEN ! EMPTY(mproc_ini)
+        @ 3,35 GET mprox_ini WHEN EMPTY(mproc_ini)
+        @ 3,57 GET mprox_fim VALID IF(mprox_ini > mprox_fim,.F.,.T.) WHEN ! EMPTY(mprox_ini)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        cons_proc := {}
+        mcomando := "SELECT * FROM smedproc WHERE data IS NOT NULL"
+        IF ! EMPTY(mcod_ani)
+                mcomando := "AND codcli = "+sr_cdbvalue(STRZERO(mcod_ani,5))
+        ENDIF
+        IF ! EMPTY(mcod_dro)
+                mcomando := "AND codproc = "+sr_cdbvalue(STRZERO(mcod_dro,5))
+        ENDIF
+        IF ! EMPTY(mproc_ini)
+                mcomando := mcomando + " AND data >= "+sr_cdbvalue(mproc_ini)+" AND data <= "+sr_cdbvalue(mproc_fim)
+        ELSEIF ! EMPTY(mprox_ini)
+                mcomando := mcomando + " AND data_prox >= "+sr_cdbvalue(mprox_ini)+" AND data_prox <= "+sr_cdbvalue(mprox_fim)
+        ENDIF
+        mtipo := 'PROCEDIMENTO'
+        sr_getconnection():exec(mcomando,,.t.,@cons_proc)
+        IF LEN(cons_proc) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        IF ! imp_arq('REL_INSEM.REL','R')
+                LOOP
+        ENDIF
+        i := 0
+        FOR i = 1 TO LEN(cons_proc)
+                prog_imp(i,DTOC(cons_proc[i,1]))
+                cons_prop:={}
+                sr_getconnection():exec("SELECT nome,(SELECT nomedroga FROM smeddro WHERE cod_med = "+sr_cdbvalue(cons_proc[i,3])+") FROM smedcli WHERE registro = "+sr_cdbvalue(VAL(cons_proc[i,2])),,.t.,@cons_prop)
+                //sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_proc[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        LOOP
+                ENDIF
+                IF mpag=0 .OR. PROW()>=57
+                        mpag := mpag+1
+                        IF mpag > 1
+                                EJECT
+                        ENDIF
+                        cabecalho(mpag,mtit,mtipo,mprg)
+                        imprt(mtipo_imp,'C')
+                        DEVPOS(PROW()+1,0);DEVOUT('  Data  ')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Animal          ')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Procedimento    ')
+                        DEVPOS(PROW(),PCOL()+2);DEVOUT('Data Prox. ')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('Aplic.')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('Oper.')
+                        DEVPOS(PROW(),PCOL()+1);DEVOUT('OBS.')
+                        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+                ENDIF
+                                          //     data                            ANIMAL                                              PROCEDIMENTOS                                PROXIMA                 APLIC                OPER                OBS
+                DEVPOS(PROW()+1,00);DEVOUT(DTOC(cons_proc[i,1])+'  '+cons_proc[i,2]+'-'+SUBSTR(cons_prop[1,1],1,10)+'  '+cons_proc[i,3]+'-'+SUBSTR(cons_prop[1,2],1,10)+'  '+DTOC(cons_proc[i,4])+'     '+cons_proc[i,6]+'    '+cons_proc[i,7]+'  '+cons_proc[i,8])
+
+        NEXT
+        DEVPOS(PROW()+1,00);DEVOUT(REPLICATE("-",137))
+        DEVPOS(PROW()+1,00);DEVOUT('TOTAL DE PROCEDIMENTOS....: '+TRANSFORM(LEN(cons_proc),'99,999'))
+        EJECT
+        SETPRC(00,00)
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('REL_INSEM.REL')
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

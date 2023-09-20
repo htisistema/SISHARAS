@@ -1,0 +1,285 @@
+*******************************
+* MENU PROCEDIMENTOS
+*******************************
+
+FUNCTION smedproc
+*****************
+LOCAL mprg:='SMEDPROC',;
+      opcao,lci,cci,lba,cba,mdata_proc,mdata_prox,mpreco,mobs,mobs1,mcampo_arq,ccomm,;
+      cons_con:={},mponto:=0,m_proc:={},m_posicao:={}
+
+PRIVATE mcod_animal,mcod_dro,mcod_vend,cons_animal:={},cons_proc:={}
+
+lci := cci := 0
+lba = 27
+cba = 100
+mtraco := REPLI('=',80)
+op_tela(03,00,30,100,'PROCEDIMENTOS')
+WHILE .T.
+        Wvw_SetTitle( ,'PROCEDIMENTOS')
+        mobs := mobs1 := SPACE(60)
+        mdata_prox := CTOD('  /  /  ')
+        mdata_proc := mdata_sis
+        mcod_animal := mcod_dro := mcod_vend := mpreco := 0
+        opcao := 'I'
+        limpa(00,00,30,100)
+        exibi_prg(mprg)
+        setcor(1)
+        opcao = 'I'
+        DEVPOS(lci+1,cci+1);DEVOUT('Codigo Animal......:')
+        DEVPOS(lci+2,cci+1);DEVOUT('Data Procedimento..:')
+        DEVPOS(lci+3,cci+1);DEVOUT('Cod.Medicam./Vacina:')
+        DEVPOS(lci+4,cci+1);DEVOUT('Proxima Aplicacao..:')
+        DEVPOS(lci+5,cci+1);DEVOUT('Preco..............:')
+        DEVPOS(lci+6,cci+1);DEVOUT('Codigo Aplicador...:')
+        DEVPOS(lci+7,cci+1);DEVOUT('Observacao.........:')
+        DEVPOS(lci+9,00);DEVOUT(REPLI(CHR(223),101))
+        DEVPOS(lci+10,01);DEVOUT('  Data   Medicamento/Vacina    Prox.Apl      Valor  Aplicador  Oper')
+        DEVPOS(lci+11,00);DEVOUT(REPLI(CHR(223),101))
+        op_tela(05,50,09,77,'MENU DE PROCEDIMENTOS')
+        mensagem('Escolha a Opcao ou [ESC]p/Abandonar')
+        @ 01,00 PROMPT ' Inclusao de Procedimento  '
+        @ 02,00 PROMPT ' Alteracao de Procedimento '
+        @ 03,00 PROMPT ' Exclusao de Procedimento  '
+        MENU TO opcao
+        wvw_lclosewindow()
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+
+        DO CASE
+                CASE opcao = 1
+                        WHILE .T.
+                                Wvw_SetTitle( ,'INCLUSAO DE PROCEDIMENTOS')
+                                mensagem('Preencha os Campos - <ESC> p/Retornar ')
+                                cons_animal := {}
+                                cons_proc   := {}
+                                mpreco      := 0
+                                @ lci+1,cci+22 GET mcod_animal PICT '99999' VALID ver_animal(mcod_animal,lci+1,cci+28)
+                                READ
+                                IF LASTKEY() = 27
+                                        EXIT
+                                ENDIF
+                                ver_animal(mcod_animal,lci+1,cci+28)
+                                IF FILE(m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg')
+                                        botao(lci,82,lci+8,100)
+                                        WVW_DrawImage( ,lci,82,lci+8,100,m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg',.T.,.F.)
+                                        setcor(1)
+                                ENDIF
+
+                                cons_con := {}
+                                cComm  := "SELECT * FROM smedproc WHERE codcli = "+sr_cdbvalue(STRZERO(mcod_animal,5))
+                                ccomm := ccomm + " ORDER BY data DESC"
+                                sr_getconnection():exec(ccomm,,.t.,@cons_con)
+                                IF LEN(cons_con) > 0
+                                        setcor(3)
+                                        i:=0
+                                        FOR i = 1 TO LEN(cons_con)
+                                                ver_proc(VAL(cons_con[i,3]))
+                                                DEVPOS(lci+11+i,01);DEVOUT(DTOC(cons_con[i,1])+' '+cons_con[i,3]+' '+IF(LEN(cons_proc)>0,cons_proc[1,4],SPACE(15))+' '+DTOC(cons_con[i,4])+' '+TRANSFORM(cons_con[i,5],'999,999.99')+'      '+cons_con[i,6]+'    '+cons_con[i,7])
+                                        NEXT
+                                        setcor(1)
+                                ENDIF
+
+                                @ lci+2,cci+22 GET mdata_proc
+                                @ lci+3,cci+22 GET mcod_dro PICT '99999' VALID IF(EMPTY(mcod_dro),.F.,ver_proc(mcod_dro,lci+3,cci+28))
+                                READ
+                                ver_proc(mcod_dro,lci+3,cci+28)
+                                IF LASTKEY() = 27
+                                        LOOP
+                                ENDIF
+                                cons_con := {}
+                                cComm  := "SELECT * FROM smedproc WHERE data = "+sr_cdbvalue(mdata_proc)
+                                ccomm := ccomm + " AND codcli = "+sr_cdbvalue(STRZERO(mcod_animal,5))
+                                ccomm := ccomm + " AND codproc = "+sr_cdbvalue(STRZERO(mcod_dro,5))
+                                sr_getconnection():exec(ccomm,,.t.,@cons_con)
+                                IF LEN(cons_con) > 0
+                                        opcao := op_simnao('N','Ja foi lancado este procedimento deseja fazer o lancamento mesmoe assim !!!!')
+                                        IF opcao = 'N'
+                                                LOOP
+                                        ENDIF
+                                ENDIF
+                                mdata_prox := mdata_sis + cons_proc[1,9]
+                                @ lci+4,cci+22 GET mdata_prox
+                                @ lci+5,cci+22 GET mpreco PICT '999,999.99'
+                                @ lci+6,cci+22 GET mcod_vend PICT '999' VALID ver_ven(STRZERO(mcod_vend,3),,,lci+6,cci+26)
+                                @ lci+7,cci+22 GET mobs
+                                @ lci+8,cci+22 GET mobs1
+                                READ
+                                IF LASTKEY() = 27
+                                        LOOP
+                                ENDIF
+                                opcao := op_simnao('S','Confirma a Inclusao do PROCEDIMENTO [S/n]:')
+                                IF LASTKEY() = 27 .OR. opcao = 'N'
+                                        LOOP
+                                ENDIF
+                                mcampo_arq :=  'data,';//1
+                                              +'codcli,';//2
+                                              +'codproc,';//3
+                                              +'data_prox,';//4
+                                              +'preco,';//5
+                                              +'cod_aplic,';//6
+                                              +'cod_oper,';//7
+                                              +'obs,';//8
+                                              +'obs1'//9
+                                cComm  := 'INSERT INTO smedproc ('+mcampo_arq+',sr_deleted) VALUES ('
+                                cComm  := ccomm +     sr_cdbvalue(mdata_proc                                  ) //1
+                                cComm  := ccomm + ','+sr_cdbvalue(STRZERO(mcod_animal,5)                      ) //2
+                                cComm  := ccomm + ','+sr_cdbvalue(STRZERO(mcod_dro,5)                        ) //3
+                                cComm  := ccomm + ','+sr_cdbvalue(mdata_prox                                  ) //4
+                                cComm  := ccomm + ','+sr_cdbvalue(mpreco                                      ) //5
+                                cComm  := ccomm + ','+sr_cdbvalue(STRZERO(mcod_vend,3)                        ) //6
+                                cComm  := ccomm + ','+sr_cdbvalue(cod_operado                                 ) //7
+                                cComm  := ccomm + ','+sr_cdbvalue(mobs                                        ) //8
+                                cComm  := ccomm + ','+sr_cdbvalue(mobs1                                       ) //9
+                                cComm  := ccomm + ','+sr_cdbvalue(' ')+')'
+                                sr_getconnection():exec(ccomm,,.f.)
+                                sr_getconnection():exec('COMMIT',,.f.)
+                        ENDDO
+                CASE opcao = 2
+                        Wvw_SetTitle( ,'ALTERCAO DE PROCEDIMENTOS')
+                        mensagem('Preencha os Campos - <ESC> p/Retornar ')
+                        cons_animal := {}
+                        cons_proc   := {}
+                        mpreco      := 0
+                        @ lci+1,cci+22 GET mcod_animal PICT '99999' VALID ver_animal(mcod_animal,lci+1,cci+28)
+                        READ
+                        ver_animal(mcod_animal,lci+1,cci+28)
+                        IF FILE(m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg')
+                                botao(lci,82,lci+8,100)
+                                WVW_DrawImage( ,lci,82,lci+8,100,m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg',.T.,.F.)
+                                setcor(1)
+                        ENDIF
+
+                        cons_con := {}
+                        cComm  := "SELECT * FROM smedproc WHERE codcli = "+sr_cdbvalue(STRZERO(mcod_animal,5))
+                        ccomm := ccomm + " ORDER BY data DESC"
+                        sr_getconnection():exec(ccomm,,.t.,@cons_con)
+                        IF LEN(cons_con) = 0
+                                atencao('Nao existe nenhum lancamento para este ANIMAL !!!')
+                                LOOP
+                        ENDIF
+                        setcor(3)
+                        m_proc:={}
+                        m_posicao := {}
+                        i:=0
+                        FOR i = 1 TO LEN(cons_con)
+                                ver_proc(VAL(cons_con[i,3]))
+                                AADD(m_proc,DTOC(cons_con[i,1])+' '+cons_con[i,3]+' '+IF(LEN(cons_proc)>0,cons_proc[1,4],SPACE(15))+' '+DTOC(cons_con[i,4])+' '+TRANSFORM(cons_con[i,5],'999,999.99')+'      '+cons_con[i,6]+'    '+cons_con[i,7])
+                                AADD(m_posicao,{cons_con[i,1],cons_con[i,2],cons_con[i,3],cons_con[i,4],cons_con[i,5],cons_con[i,6],cons_con[i,7],cons_con[i,8],cons_con[i,9],cons_con[i,10]})
+                        NEXT
+                        Mensagem('<ENTER>p/Alterar - <ESC> p/Abandonar')
+                        mponto := ACHOICE(lci+12,cci+1,lba-1,cba-1,m_proc,,,mponto)
+                        setcor(1)
+                        IF LASTKEY() = 13
+                                mdata_proc := m_posicao[mponto,1]
+                                mcod_dro   := VAL(m_posicao[mponto,3])
+                                mdata_prox := m_posicao[mponto,4]
+                                mpreco     := m_posicao[mponto,5]
+                                mcod_vend  := VAL(m_posicao[mponto,6])
+                                mobs       := m_posicao[mponto,8]
+                                mobs1      := m_posicao[mponto,9]
+                        ELSE
+                                LOOP
+                        ENDIF
+                        @ lci+2,cci+22 GET mdata_proc
+                        @ lci+3,cci+22 GET mcod_dro PICT '99999' VALID IF(EMPTY(mcod_dro),.F.,ver_proc(mcod_dro,lci+3,cci+28))
+                        READ
+                        ver_proc(mcod_dro,lci+3,cci+28)
+                        IF LASTKEY() = 27
+                                LOOP
+                        ENDIF
+                        mdata_prox := mdata_sis + cons_proc[1,9]
+                        @ lci+4,cci+22 GET mdata_prox
+                        @ lci+5,cci+22 GET mpreco PICT '999,999.99'
+                        @ lci+6,cci+22 GET mcod_vend PICT '999' VALID ver_ven(STRZERO(mcod_vend,3),,,lci+6,cci+26)
+                        @ lci+7,cci+22 GET mobs
+                        @ lci+8,cci+22 GET mobs1
+                        READ
+                        IF LASTKEY() = 27
+                                LOOP
+                        ENDIF
+                        opcao := op_simnao('S','Confirma a Alteracao do PROCEDIMENTO [S/n]:')
+                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                LOOP
+                        ENDIF
+                        cComm  := 'UPDATE smedproc SET data = '+sr_cdbvalue(mdata_proc)
+                        cComm  := ccomm + ',codproc = '+sr_cdbvalue(STRZERO(mcod_dro,5)                        ) //3
+                        cComm  := ccomm + ',data_prox = '+sr_cdbvalue(mdata_prox) //4
+                        cComm  := ccomm + ',preco = '+sr_cdbvalue(mpreco) //5
+                        cComm  := ccomm + ',cod_aplic = '+sr_cdbvalue(STRZERO(mcod_vend,3)) //6
+                        cComm  := ccomm + ',cod_oper = '+sr_cdbvalue(cod_operado) //7
+                        cComm  := ccomm + ',obs = '+sr_cdbvalue(mobs) //8
+                        cComm  := ccomm + ',obs1 = '+sr_cdbvalue(mobs1) //9
+                        cComm  := ccomm + ' WHERE sr_recno = '+sr_cdbvalue(m_posicao[mponto,10])
+                        sr_getconnection():exec(ccomm,,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+                CASE opcao = 3
+                        Wvw_SetTitle( ,'EXCLUSAO DE PROCEDIMENTOS')
+                        mensagem('Preencha os Campos - <ESC> p/Retornar ')
+                        cons_animal := {}
+                        cons_proc   := {}
+                        mpreco      := 0
+                        @ lci+1,cci+22 GET mcod_animal PICT '99999' VALID ver_animal(mcod_animal,lci+1,cci+28)
+                        READ
+                        ver_animal(mcod_animal,lci+1,cci+28)
+                        IF FILE(m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg')
+                                botao(lci,82,lci+8,100)
+                                WVW_DrawImage( ,lci,82,lci+8,100,m_cfg[62]+'A'+STRZERO(mcod_animal,5)+'.jpg',.T.,.F.)
+                                setcor(1)
+                        ENDIF
+
+                        cons_con := {}
+                        cComm  := "SELECT * FROM smedproc WHERE codcli = "+sr_cdbvalue(STRZERO(mcod_animal,5))
+                        ccomm := ccomm + " ORDER BY data DESC"
+                        sr_getconnection():exec(ccomm,,.t.,@cons_con)
+                        IF LEN(cons_con) = 0
+                                atencao('Nao existe nenhum lancamento para este ANIMAL !!!')
+                                LOOP
+                        ENDIF
+                        setcor(3)
+                        m_proc:={}
+                        m_posicao := {}
+                        i:=0
+                        FOR i = 1 TO LEN(cons_con)
+                                ver_proc(VAL(cons_con[i,3]))
+                                AADD(m_proc,DTOC(cons_con[i,1])+' '+cons_con[i,3]+' '+IF(LEN(cons_proc)>0,cons_proc[1,4],SPACE(15))+' '+DTOC(cons_con[i,4])+' '+TRANSFORM(cons_con[i,5],'999,999.99')+'      '+cons_con[i,6]+'    '+cons_con[i,7])
+                                AADD(m_posicao,{cons_con[i,1],cons_con[i,2],cons_con[i,3],cons_con[i,4],cons_con[i,5],cons_con[i,6],cons_con[i,7],cons_con[i,8],cons_con[i,9],cons_con[i,10]})
+                        NEXT
+                        Mensagem('<ENTER>p/EXCLUIR - <ESC> p/Abandonar')
+                        mponto := ACHOICE(lci+12,cci+1,lba-1,cba-10,m_proc,,,mponto)
+                        setcor(1)
+                        IF LASTKEY() = 13
+                                mdata_proc := m_posicao[mponto,1]
+                                mcod_dro   := VAL(m_posicao[mponto,3])
+                                mdata_prox := m_posicao[mponto,4]
+                                mpreco     := m_posicao[mponto,5]
+                                mcod_vend  := VAL(m_posicao[mponto,6])
+                                mobs       := m_posicao[mponto,8]
+                                mobs1      := m_posicao[mponto,9]
+                        ELSE
+                                LOOP
+                        ENDIF
+                        ver_proc(VAL(m_posicao[mponto,3]),lci+3,cci+28)
+                        ver_ven(m_posicao[mponto,6],,,lci+6,cci+26)
+                        setcor(3)
+                        DEVPOS(lci+2,cci+22);DEVOUT(m_posicao[mponto,1])
+                        DEVPOS(lci+3,cci+22);DEVOUT(m_posicao[mponto,3])
+                        DEVPOS(lci+4,cci+22);DEVOUT(m_posicao[mponto,4])
+                        DEVPOS(lci+5,cci+22);DEVOUTPICT(m_posicao[mponto,5],'999,999.99')
+                        DEVPOS(lci+6,cci+22);DEVOUT(m_posicao[mponto,6])
+                        DEVPOS(lci+7,cci+22);DEVOUT(m_posicao[mponto,8])
+                        DEVPOS(lci+8,cci+22);DEVOUT(m_posicao[mponto,9])
+                        setcor(1)
+                        opcao := op_simnao('N','Confirma a EXCLUSAO do PROCEDIMENTO [N/s]:')
+                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                LOOP
+                        ENDIF
+                        cComm  := 'DELETE FROM smedproc WHERE sr_recno = '+sr_cdbvalue(m_posicao[mponto,10])
+                        sr_getconnection():exec(ccomm,,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+        ENDCASE
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+********************************** f i m **********************************

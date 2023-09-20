@@ -1,0 +1,213 @@
+* CIDADES
+*********
+#include "inkey.ch"              // constantes de codigos das teclas
+
+FUNCTION saccid(mop,mcida,mempty,muf_f,mcp)
+******************************************************
+LOCAL mprg:='SACCID',y,mcod,;
+      cons_m:={},m_prod:={},;
+      mhoras:='',menuid,nBota
+
+STATIC mpesquisa:= '                           '
+
+MEMVAR mdata_sis,nivel_acess
+PRIVATE point:=0,m_pos:={}
+setcor(1)
+op_tela(04,10,50,75,'CADASTRO DE CIDADES',,1)
+CLEAR GETS
+WvW_PBSetFont( NIL, 'times', 25, 10,)
+nBota := wvw_pbCreate(NIL,0,46,1,62,'Inclusao CIDADES',NIL,{||saccid1('I')})
+WVW_PBEnable( NIL, nBota, .T. )
+IF mcida <> NIL
+        mpesquisa:= mcida
+ENDIF
+WHILE .T.
+        exibi_prg(mprg)
+        limpa(0,0,50,120)
+        mensagem('Digite a nome da CIDADE - [CTRL+Y]Apagar Nome da Cidade')
+        setcor(1)
+        DEVPOS(00,01);DEVOUT('Pesquisa Geral:')
+        setcor(3)
+        @ 02,00 TO 02,120
+        DEVPOS(03,01);DEVOUT('Cidade                    Cep      UF Codigo')
+        @ 04,00 TO 04,120
+        @ 43,00 TO 43,120
+        DEVPOS(44,01);DEVOUT('Total de Produtos:')
+        DEVPOS(44,27);DEVOUT('Tempo da Pesquisa:                                                           1->IAT   2->IPPT')
+        setcor(1)
+        @ 00,17 GET mpesquisa PICT '@!KS50'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        mhoras := TIME()
+        mensagem('Escolha o produto e tecle <ENTER> ou <ESC> p/Abandonar')
+        IF SUBSTR(mpesquisa,1,1) = '*' .OR. EMPTY(mpesquisa)
+                cComm  := "SELECT * FROM saccid "
+        ELSE
+                cComm  := "SELECT * FROM saccid WHERE "
+                        ccomm := ccomm + "(cidade LIKE "+sr_cdbvalue('%'+ALLTRIM(mpesquisa)+'%');
+                                       + " OR cep LIKE "+sr_cdbvalue('%'+ALLTRIM(mpesquisa)+'%');
+                                       + " OR cod_cid LIKE "+sr_cdbvalue('%'+ALLTRIM(mpesquisa)+'%')+")"
+        ENDIF
+        ccomm := ccomm + " ORDER BY cidade"
+        cons_m := {}
+        sr_getconnection():exec(ccomm,,.t.,@cons_m)
+        IF LEN(cons_m) = 0
+                atencao('Nao foi encontrado nenhuma CIDADE..')
+                LOOP
+        ENDIF
+        m_prod := {}
+        m_pos  := {}
+        point  := 0
+        DEVPOS(44,20);DEVOUT(STRZERO(LEN(cons_m),5))
+        DEVPOS(44,46);DEVOUT(ELAPTIME(mhoras,TIME()))
+        FOR i = 1 TO LEN(cons_m)
+                AADD(m_prod,' '+cons_m[i,2]+' '+cons_m[i,3]+' '+cons_m[i,4]+' '+cons_m[i,1])
+                AADD(m_pos,{cons_m[i,1],cons_m[i,2],cons_m[i,3],cons_m[i,4],cons_m[i,5]})
+        NEXT
+        point := ACHOICE(5,0,42,120,m_prod,,,point)
+        DO CASE
+                CASE LASTKEY()=27
+                        LOOP
+                CASE LASTKEY() = 13
+                        IF mop <> NIL
+                                mopcao := mensagem1('Tecle [A] p/ Alteracao [E] p/ Exclusao:','A','A,E')
+                                IF LASTKEY() = 27
+                                        LOOP
+                                ENDIF
+                                IF mopcao = 'A'
+                                        saccid1('A')
+                                ELSEIF mopcao = 'E'
+                                        saccid1('E')
+                                ENDIF
+			ELSE
+                                mcod_cid := m_pos[point,1]
+                                mcid := m_pos[point,2]
+                                mcidade := m_pos[point,2]
+                                mcid_aux := m_pos[point,2]
+                                mcp := m_pos[point,3]
+                                mcep_cid := m_pos[point,3]
+                                muf := m_pos[point,4]
+                                muf_cid := m_pos[point,4]
+                                wvw_lclosewindow()
+                                CLEAR GETS
+                                RETURN mcidade
+                        ENDIF
+        ENDCASE
+END
+wvw_lclosewindow()
+CLEAR GETS
+RETURN ' '
+**************** f i m **********************************
+* FUNCAO P/CONSULTAR, INCLUIR, ALTERAR E EXCLUIR CIDADES
+*********************************************************
+FUNCTION saccid1(mtipo)
+***********************
+LOCAL mprg:='SACCID',mtitulo:='CADASTRO DE CIDADES',;
+      mcod_cid,mcid,mcep_cid,muf_cid
+
+IF mtipo = 'I'
+        mprg:='SACCID_INCL'
+ELSEIF mtipo = 'A'
+        mprg:='SACCID_ALT'
+ELSE
+        mprg:='SACCID_EXCL'
+ENDIF
+IF ! ver_nivel(mprg,mtitulo,'15',nivel_acess,,'AMBIE')
+        RETURN NIL
+ENDIF
+op_tela(0,0,5,65,mtitulo,,1)
+WHILE .T.
+        IF mtipo = 'I'
+                mensagem('Digite o Nome da Cidade - <ESC> p/Retornar')
+                mcod_cid := space(7)
+                mcid := SPACE(20)
+                mcep_cid := SPACE(9)
+                muf_cid := SPACE(2)
+                muf := SPACE(2)
+                DEVPOS(00,01);DEVOUT('Nome da Cidade..:')
+                DEVPOS(01,01);DEVOUT('CEP.............:')
+                DEVPOS(02,01);DEVOUT('Estado..........:')
+                DEVPOS(03,01);DEVOUT('Codigo da Cidade:')
+                @ 0,19 GET mcid PICT '@!' VALID ver_cidade(mcid,.T.)
+                @ 1,19 GET mcep_cid PICT '@!'
+                @ 2,19 GET muf_cid PICT '@!'
+                @ 3,19 GET mcod_cid PICT '@!' VALID IF(EMPTY(mcod_cid),.F.,.T.)
+                READ
+                IF LASTKEY() = 27
+                        EXIT
+                ENDIF
+                opcao := 'S'
+                opcao := op_simnao('S','Confirma Inclusao:')
+                IF LASTKEY() = 27
+                        EXIT
+                ENDIF
+                IF opcao = 'S'
+                        sr_getconnection():exec('INSERT INTO saccid (cod_cid,cidade,cep,uf,cod_ope,SR_DELETED )'+;
+                                ' VALUES ('+;
+                                sr_cdbvalue(mcod_cid)+','+; //1
+                                sr_cdbvalue(mcid)+','+; //2
+                                sr_cdbvalue(mcep_cid)+','+; //3
+                                sr_cdbvalue(muf_cid)+','+; //3
+                                sr_cdbvalue(cod_operado)+','+; //3
+                                sr_cdbvalue(' ')+')',,.f.)
+                        sr_getconnection():exec("COMMIT",,.f.)
+                ENDIF
+        ELSEIF mtipo = 'A'
+                mcod_cid := m_pos[point,1]
+                mcid := m_pos[point,2]
+                mcep_cid := m_pos[point,3]
+                muf_cid := m_pos[point,4]
+                mensagem('Digite o Nome da Cidade - <ESC> p/Retornar')
+                DEVPOS(00,01);DEVOUT('Nome da Cidade..:')
+                DEVPOS(01,01);DEVOUT('CEP.............:')
+                DEVPOS(02,01);DEVOUT('Estado..........:')
+                DEVPOS(03,01);DEVOUT('Codigo da Cidade:')
+                @ 0,19 GET mcid PICT '@!' VALID ver_cidade(mcid,.T.)
+                @ 1,19 GET mcep_cid PICT '@!'
+                @ 2,19 GET muf_cid PICT '@!'
+                @ 3,19 GET mcod_cid PICT '@!' VALID IF(EMPTY(mcod_cid),.F.,.T.)
+                READ
+                IF LASTKEY() = 27
+                        EXIT
+                ENDIF
+                opcao := 'S'
+                opcao := op_simnao('S','Confirma ALTERACAO:')
+                IF LASTKEY() = 27
+                        EXIT
+                ENDIF
+                IF opcao = 'S'
+                        sr_getconnection():exec("UPDATE saccid SET cod_cid = "+sr_cdbvalue(mcod_cid)+",cidade = "+sr_cdbvalue(mcid)+",cep = "+sr_cdbvalue(mcep_cid)+",uf = "+sr_cdbvalue(muf_cid)+" WHERE cod_cid = "+sr_cdbvalue(mcod_cid),,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+                ENDIF
+        ELSE
+                mcod_cid := m_pos[point,1]
+                mcid := m_pos[point,2]
+                mcep_cid := m_pos[point,3]
+                muf_cid := m_pos[point,4]
+                mensagem('Digite o Nome da Cidade - <ESC> p/Retornar')
+                DEVPOS(00,01);DEVOUT('Nome da Cidade..:')
+                DEVPOS(01,01);DEVOUT('CEP.............:')
+                DEVPOS(02,01);DEVOUT('Estado..........:')
+                DEVPOS(03,01);DEVOUT('Codigo da Cidade:')
+                @ 0,19 SAY mcid
+                @ 1,19 SAY mcep_cid
+                @ 2,19 SAY muf_cid
+                @ 3,19 SAY mcod_cid
+                opcao := 'N'
+                opcao := op_simnao('N','Confirma EXCLUSAO:')
+                IF LASTKEY() = 27
+                        EXIT
+                ENDIF
+                IF opcao = 'S'
+                        sr_getconnection():exec("DELETE FROM saccid  WHERE cod_cid = "+sr_cdbvalue(mcod_cid),,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+                ENDIF
+        ENDIF
+        EXIT
+ENDDO
+wvw_lclosewindow()
+CLEAR GETS
+RETURN NIL
+******************************* f i m *********************************************

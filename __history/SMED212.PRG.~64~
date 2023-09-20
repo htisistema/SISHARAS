@@ -1,0 +1,138 @@
+* ALTERACAO DE ANIMAIS
+**********************
+FUNCTION smed212
+****************
+LOCAL mprg:='SMED212';
+      ,opcao,mdatn,msex,mbairro;
+      ,mprof,mnatu,mend,mcid,mest,mcep,mfone;
+      ,mrecib,telahist,opcaohis,mrg;
+      ,mobs1,mobs2,mobs3,mobs4,mraca:=SPACE(35),mnum_registro
+
+PRIVATE mregistro,mnome,mvalor,mfator,mmod,mrsoc,mdata,mcconv,mprazo,mcod_prop:=0,mprop:=SPACE(35),;
+        mcod_raca:=0,mcod_prop:=0,mcod_pela:=0,mcod_espe:=0
+IF ! ver_nivel(mprg,'ALTERACAO DE ANIMAIS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+IF ! abriarq(' saccli','cli');RETURN NIL;ENDIF
+IF ! abriarq(' smedraca','raca');RETURN NIL;ENDIF
+IF ! abriarq(' smedcli','smcli');RETURN NIL;ENDIF
+
+op_tela(0,0,16,92,'ALTERACAO DE ANIMAIS')
+
+WHILE .T.
+        exibi_prg(mprg)
+        opcaohis := mprazo := mvalor := mfator := mcod_prop:=mcod_raca:=0
+        mrecib := opcao := msex := SPACE(1)
+        mmod := mest := SPACE(2)
+        mcep := SPACE(9)
+        mrg := SPACE(12)
+        mnum_registro := SPACE(18)
+        mnatu := mbairro := mcid := SPACE(25)
+        mrsoc := SPACE(30)
+        mnome := mend := mprop := mraca := SPACE(35)
+        mdata := mdatn := CTOD('  /  /  ')
+        *****************
+        SELE('smcli');ORDSETFOCUS(1)
+        *****************
+                setcor(1)
+                Mensagem('<ESC> Retornar - <ENTER>ou<A> Alterar Reg. - <'+setcim+'> Prox. Reg. - <'+setbaix+'> Reg. Ant.')
+                DEVPOS(0, 1);DEVOUT('Codigo do Cliente:')
+                DEVPOS(1, 1);DEVOUT('Codigo do ANIMAL.:')
+                DEVPOS(2, 1);DEVOUT('No. do Registro..:')
+                DEVPOS(3, 1);DEVOUT('Nome.............:')
+                DEVPOS(4, 1);DEVOUT('Codigo da Raca...:')
+                DEVPOS(5, 1);DEVOUT('Codigo da Pelagem:')
+                DEVPOS(6, 1);DEVOUT('Codigo da Especie:')
+                DEVPOS(7, 1);DEVOUT('Data Cadastro....:')
+                DEVPOS(8, 1);DEVOUT('Data Nascimento..:')
+                DEVPOS(9, 1);DEVOUT('Idade............:')
+                DEVPOS(10, 1);DEVOUT('Sexo.............:')
+                DEVPOS(11,1);DEVOUT('Observacao.......:')
+                ver_raca(VAL(smcli->cod_raca),4,27)
+                ver_pela(VAL(smcli->cod_pela),5,27)
+                ver_especie(VAL(smcli->cod_espe),6,27)
+                setcor(3)
+                DEVPOS(0,20);DEVOUT(smcli->cod_prop)
+                DEVPOS(0,27);DEVOUT(smcli->prop)
+                DEVPOS(1,20);DEVOUT(STR(smcli->registro,5))
+                DEVPOS(2,20);DEVOUT(smcli->cod_abqm)
+                DEVPOS(3,20);DEVOUT(smcli->nome)
+                DEVPOS(4,20);DEVOUT(smcli->cod_raca)
+                DEVPOS(5,20);DEVOUT(smcli->cod_pela)
+                DEVPOS(6,20);DEVOUT(smcli->cod_espe)
+                DEVPOS(7,8);DEVOUT(smcli->data)
+                DEVPOS(8,55);DEVOUT(smcli->datans)
+                DEVPOS(9,72);DEVOUT(STR(INT((DATE() - smcli->datans)/365),2))
+                DEVPOS(10,8);DEVOUT(smcli->sexo)
+                DEVPOS(11,8);DEVOUT(smcli->obs1)
+                DEVPOS(12,8);DEVOUT(smcli->obs2)
+                DEVPOS(13,8);DEVOUT(smcli->obs3)
+                DEVPOS(14,8);DEVOUT(smcli->obs4)
+                setcor(1)
+        mcod_prop := smcli->cod_prop
+        mnum_registro := smcli->cod_abqm
+        mcod_raca := VAL(smcli->cod_raca)
+        mcod_pela := VAL(smcli->cod_pela)
+        mcod_espe := VAL(smcli->cod_espe)
+        mregistro := smcli->registro
+        mnome := smcli->nome
+        mdatn := smcli->datans
+        msex := smcli->sexo
+        mobs1 := smcli->obs1
+        mobs2 := smcli->obs2
+        mobs3 := smcli->obs3
+        mobs4 := smcli->obs4
+        Mensagem('Campos Liberados  -  <ESC> Abandonar  -  <F1> Consultar')
+        SETCOR(3)
+        DEVPOS(5,8);DEVOUT(data)
+        SETCOR(1)
+        @ 0,20 GET mcod_prop PICT '99999' VALID IF(EMPTY(mcod_prop),.F.,ver_prop(mcod_prop,0,27))
+        @ 2,20 GET mnum_registro
+        @ 3,27 GET mnome PICT '@!'
+        @ 4,20 GET mcod_raca PICT '99999' VALID IF(EMPTY(mcod_raca),.F.,ver_raca(mcod_raca,4,27))
+        @ 5,20 GET mcod_pela PICT '99999' VALID IF(EMPTY(mcod_pela),.F.,ver_pela(mcod_pela,5,27))
+        @ 6,20 GET mcod_espe PICT '99999' VALID IF(EMPTY(mcod_espe),.F.,ver_especie(mcod_espe,6,27))
+        @ 8,20 GET mdatn VALID calc_nasc(mdatn,9,20)
+        @ 10,20 GET msex PICT '@!' VALID msex $ 'M,F, '
+        @ 11,20 GET mobs1
+        @ 12,20 GET mobs2
+        @ 13,20 GET mobs3
+        @ 14,20 GET mobs4
+        READ
+        mprop := cli->nome
+        mraca := raca->descricao
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        IF LASTKEY() = 27
+                UNLOCK
+                EXIT
+        ENDIF
+        opcao := op_simnao('S','Confirma Alteracao [S/n]:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                UNLOCK
+                EXIT
+        ENDIF
+        IF opcao = 'S'
+                smcli-> cod_prop  := mcod_prop
+                smcli-> cod_abqm  := mnum_registro
+                smcli-> prop      := mprop
+                smcli-> cod_pela  := STRZERO(mcod_pela,5)
+                smcli-> cod_espe  := STRZERO(mcod_espe,5)
+                smcli-> cod_raca  := STRZERO(mcod_raca,5)
+                smcli-> raca      := mraca
+                smcli-> datans    := mdatn
+                smcli-> sexo      := msex
+                smcli-> obs1      := mobs1
+                smcli-> obs2      := mobs2
+                smcli-> obs3      := mobs3
+                smcli-> obs4      := mobs4
+                DBUNLOCK()
+                DBCOMMIT()
+        ENDIF
+        EXIT
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M ******************
+

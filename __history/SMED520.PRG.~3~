@@ -1,0 +1,159 @@
+*******************************
+* LISTAGEM DE FATURAS
+*******************************
+
+FUNCTION smed520
+****************
+
+LOCAL mprg:='SMED520',lci,cci,lba,cba,opcao,mdata1,mdata2,tdata;
+      ,mcconv,mtotal,mpag,mcont,mreg
+
+PRIVATE mrsoc
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+mreg := mcont := 0
+mpag := 1
+mcconv := SPACE(2)
+mtotal := 0
+lci :=  cci :=  0
+lba :=  13
+cba :=  45
+*********************************************
+CLOSE ALL
+USE smedconv ALIAS conv SHARED NEW
+USE smedmov ALIAS contr SHARED NEW
+*********************************************
+op_tela(09,06,13,45,'LISTAGEM DE FATURAS')
+WHILE .T.
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        Mensagem('Preencha as Datas ou Tecle <ESC> p/Retornar')
+
+        opcao := SPACE(1)
+        mdata1 := mdata2 := CTOD('  /  /  ')
+        tdata := 0
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Data (Inicio do Periodo):')
+        DEVPOS(lci+2,cci+2);DEVOUT('Data (Final do Periodo ):')
+        DEVPOS(lci+3,cci+2);DEVOUT('Codigo do Convenio .....:')
+
+        SET INTEN ON
+        @ lci+1,cci+29 GET mdata1 PICT '@D'
+        READ
+
+        IF LASTKEY() = 27
+                CLOSE ALL
+                EXIT
+        ENDIF
+
+        IF EMPTY(mdata1)
+                LOOP
+        ENDIF
+
+        *********************
+        SELE('contr');ORDSETFOCUS(1)
+        GO TOP
+        **********************
+        SET SOFTSEEK ON
+
+        SEEK DTOS(mdata1)
+
+        SET SOFTSEEK OFF
+
+        IF EOF()
+               GO TOP
+        ENDIF
+
+
+        @ lci+2,cci+29 GET mdata2 PICT '@D'
+        READ
+        tdata = mdata2 - mdata1
+
+        IF tdata < 0
+                LOOP
+        ENDIF
+        Mensagem('p/Consultar Codigos de Convenios Tecle <F3>')
+
+        @ lci+3,cci+29 GET mcconv PICT '99' VALID vcconv(@mcconv)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF ! imp_arq('SMED520.REL')
+                LOOP
+        ENDIF
+        cabfatu(mpag,mdata1,mdata2)
+        mcont = 7
+        WHILE datacons <= mdata2 .AND. datacons >= mdata1 .AND. ! EOF()
+                IF mcont >= 58
+                        EJECT
+                        mpag = mpag + 1
+                        cabfatu(mpag,mdata1,mdata2)
+                        mcont = 7
+                ENDIF
+                IF mcconv = codconv .AND. situacao <> 'R'
+                        @ PROW()+1,02 SAY datacons
+                        @ PROW(),12 SAY guiano
+                        @ PROW(),30 SAY cadnome
+                        @ PROW(),64 SAY valor PICT '99,999,999.99'
+                        mreg = mreg + 1
+                        mcont = mcont + 1
+                        mtotal = mtotal + valor
+                ENDIF
+                SKIP
+                IF EOF()
+                        EXIT
+                ENDIF
+                LOOP
+        ENDDO
+        IF mcont > 54
+                cabfatu(mpag,mdata1,mdata2)
+                EJECT
+        ENDIF
+        @ PROW()+3,02 SAY 'Quantidade de Cliente Cadastrado:'
+        @ PROW(),36 SAY LTRIM(STR(mreg,5))
+        @ PROW()+1,02 SAY 'Total da Fatura .............R$:'
+        @ PROW(),36 SAY mtotal PICT '99,999,999.99'
+        @ PROW()+1,56 SAY TIME()+' Hrs.'
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('SMED520.REL')
+        CLOSE ALL
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+****************************** F I M *******************************
+**************************
+* CABECALHO LIST.FATURAS
+**************************
+FUNCTION cabfatu(fpag,fdata1,fdata2)
+***********************
+LOCAL traco:= REPLI('=',80)
+
+WHILE .T.
+        @ PROW()+1,34 SAY memp_resa
+        @ PROW(),34 SAY memp_resa
+        @ PROW()+1,31 SAY 'Fatura Referente a Consultas'
+        @ PROW()+1,02 SAY fir+ma
+        @ PROW(),31 SAY 'Periodo de'
+        @ PROW(),42 SAY fdata1
+        @ PROW(),51 SAY 'a'
+        @ PROW(),53 SAY fdata2
+        @ PROW(),72 SAY 'PAG.'
+        @ PROW(),77 SAY STRZERO(fpag,3)
+        @ PROW()+1,02 SAY 'Sistema Controle Medico'
+        @ PROW(),31 SAY 'Convenio com '+mrsoc
+        @ PROW(),72 SAY DATE()
+        @ PROW()+1,00 SAY traco
+        @ PROW()+1,04 SAY 'Data'
+        @ PROW(),16 SAY 'Guia No.'
+        @ PROW(),32 SAY 'Nome'
+        @ PROW(),70 SAY 'Valor'
+        @ PROW()+1,00 SAY traco
+        RETURN NIL
+ENDDO
+************************** F I M ********************************************
+

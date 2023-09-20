@@ -1,0 +1,172 @@
+**********************
+* INCLUSAO DE PROPRIETARIO
+**********************
+
+FUNCTION smedpro1
+****************
+
+LOCAL mprg:='SMEDPRO1';
+      ,lci,cci,lba,cba,opcao,mdatn,msex,mcor,mbairro;
+      ,mend,mcid,mest,mcep,mfone,mind,mguia,mrg,tela1,tela2;
+      ,mrecib,telahist,opcaohis,memp_cli,mprofissao;
+      ,mtela,tela211,mdatault,;
+      mfuma,mfum_dat1,mfum_dat2,mexame,mradiologia,mobs1,mobs2,mobs3,mobs4,;
+      tela311,m_hist:={},m_ponto:={},;
+      mdata_con,mlin1,mlin2,mlin3,mponto:=0
+
+PRIVATE mreg,mnome,mvalor,mfator,mmod,mrsoc,mdata,mcconv,mprazo
+
+IF ! ver_nivel(mprg,'INCLUSAO DE PROPRIETARIOS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+lci := cci := 0
+lba := 20
+cba := 79
+
+IF ! AbriArq('smedmov','contr');RETURN NIL;ENDIF
+IF ! abriarq(' saccli','cli');RETURN NIL;ENDIF
+IF ! abriarq(' smedtab','tab');RETURN NIL;ENDIF
+IF ! abriarq(' smedconv','conv');RETURN NIL;ENDIF
+IF ! abriarq(' smeddro','dro');RETURN NIL;ENDIF
+IF ! abriarq(' smedrec','rec');RETURN NIL;ENDIF
+IF ! abriarq(' smedrece','rece');RETURN NIL;ENDIF
+IF ! abriarq(' smedcomp','com');RETURN NIL;ENDIF
+op_tela(05,02,20,79,' INCLUSAO DO PROPRIETARIO ')
+WHILE .T.
+        exibi_prg(mprg)
+        limpa(00,00,30,90)
+        mexame := mradiologia := SPACE(1)
+        mreg := opcaohis := mvalor := mfator := 0
+        mrsoc := SPACE(30)
+        mrecib := opcao := SPACE(1)
+        mmod := mcconv := SPACE(2)
+        mdata := mdatault := CTOD('  /  /  ')
+        mnome := SPACE(35)
+        mdatn := CTOD('  /  /  ')
+        mbairro := mcid := SPACE(25)
+        mend := SPACE(35)
+        mest := SPACE(2)
+        mcep := SPACE(9)
+        mfone := SPACE(15)
+        mind := SPACE(30)
+        mguia := SPACE(16)
+        mrg   := SPACE(12)
+        mprofissao := memp_cli := SPACE(20)
+        mprazo := 0
+        mobs1 := mobs2 := mobs3 := mobs4 := SPACE(60)
+        *****************
+        SELE('cli');ORDSETFOCUS(1)
+        GO TOP
+        *****************
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar - <F3) p/Consultar Convenio')
+        DEVPOS(lci+1,cci+2);DEVOUT('Registro:')
+        DEVPOS(lci+1,cci+19);DEVOUT('Nome:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Data:')
+        DEVPOS(lci+2,cci+20);DEVOUT('R.G.:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Data Nasc.:')
+        DEVPOS(lci+3,cci+24);DEVOUT('Idade:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Endereco:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Bairro:')
+        DEVPOS(lci+5,cci+37);DEVOUT('Cidade:')
+        DEVPOS(lci+6,cci+2);DEVOUT('UF:')
+        DEVPOS(lci+6,cci+10);DEVOUT('CEP:')
+        DEVPOS(lci+6,cci+26);DEVOUT('Fone:')
+        DEVPOS(lci+7,cci+2);DEVOUT('Emp.onde Trabalha:')
+        DEVPOS(lci+8,cci+2);DEVOUT('Profissao:')
+        DEVPOS(lci+9,cci+2);DEVOUT('Indicado Por:')
+        DEVPOS(lci+10,cci+2);DEVOUT('OBS.:')
+        mdata := DATE()
+        SET INTEN ON
+        mdatault := mdata
+        @ lci+1,cci+25 GET mnome PICT '@!' VALID IF(EMPTY(mnome),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        IF cli->(DBSEEK(mnome))
+                tela2 := SAVESCREEN(00,00,24,79)
+                setcor(3)
+                botao(11,24,17,74)
+                @ 15,25 TO 15,73 DOUBLE
+                setcor(1)
+                SETCOLOR('w+*/n,x')
+                DEVPOS(12,26);DEVOUT('Nome ja Existente no Arquivo !!!')
+                setcor(1)
+                DEVPOS(13,26);DEVOUT('Nome:')
+                DEVPOS(14,26);DEVOUT('Data Nasc.:')
+                DEVPOS(14,48);DEVOUT('Dat.Inic.:')
+                setcor(3)
+                DEVPOS(13,32);DEVOUT(cli->razao)
+                DEVPOS(14,38);DEVOUT(cli->nascimento)
+                DEVPOS(14,59);DEVOUT(cli->data_cad)
+                setcor(1)
+                DEVPOS(16,26);DEVOUT('Cadastra Novamente [S/N]:')
+                SET INTEN ON
+                @ 16,53 GET opcao PICT '@!' VALID opcao $ 'S,N'
+                READ
+                RESTSCREEN(00,00,24,79,tela211)
+                IF LASTKEY() = 27 .OR. opcao = 'N'
+                        LOOP
+                        opcao := SPACE(1)
+                ENDIF
+                opcao := SPACE(1)
+        ENDIF
+        @ lci+2,cci+8 GET mdata PICT '  /  /  '
+        @ lci+2,cci+26 GET mrg 
+        @ lci+3,cci+14 GET mdatn VALID calc_nasc(mdatn,lci+3,cci+31)
+        @ lci+4,cci+12 GET mend PICT '@!'
+        @ lci+5,cci+10 GET mbairro PICT '@!'
+        @ lci+5,cci+45 GET mcid PICT '@!'
+        @ lci+6,cci+6 GET mest PICT '@!'
+        @ lci+6,cci+15 GET mcep PICT '99999-999'
+        @ lci+6,cci+32 GET mfone
+        @ lci+7,cci+21 GET memp_cli PICT '@!'
+        @ lci+8,cci+13 GET mprofissao PICT '@!'
+        @ lci+9,cci+16 GET mind PICT '@!'
+        @ lci+10,cci+8 GET mobs1
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        opcao := op_simnao('S','Confirma Inclusao:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                LOOP
+        ENDIF
+        IF opcao = 'S'
+                ORDSETFOCUS(1)
+                GO BOTT
+                mreg := VAL(cli->cod_cli) + 1
+                ORDSETFOCUS(1)
+                setcor(3)
+                DEVPOS(lci+1,cci+12);DEVOUT(STRZERO(mreg,5,0))
+                setcor(1)
+                IF ADIREG()
+                        cli->cod_cli    := STRZERO(mreg,5,0)
+                        cli->rg         := mrg
+                        cli->data_cad   := mdata
+                        cli->razao      := mnome
+                        cli->nascimento := mdatn
+                        cli->endereco   := mend
+                        cli->cidade     := mcid
+                        cli->bairro     := mbairro
+                        cli->uf         := mest
+                        cli->cep        := mcep
+                        cli->tel1       := mfone
+                        cli->contato    := mind
+                        cli->cargo_c    := mprofissao
+                        cli->empre_c    := memp_cli
+                        cli->obs        := mobs1 
+                        COMMIT
+                        UNLOCK
+                ELSE
+                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                        LOOP
+                ENDIF
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M ******************

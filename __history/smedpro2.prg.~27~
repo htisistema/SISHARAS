@@ -1,0 +1,126 @@
+***********************
+* ALTERACAO DE PROPRIETARIO
+**********************
+
+FUNCTION smedpro2
+****************
+LOCAL mprg:='SMEDPRO2';
+      ,lci,cci,lba,cba,opcao,mdatn,msex,mcor,mbairro;
+      ,mprof,mend,mcid,mest,mcep,mfone,mind,mguia;
+      ,mprofissao,memp_cli,mrg;
+      ,mdatault,;
+      mfuma,mfum_dat1,mfum_dat2,mobs1,mobs2,mobs3,mobs4
+
+PRIVATE mregistro,mnome,mvalor,mfator,mmod,mrsoc,mdata,mcconv,mprazo
+IF ! ver_nivel(mprg,'ALTERACAO DE PROPRIETARIO','12',nivel_acess)
+        RETURN NIL
+ENDIF
+
+lci := cci := 0
+lba := 20
+cba := 79
+op_tela(05,02,20,79,' ALTERACAO DO PROPRIETARIO ')
+WHILE .T.
+        opcaohis := mprazo := mvalor := mfator := 0
+        mrecib := opcao := msex := mcor := SPACE(1)
+        mmod := mcconv := mest := SPACE(2)
+        mcep := SPACE(9)
+        mfone := SPACE(15)
+        mguia := SPACE(16)
+        mbairro := mcid := SPACE(25)
+        mrsoc := mind := SPACE(30)
+        mnome := mend := SPACE(35)
+        mdata := mdatault := mdatn := CTOD('  /  /  ')
+        *****************
+        SELE('cli');ORDSETFOCUS(1)
+        *****************
+        setcor(1)
+        Mensagem('<ESC> Retornar - <ENTER> Confirma - <'+setcim+'> Prox. Reg. - <'+setbaix+'> Reg. Ant.')
+        DEVPOS(lci+1,cci+2);DEVOUT('Registro:')
+        DEVPOS(lci+1,cci+19);DEVOUT('Nome:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Data:')
+        DEVPOS(lci+2,cci+20);DEVOUT('R.G.:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Data Nasc.:')
+        DEVPOS(lci+3,cci+24);DEVOUT('Idade:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Endereco:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Bairro:')
+        DEVPOS(lci+5,cci+37);DEVOUT('Cidade:')
+        DEVPOS(lci+6,cci+2);DEVOUT('UF:')
+        DEVPOS(lci+6,cci+10);DEVOUT('CEP:')
+        DEVPOS(lci+6,cci+26);DEVOUT('Fone:')
+        DEVPOS(lci+7,cci+2);DEVOUT('Emp.onde Trabalha:')
+        DEVPOS(lci+8,cci+2);DEVOUT('Profissao:')
+        DEVPOS(lci+9,cci+2);DEVOUT('Indicado Por:')
+        DEVPOS(lci+10,cci+2);DEVOUT('OBS.:')
+        memp_cli := cli->empre_c
+        mprofissao := cli->cargo_c
+        mrg := cli->rg
+        mregistro := cli->cod_cli
+        mnome := cli->razao
+        mdatn := cli->nascimento
+        mend := cli->endereco
+        mbairro := cli->bairro
+        mcid := cli->cidade
+        mest := cli->uf
+        mcep := cli->cep
+        mfone := cli->tel1
+        mind := cli->contato
+        mdatault := cli->data_atu
+        mobs1 := cli->obs
+        Mensagem('Campos Liberados  -  <ESC> Abandonar  -  <F3> Consultar Convenio')
+        SETCOR(3)
+        DEVPOS(lci+2,cci+8);DEVOUT(cli->data_cad)
+        SETCOR(1)
+        @ lci+1,cci+25 GET mnome PICT '@!'
+        @ lci+2,cci+26 GET mrg PICT '@@R 9999999/XXX-XX'
+        @ lci+3,cci+14 GET mdatn VALID calc_nasc(mdatn,lci+3,cci+31)
+        @ lci+3,cci+41 GET msex PICT '@!' VALID msex $ 'M,F, '
+        @ lci+3,cci+48 GET mcor PICT '@!'
+        @ lci+4,cci+12 GET mend PICT '@!'
+        @ lci+5,cci+10 GET mbairro PICT '@!'
+        @ lci+5,cci+45 GET mcid PICT '@!'
+        @ lci+6,cci+6 GET mest PICT '@!'
+        @ lci+6,cci+15 GET mcep PICT '99999-999'
+        @ lci+6,cci+32 GET mfone
+        @ lci+7,cci+21 GET memp_cli PICT '@!'
+        @ lci+8,cci+13 GET mprofissao PICT '@!'
+        @ lci+9,cci+16 GET mind PICT '@!'
+        @ lci+10,cci+8 GET mobs1
+        @ lci+11,cci+8 GET mobs2
+        @ lci+12,cci+8 GET mobs3
+        @ lci+13,cci+8 GET mobs4
+        READ
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        IF LASTKEY() = 27
+                UNLOCK
+                EXIT
+        ENDIF
+        opcao := op_simnao('S','Confirma Alteracao:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                UNLOCK
+                EXIT
+        ENDIF
+        cli->rg         := mrg
+        cli->data_cad   := mdata
+        cli->razao      := mnome
+        cli->nascimento := mdatn
+        cli->endereco   := mend
+        cli->cidade     := mcid
+        cli->bairro     := mbairro
+        cli->uf         := mest
+        cli->cep        := mcep
+        cli->tel1       := mfone
+        cli->contato    := mind
+        cli->cargo_c    := mprofissao
+        cli->empre_c    := memp_cli
+        cli->obs        := mobs1 
+        DBUNLOCK()
+        DBCOMMIT()
+        EXIT
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M ******************
+

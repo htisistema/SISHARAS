@@ -1,0 +1,192 @@
+* INCLUSAO DE ANIMALS
+**********************
+FUNCTION smed211
+****************
+LOCAL mprg:='SMED211';
+      ,opcao,mdatn,msex,mcor,mestc,mbairro;
+      ,mprof,mnatu,mend,mcid,mest,mcep,mfone,mresp,mind,mguia,tela1,tela2;
+      ,mrecib,telahist,opcaohis,mplano,mempresa,mnum_cart,mval_cart,mrg;
+      ,mconjuge,mprof_conj,memp_conj,mfone_conj,mtela,tela211,mdatault,memp_cli,;
+      mfuma,mfum_dat1,mfum_dat2,mexame,mradiologia,mobs1,mobs2,mobs3,mobs4,;
+      tela311,m_hist:={},m_ponto:={},mnum_registro,;
+      mdata_con,mlin1,mlin2,mlin3,mponto:=0,li,ci,lb,cb,mprop:=SPACE(35),mraca:=SPACE(35)
+
+PRIVATE mreg,mnome,mvalor,mfator,mmod,mrsoc,mdata,mcod_conv,mprazo,;
+        mcod_raca:=0,mcod_cli:=0,mcod_pela:=0,mcod_espe:=0
+
+IF ! ver_nivel(mprg,'INCLUSAO DE ANIMALS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+
+li := 00
+ci := 00
+lb := 32
+cb := 90
+IF ! abriarq(' smedcli','smcli');RETURN NIL;ENDIF
+IF ! abriarq(' saccli','cli');RETURN NIL;ENDIF
+IF ! abriarq(' smedraca','raca');RETURN NIL;ENDIF
+IF ! abriarq(' smedrec','rec');RETURN NIL;ENDIF
+IF ! abriarq(' smedclin','clin');RETURN NIL;ENDIF
+IF ! abriarq(' smedrece','rece');RETURN NIL;ENDIF
+IF ! abriarq(' smedcomp','com');RETURN NIL;ENDIF
+IF ! abriarq(' smedhist','hist');RETURN NIL;ENDIF
+IF ! abriarq(' smedexam','exam');RETURN NIL;ENDIF
+IF ! abriarq(' smeddiag','diag');RETURN NIL;ENDIF
+IF ! abriarq(' smedcond','cond');RETURN NIL;ENDIF
+
+op_tela(03,02,20,90,'INCLUSAO DE ANIMALS')
+WHILE .T.
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        mexame := mradiologia := SPACE(1)
+        mreg := opcaohis := mvalor := mfator := mcod_cli := mcod_raca := mcod_pela := ;
+        mcod_espe := 0
+        mrsoc := SPACE(30)
+        mrecib := opcao := SPACE(1)
+        mmod := mcod_conv := SPACE(2)
+        mdata := mdatault := CTOD('  /  /  ')
+        mnome := SPACE(35)
+        mdatn := CTOD('  /  /  ')
+        msex := SPACE(1)
+        memp_cli := mprof := SPACE(20)
+        mbairro := mcid := mnatu := mplano := mempresa := SPACE(25)
+        mend := SPACE(35)
+        mest := SPACE(2)
+        mcep := SPACE(9)
+        mfone := SPACE(15)
+        mresp := mind := SPACE(30)
+        mguia := SPACE(16)
+        mrg := SPACE(12)
+        mprazo := 0
+        mobs1 := mobs2 := mobs3 := mobs4 := SPACE(60)
+        mnum_registro := SPACE(8)
+        *****************
+        SELE('smcli');ORDSETFOCUS(1)
+        GO TOP
+        *****************
+        limpa(00,00,30,90)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar - <F3> p/Consultar Convenio')
+        DEVPOS(0, 1);DEVOUT('Cod.Cliente......:')
+        DEVPOS(1, 1);DEVOUT('Codigo do ANIMAL.:')
+        DEVPOS(2, 1);DEVOUT('No. do Registro..:')
+        DEVPOS(3, 1);DEVOUT('Nome.............:')
+        DEVPOS(4, 1);DEVOUT('Codigo da Raca...:')
+        DEVPOS(5, 1);DEVOUT('Codigo da Pelagem:')
+        DEVPOS(6, 1);DEVOUT('Codigo da Especie:')
+        DEVPOS(7, 1);DEVOUT('Data Cadastro....:')
+        DEVPOS(8, 1);DEVOUT('Data Nascimento..:')
+        DEVPOS(9, 1);DEVOUT('Idade............:')
+        DEVPOS(10, 1);DEVOUT('Sexo.............:')
+        DEVPOS(11,1);DEVOUT('Observacao.......:')
+        mdata := DATE()
+        mdatault := CTOD('  /  /  ')
+        SET INTEN ON
+        mdatault := mdata
+        @ 0,20 GET mcod_cli PICT '99999' VALID IF(EMPTY(mcod_cli),.F.,ver_prop(mcod_cli,0,26))
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+	ver_prop(mcod_cli,0,26)
+        mprop := cli->nome
+        setcor(3)
+        DEVPOS(0,20);DEVOUT(STRZERO(mcod_cli,5))
+        setcor(1)
+        @ 2,20 GET mnum_registro PICT '@!'
+        @ 3,20 GET mnome PICT '@!' VALID IF(EMPTY(mnome),.F.,.T.)
+        @ 4,20 GET mcod_raca PICT '99999' VALID IF(EMPTY(mcod_raca),.F.,ver_raca(mcod_raca,4,27))
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+	ver_raca(mcod_raca,4,27)
+        mraca := raca->descricao
+        @ 5,21 GET mcod_pela PICT '99999' VALID IF(EMPTY(mcod_pela),.F.,ver_pela(mcod_pela,5,27))
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+	ver_pela(mcod_pela,5,27)
+        @ 6,21 GET mcod_espe PICT '99999' VALID IF(EMPTY(mcod_espe),.F.,ver_especie(mcod_espe,6,27))
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+	ver_especie(mcod_espe,6,27)
+        @ 7,20 GET mdata PICT '  /  /  '
+        @ 8,20 GET mdatn VALID calc_nasc(mdatn,9,20)
+        @ 10,20 GET msex PICT '@!' VALID msex $ 'M,F, '
+        @ 11,20 GET mobs1
+        @ 12,20 GET mobs2
+        @ 13,20 GET mobs3
+        @ 14,20 GET mobs4
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        //@ 5,35 GET mcod_conv PICT '99' VALID ver_conv(mcod_conv,5,39)
+        //@ 6,9 GET mplano PICT '@!'
+        //@ 6,45 GET mempresa PICT '@!'
+        //@ 7,12 GET mval_cart
+        //@ 7,28 GET mrg PICT '@!@R 9999999/XXX-XX'
+        //@ 9,12 GET mend PICT '@!'
+        //@ 10,10 GET mbairro PICT '@!'
+        //@ 10,45 GET mcid PICT '@!'
+        //@ 11,6 GET mest PICT '@!'
+        //@ 11,15 GET mcep PICT '99999-999'
+        //@ 11,32 GET mfone
+        //@ 12,21 GET mdatault
+        opcao := op_simnao('S','Confirma Inclusao [S/N]:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                LOOP
+        ENDIF
+        IF opcao = 'S'
+                ORDSETFOCUS(2)
+                GO BOTT
+                mreg := registro + 1
+                ORDSETFOCUS(1)
+                setcor(3)
+                DEVPOS(1,20);DEVOUT(STRZERO(mreg,5,0))
+                setcor(1)
+                IF ADIREG()
+                        smcli->cod_prop   := mcod_cli
+                        smcli->prop       := mprop
+                        smcli->registro   := mreg
+                        smcli->cod_abqm   := mnum_registro
+                        smcli->data       := mdata
+                        smcli->nome       := mnome
+                        smcli->cod_raca   := STRZERO(mcod_raca,5,0)
+                        smcli->cod_pela   := STRZERO(mcod_pela,5,0)
+                        smcli->cod_espe   := STRZERO(mcod_espe,5,0)
+                        smcli->datans     := mdatn
+                        smcli->sexo       := msex
+                        smcli->obs1       := mobs1
+                        smcli->obs2       := mobs2
+                        smcli->obs3       := mobs3
+                        smcli->obs4       := mobs4
+                        COMMIT
+                        UNLOCK
+                ELSE
+                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                        LOOP
+                ENDIF
+        ENDIF
+EXIT
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M ******************
+* FUNCAO CALCULAR IDADE
+**************************
+FUNCTION calc_nasc(idade,l,c)
+*****************************
+setcor(3)
+DEVPOS(l,c);DEVOUT(STR(INT((DATE() - idade)/365),3))
+setcor(1)
+RETURN .T.

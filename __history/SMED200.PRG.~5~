@@ -1,0 +1,152 @@
+******************
+* MENU DE INCLUSAO
+******************
+
+FUNCTION smed200
+****************
+
+LOCAL mprg:='SMED200',;
+      opcao,lci,cci,lba,cba,tela210
+
+lci := 05
+cci := 02
+lba := 19
+cba := 20
+
+tela210 := SAVESCREEN(00,00,24,79)
+
+opcao := 0
+****************************************************
+* VERIFICAR NIVEL DE ACESSO DA SENHA
+****************************************************
+* Niveis de sao: 1 e 2
+****************************************************
+IF ! nivel('1','2')
+        atencao('Acesso nao Autorizado !!!')
+        RETURN NIL
+ENDIF
+
+****************************************************
+
+WHILE .T.
+        exibi_prg(mprg)
+        apaga(23,00,23,79)
+        setcor(3)
+        botao(lci,cci,lba,cba)
+        setcor(9)
+        @ lci+1,cci+1 PROMPT ' Cliente         ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de CLIENTES, <ESC> p/Retornar **'
+        @ lci+2,cci+1 PROMPT ' Convenio        ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de CONVENIOS, <ESC> p/Retornar **'
+        @ lci+3,cci+1 PROMPT ' Especialista    ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de ESPECIALISTAS, <ESC> p/Retornar **'
+        @ lci+4,cci+1 PROMPT ' Medicamentos    ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de MEDICAMENTOS, <ESC> p/Retornar **'
+        @ lci+5,cci+1 PROMPT ' Receitas        ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de RECEITAS, <ESC> p/Retornar **'
+        @ lci+6,cci+1 PROMPT ' Operadores      ' MESSAGE '** (Inclusao, Alteracao e Exclusao) de RECEITAS, <ESC> p/Retornar **'
+        @ lci+7,cci+1 PROMPT ' Tab.Preco       ' MESSAGE '** Alteracao na Tabel de Preco, <ESC> p/Retornar **'
+        @ lci+8,cci+1 PROMPT ' Proc.  A.M.B    ' MESSAGE '** (Inclusao, Alter. e Excl.) Tab.de Procedimentos A.M.B., <ESC> p/Retornar **'
+        @ lci+9,cci+1 PROMPT ' Diag.  C.I.D    ' MESSAGE '** (Inclusao, Alter. e Excl.) Tab.de Diagnostico C.I.D., <ESC> p/Retornar **'
+        @ lci+10,cci+1 PROMPT ' Patologias      ' MESSAGE '** (Inclusao, Alter. e Excl.) de Patologias, <ESC> p/Retornar **'
+        @ lci+11,cci+1 PROMPT ' Cirurgias       ' MESSAGE '** (Inclusao, Alter. e Excl.) de Cirurgias, <ESC> p/Retornar **'
+        @ lci+12,cci+1 PROMPT ' Despesas        ' MESSAGE '** (Inclusao, Alter. e Excl.) de Despesas, <ESC> p/Retornar **'
+        @ lci+13,cci+1 PROMPT ' Contas Despesas ' MESSAGE '** (Inclusao, Alter. e Excl.) de Despesas, <ESC> p/Retornar **'
+        SET INTEN ON
+        MENU TO opcao
+
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,tela210)
+                CLOSE ALL
+                RETURN NIL
+        ENDIF
+
+        DO CASE
+                CASE LASTKEY() = 4
+                        CLEAR GETS
+                        smed300()
+                CASE opcao = 1
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        f7_animal('*')
+*                       smed210()       && MENU DE CLIENTE
+                CASE opcao = 2
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed220()       && INCLUSAO CONVENIO
+                CASE opcao = 3
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed230()       && INCLUSAO ESPECIALISTA
+                CASE opcao = 4
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed240('*')       && INCLUSAO REMEDIOS
+                CASE opcao = 5
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed250()       && INCLUSAO receitas
+                CASE opcao = 6
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        sacsenha()
+*                       senha1S()       && INCLUSAO OPERADORES
+                CASE opcao = 7
+                        IF ! nivel('1')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed270()       && ALTERACAO DA TABELA DE PRECO
+                CASE opcao = 8
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed280()       && TABELA DA procedimentos AMB.
+                CASE opcao = 9
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed290()       && TABELA DA diagnostico CID.
+                CASE opcao = 10
+                        IF ! nivel('1')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed2p()       && CADASTRO DE PATOLOGIAS
+                CASE opcao = 11
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        smed260()       && CADASTRO DE CIRURGIA
+                CASE opcao = 12
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        CLOSE ALL
+                        USE sacdesp ALIAS cdesp NEW SHARED
+                        * SET INDEX TO sacdesp1,sacdesp2
+                        USE sacforn ALIAS forn NEW SHARED
+                        * SET INDEX TO sacforn1,sacforn2,sacforn3
+                        f6_forn('*')       && CADASTRO DE DESPESAS
+                        CLOSE ALL
+                CASE opcao = 13
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                RETURN NIL
+                        ENDIF
+                        sacdesp()
+        ENDCASE
+ENDDO
+RETURN NIL
+

@@ -1,0 +1,82 @@
+**************************
+* ALTERACAO DE MEDICAMENTOS
+**************************
+
+FUNCTION smed242
+****************
+
+LOCAL lci,cci,lba,cba,opcao,mnomedr,mnomecom,mdose,mposo,mefei,mprec,tela,;
+      tela2,tela1,mdias_prox:=0
+
+PRIVATE mcod_med
+
+lci := cci := 0
+lba := 21
+cba := 87
+op_tela(13,15,22,87,'ALTERACAO DE MEDICAMENTOS')
+
+WHILE .T.
+        EXIBI_PRG('SMED242')
+        mcod_med := SPACE(5)
+        opca := SPACE(1)
+        opcao := mdias_prox := 0
+        mnomedr := SPACE(20)
+        mnomecom := SPACE(15)
+        muso := SPACE(7)
+        mdose := SPACE(24)
+        mposo := SPACE(50)
+        mefei := SPACE(50)
+        mprec := SPACE(50)
+        mensagem('Preencha o Campo ou Tecle <ESC> p/Retornar')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod. Medicamento..:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome Comercial....:')
+        DEVPOS(lci+2,cci+40);DEVOUT('Uso ...:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nome da Droga.....:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Quantd.Dose.......:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Posologia.........:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Efeitos Colaterais:')
+        DEVPOS(lci+7,cci+2);DEVOUT('Precaucoes........:')
+        DEVPOS(lci+8,cci+2);DEVOUT('Proxima Aplicacao.:       Dias')
+        mcod_med        := dro->cod_med
+        mnomecom        := dro->nomecom
+        mnomedr         := dro->nomedroga
+        mdose           := dro->dose_quant
+        mposo           := dro->posologia
+        mefei           := dro->efeito_col
+        mprec           := dro->precaucoes
+        mdias_prox      := dro->dias_prox
+        muso            := dro->uso_med
+        @ lci+1,cci+22 GET mcod_med PICT '99999'
+        @ lci+2,cci+22 GET mnomecom PICT '@!'
+        @ lci+2,cci+49 GET muso PICT '@!'
+        @ lci+3,cci+22 GET mnomedr PICT '@!'
+        @ lci+4,cci+22 GET mdose PICT '@!'
+        @ lci+5,cci+22 GET mposo PICT '@!'
+        @ lci+6,cci+22 GET mefei PICT '@!'
+        @ lci+7,cci+22 GET mprec PICT '@!'
+        @ lci+8,cci+22 GET mdias_prox PICT '9,999'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        opcao := op_simnao('S','Confirma Alteracao:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                LOOP
+        ENDIF
+        BLOQREG()
+        dro-> uso_med := muso
+        dro-> nomedroga := mnomedr
+        dro-> nomecom := mnomecom
+        dro-> dose_quant := mdose
+        dro-> posologia := mposo
+        dro-> efeito_col := mefei
+        dro-> precaucoes := mprec
+        dro-> dias_prox  := mdias_prox
+        DBCOMMIT()
+        DBUNLOCK()
+        EXIT
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+

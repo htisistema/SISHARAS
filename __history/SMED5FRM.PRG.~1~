@@ -1,0 +1,236 @@
+****************
+* MENU RECEITAS
+*****************
+
+FUNCTION smed5frm
+****************
+
+LOCAL opcao,lci,cci,lba,cba,telamenu
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+lci := 12
+cci := 10
+lba := 19
+cba := 26
+telamenu := SAVESCREEN(00,00,24,79)
+opcao := 0
+WHILE .T.
+        apaga(23,00,23,79)
+
+        SETCOLOR(vcor[2])
+        botao(lci,cci,lba,cba)
+        janela(lci,cba,' Receitas ')
+        setcor(1)
+        @ lci+1,cci+1 PROMPT ' Formulario 1 ' MESSAGE '*** Formulario COLPOSCOPIA E CITOLOGIA ONCOTICA - <ESC> p/Retornar ***'
+        @ lci+2,cci+1 PROMPT ' Formulario 2 ' MESSAGE '** DENSITOMETRIA OSSEA DE COLUNA LOMBAR E FEMUR PROXIMAL - <ESC>p/Retornar **'
+        @ lci+3,cci+1 PROMPT ' Formulario 3 ' MESSAGE '*** Formulario MAMOGRAFIA BILATERAL - <ESC> p/Retornar ***'
+        @ lci+4,cci+1 PROMPT ' Formulario 4 ' MESSAGE '*** Formulario U S G TRANSVAGINAL - <ESC> p/Retornar ***'
+        @ lci+5,cci+1 PROMPT ' Formulario 5 ' MESSAGE '*** Formulario HEMOGRAMA COMPLETO - <ESC> p/Retornar ***'
+        @ lci+6,cci+1 PROMPT ' Formulario 6 ' MESSAGE '*** CULTURA DE CONTEUDO VAGINAL COM ANTIOBIOGRAMA - <ESC> p/Retornar ***'
+
+        SET INTEN ON
+        MENU TO opcao
+
+        IF LASTKEY() = 27
+                RESTSCREEN(00,00,24,79,telamenu)
+                RETURN NIL
+        ENDIF
+
+        DO CASE
+                CASE opcao = 1
+                        smed5frm1(1)
+                CASE opcao = 2
+                        smed5frm1(2)
+                CASE opcao = 3
+                        smed5frm1(3)
+                CASE opcao = 4
+                        smed5frm1(4)
+                CASE opcao = 5
+                        smed5frm1(5)
+                CASE opcao = 6
+                        smed5frm1(6)
+        ENDCASE
+ENDDO
+RESTSCREEN(00,00,24,79,telamenu)
+RETURN NIL
+************************** F I M ********************************************
+*********************
+* IMPRIMI FORMULARIO 1
+*********************
+
+FUNCTION smed5frm1(mtipo)
+******************************
+
+LOCAL telaprin,i:=0,mquantd:=1
+
+WHILE .T.
+        mensagem('Quantidade de copias: ')
+        @ 23,COL()+1 GET mquantd PICT '99'
+        READ
+        IF LASTKEY() = 27
+                RETURN NIL
+        ENDIF
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('SMED.REL')
+                LOOP
+        ENDIF
+
+        IF mtipo = 1
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,00 SAY PADC('COLPOSCOPIA E CITOLOGIA ONCOTICA',80)
+                        @ PROW()+3,01 SAY 'HD : '
+                        @ PROW()+3,01 SAY 'CID: '
+                        @ PROW()+3,01 SAY 'OBS: '
+                        @ PROW()+8,30 SAY 'Recife,    /    /    '
+                        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+        ELSEIF mtipo = 2
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,00 SAY PADC('DENSITOMETRIA OSSEA DE COLUNA LOMBAR E FEMUR PROXIMAL',80)
+                        @ PROW()+3,01 SAY 'HD : MENOPAUSA COM OSTEOPOROSE'
+                        @ PROW()+3,01 SAY 'CID: N 95.2'
+                        @ PROW()+3,01 SAY 'OBS: '
+                        @ PROW()+8,30 SAY 'Recife,    /    /    '
+                        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+
+        ELSEIF mtipo = 3
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,00 SAY PADC('MAMOGRAFIA BILATERAL',80)
+                        @ PROW()+3,01 SAY 'HD : DISPLASIA MAMARIA'
+                        @ PROW()+3,01 SAY 'CID: N 60'
+                        @ PROW()+3,01 SAY 'OBS: '
+                        @ PROW()+8,30 SAY 'Recife,    /    /    '
+                        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+
+        ELSEIF mtipo = 4
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,01 SAY '[ ] U S G TRANSVAGINAL'
+                        @ PROW()+3,01 SAY '[ ] U S G OBSTETRICA'
+                        @ PROW()+3,01 SAY '[ ] U S G DE MAMAS'
+                        @ PROW()+3,01 SAY '[ ] ____________________________________'
+                        @ PROW()+3,01 SAY 'HD : '
+                        @ PROW()+3,01 SAY 'CID: '
+                        @ PROW()+3,01 SAY 'OBS: '
+                        @ PROW()+8,30 SAY 'Recife,    /    /    '
+                        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+
+        ELSEIF mtipo = 5
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,01 SAY '[ ] HEMOGRAMA COMPLETO              [ ] ESTRADIOL'
+                        @ PROW()+1,01 SAY '[ ] GLICEMIA DE JEJUM               [ ] PROLACTINA'
+                        @ PROW()+1,01 SAY '[ ] GRUPO SANGUINEO E FATOR RH      [ ] F S H. LH'
+                        @ PROW()+1,01 SAY '[ ] PROGESTERONA PLASMATICA         [ ] PROGESTERONA'
+                        @ PROW()+1,01 SAY '[ ] GLICEMIA POS-PRANDIAL           [ ] T3, T4, TSH'
+                        @ PROW()+1,01 SAY '[ ] V D R L                         [ ] H C G   SUBUNIDADE   BETA'
+                        @ PROW()+1,01 SAY '[ ] I M F PARA RUBEOLA                  P/DIAGNOSTICO DE GRAVIDES'
+                        @ PROW()+1,01 SAY '[ ] I M F PARA TOXOPLASMOSE'
+                        @ PROW()+1,01 SAY '[ ] ANTI HIV 1 E 2'
+                        @ PROW()+1,01 SAY '[ ] UREIA'
+                        @ PROW()+1,01 SAY '[ ] CREATININA'
+                        @ PROW()+1,01 SAY '[ ] SUMARIO DE URINA'
+                        @ PROW()+1,01 SAY '[ ] UROCULTURA COM ANTIBIOGRAMA'
+                        @ PROW()+1,01 SAY '[ ] COLESTEROL TOTAL, HDL, LDL'
+                        @ PROW()+1,01 SAY '[ ] TRIGLICERIDIOS'
+                        @ PROW()+1,01 SAY '[ ] UROCULTURA COM ANTIBIOGRAMA'
+                        @ PROW()+1,01 SAY '[ ] _________________________________________________'
+                        @ PROW()+1,01 SAY '    _________________________________________________'
+                        @ PROW()+1,01 SAY '    _________________________________________________'
+                        @ PROW()+2,01 SAY 'HD : '
+                        @ PROW()+2,01 SAY 'CID: '
+                        @ PROW()+2,01 SAY 'OBS: '
+                        @ PROW()+6,30 SAY 'Recife,'
+                        @ PROW()+4,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+        ELSEIF mtipo = 6
+                i := 0
+                FOR i = 1 TO mquantd
+                        cabec()
+                        pitalico(.F.)
+                        imprt(impressora,'N')
+                        @ PROW()+3,05 SAY 'Solicito Para: '
+                        @ PROW()+3,00 SAY PADC('CULTURA DE CONTEUDO VAGINAL COM ANTIOBIOGRAMA + PESQUISA A FRESCO',80)
+                        @ PROW()+1,00 SAY PADC('+',80)
+                        @ PROW()+1,00 SAY PADC('CULTURA COM ANTIBIOGRAMA PARA UREAPLASMA',80)
+                        @ PROW()+1,00 SAY PADC('+',80)
+                        @ PROW()+1,00 SAY PADC('IMF PARA CLAMIDIA',80)
+                        @ PROW()+3,01 SAY 'HD : LEUCORREIA'
+                        @ PROW()+3,01 SAY 'CID: N 95.2'
+                        @ PROW()+3,01 SAY 'OBS: '
+                        @ PROW()+8,30 SAY 'Recife,    /    /    '
+                        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC('CREMEPE: '+crm,80)
+                        rodape(1)
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                NEXT
+
+        ENDIF
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('SMED.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+        RETURN NIL
+
+ENDDO
+RETURN NIL
+******************************* f i m *******************************
+

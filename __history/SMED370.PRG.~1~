@@ -1,0 +1,246 @@
+*** SMED370.PRG: Consulta de CIRURGIAS
+**************************************************
+
+FUNCTION smed370()
+***************
+LOCAL mprg:='SMED370'
+LOCAL mtipo,lci,cci,lba,cba,m_dup:={},m_pos:={},point,mdata1,;
+      mdata2,mteladata,mtot_dup,mvlr_dup,mcod_cli,mcod_conv,mcod_cirur,mpag,;
+      mcont := 0,i
+
+lci := cci := 00
+lba := 29
+cba := 79
+
+*********************************************
+CLOSE ALL
+USE smedcirur ALIAS cirur SHARED NEW
+USE smedcli ALIAS cli SHARED NEW
+USE smedconv ALIAS conv SHARED NEW
+USE smedmvci ALIAS mvci SHARED NEW
+*********************************************
+**************
+SELE('mvci');ORDSETFOCUS(1)
+***************
+op_tela(01,00,29,79,' CONSULTA "Cirurgia por Cliente" ')
+WHILE .T.
+        exibi_prg(mprg)
+        limpa(00,00,30,90)
+        mdata1 := mdata2 := CTOD('  /  /  ')
+        mcod_cli := mcod_conv := mcod_cirur := mtot_dup := mvlr_dup := 0
+        mpag := 1
+        ASIZE(m_dup,0)
+        ASIZE(m_pos,0)
+        setcor(3)
+        @ lci+2,cci TO lci+2,cba
+        DEVPOS(lci+1,cci+1);DEVOUT('  Data')
+        DEVPOS(lci+1,cci+11);DEVOUT('Cliente')
+        DEVPOS(lci+1,cci+37);DEVOUT('Cirurgia')
+        DEVPOS(lci+1,cci+66);DEVOUT('Valor')
+        DEVPOS(lci+1,cci+74);DEVOUT('Conv.')
+        *** RESUMO DA CONSULTA ***
+        botao(20,00,22,79)
+        setcor(1)
+        DEVPOS(21,02);DEVOUT('Quantidade de Cirurgia:')
+        DEVPOS(21,36);DEVOUT('Total de Cirurgias..R$:')
+        mensagem('Digite o periodo que deseja consultar - <ESC> p/retornar')
+        op_tela(12,25,18,77)
+        DEVPOS(01,01);DEVOUT('Cod.Cliente.:')
+        DEVPOS(02,01);DEVOUT('Cod.Convenio:')
+        DEVPOS(03,01);DEVOUT('Cod.Cirurgia:')
+        DEVPOS(04,01);DEVOUT('Data Inicial:')
+        DEVPOS(05,01);DEVOUT('Data Final..:')
+        @ 01,15 GET mcod_cli PICT '99999' VALID ver_cli(STRZERO(mcod_cli,5),01,21)
+        @ 02,15 GET mcod_conv PICT '99' WHEN EMPTY(mcod_cli) VALID ver_conv(STRZERO(mcod_conv,2),02,21)
+        @ 03,15 GET mcod_cirur PICT '999' VALID ver_cirur(STRZERO(mcod_cirur,3),03,21)
+        @ 04,15 GET mdata1
+        @ 05,15 GET mdata2
+        READ
+        wvw_lclosewindow()
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        IF mdata1 > mdata2
+                LOOP
+        ENDIF
+        IF EMPTY(mdata1)
+                mdata1 := CTOD('11/11/11')
+        ENDIF
+        IF EMPTY(mdata2)
+                mdata2 := CTOD('31/12/99')
+        ENDIF
+        opcao := op_simnao('S','Confirma o periodo [S/n]:')
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF opcao = 'N'
+                LOOP
+        ENDIF
+        SETCOLOR('i')
+        DEVPOS(lci,cci+2);DEVOUT('Periodo: '+DTOC(mdata1)+' a '+DTOC(mdata2))
+        setcor(1)
+        mensagem('Aguarde um momento processando a consulta')
+        **************
+        SELE('mvci');ORDSETFOCUS(1)
+        ***************
+        GO TOP
+        SET SOFTSEEK ON
+        SEEK DTOS(mdata1)
+        SET SOFTSEEK OFF
+        IF EOF()
+                GO TOP
+        ENDIF
+        WHILE ! EOF()
+                IF ! EMPTY(mcod_cli)
+                        IF STRZERO(mcod_cli,5) <> mvci->cod_cli
+                                SKIP
+                                LOOP
+                        ENDIF
+                ENDIF
+                IF ! EMPTY(mcod_conv)
+                        IF STRZERO(mcod_conv,2) <> mvci->cod_conv
+                                SKIP
+                                LOOP
+                        ENDIF
+                ENDIF
+                IF ! EMPTY(mcod_cirur)
+                        IF STRZERO(mcod_cirur,3) <> mvci->cod_cirur
+                                SKIP
+                                LOOP
+                        ENDIF
+                ENDIF
+                AADD(m_pos,RECNO())
+                AADD(m_dup,DTOC(mvci->dat_cirur)+' '+mvci->cod_cli+'-'+LEFT(mvci->cliente,20);
+                +' '+mvci->cod_cirur+'-'+LEFT(mvci->cirurgia,20)+' '+TRANSFORM(mvci->vlr_cirur,'999999.99');
+                +'     '+mvci->cod_conv)
+                mvlr_dup := mvlr_dup + mvci->vlr_cirur
+                mtot_dup ++
+                setcor(3)
+                DEVPOS(21,28);DEVOUT(STRZERO(mtot_dup,6))
+                DEVPOS(21,60);DEVOUT(TRANSFORM(mvlr_dup,'999,999,999.99'))
+                setcor(1)
+                SKIP
+        ENDDO
+        IF LEN(m_dup) = 0
+                atencao('Nao existe movimento neste periodo !!!')
+                LOOP
+        ENDIF
+        WHILE .T.
+                CLEAR TYPEAHEAD
+                mensagem("<ESC> Retorna - <ENTER> p/Resumo - <F6>mprimir" )
+                point := ACHOICE(lci+3,cci+1,lba-1,cba-1,m_dup)
+
+                DO CASE
+                        CASE LASTKEY()=27
+                                opcao := op_simnao('N','Deseja imprimir as cirurgias [s/N]:')
+                                IF LASTKEY() = 27 .OR. opcao = 'N'
+                                        EXIT
+                                ENDIF
+                                mensagem('Espere o Final da Impressao OK')
+                                SET DEVI TO PRINT
+                                cabciru(mpag,mdata1,mdata2)
+                                mcont = 7
+                                i := 0
+                                FOR i = 1 TO LEN(m_dup)
+                                        IF mcont >= 58
+                                                EJECT
+                                                mpag = mpag + 1
+                                                cabciru(mpag,mdata1,mdata2)
+                                                mcont = 7
+                                        ENDIF
+                                        @ PROW()+1,01 SAY m_dup[i]
+                                        mcont = mcont + 1
+                                NEXT
+                                IF mcont > 54
+                                        cabciru(mpag,mdata1,mdata2)
+                                        EJECT
+                                ENDIF
+                                DEVPOS(PROW()+2,00);DEVOUT('**************** R E S U M O *************')
+                                DEVPOS(PROW()+1,00);DEVOUT('Quantidade de Cirurgia: '+TRANSFORM(mtot_dup,'9,999,999.99'))
+                                DEVPOS(PROW()+1,00);DEVOUT('Total de Cirurgias..R$: '+TRANSFORM(mvlr_dup,'9,999,999.99'))
+                                @ PROW()+1,00 SAY TIME()+' Hrs.'
+                                EJECT
+                                SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+                                EXIT
+                        CASE LASTKEY() = 13
+                                GO m_pos[point]
+                                tela1 := SAVESCREEN(09,04,21,70)
+                                setcor(3)
+                                botao(09,06,21,70)
+                                setcor(1)
+                                DEVPOS(10,08);DEVOUT('Data Cirurgia:')
+                                DEVPOS(10,33);DEVOUT('Hora:')
+                                DEVPOS(10,46);DEVOUT('Hrs.Internamento:')
+                                DEVPOS(11,08);DEVOUT('Cliente..........:')
+                                DEVPOS(12,08);DEVOUT('Convenio.........:')
+                                DEVPOS(13,08);DEVOUT('Cirurgia.........:')
+                                DEVPOS(14,08);DEVOUT('Diagnostico......:')
+                                DEVPOS(16,08);DEVOUT('Hospital.........:')
+                                DEVPOS(17,08);DEVOUT('Equipe Medico....:')
+                                DEVPOS(18,08);DEVOUT('Alta da Cirurgia.:')
+                                DEVPOS(19,08);DEVOUT('Valor Cirurgia R$:')
+                                DEVPOS(20,08);DEVOUT('Observacao.......:')
+                                setcor(3)
+                                DEVPOS(10,23);DEVOUT(mvci->dat_cirur)
+                                DEVPOS(10,39);DEVOUT(mvci->hora_cir)
+                                DEVPOS(10,64);DEVOUT(mvci->hora_int)
+                                DEVPOS(11,28);DEVOUT(mvci->cod_cli+'-'+cliente)
+                                DEVPOS(12,28);DEVOUT(mvci->cod_conv+'-'+convenio)
+                                DEVPOS(13,28);DEVOUT(mvci->cod_cirur+'-'+cirurgia)
+                                DEVPOS(14,28);DEVOUT(mvci->diag1)
+                                DEVPOS(15,28);DEVOUT(mvci->diag2)
+                                DEVPOS(16,28);DEVOUT(mvci->hospital)
+                                DEVPOS(17,28);DEVOUT(mvci->equipe)
+                                DEVPOS(18,28);DEVOUT(mvci->alta)
+                                DEVPOS(19,28);DEVOUT(TRANSFORM(mvci->vlr_cirur,'9,999,999.99'))
+                                DEVPOS(20,28);DEVOUT(mvci->obs_cirur)
+                                setcor(1)
+                                mensagem('Pressione qualquer tecla p/retornar')
+                                INKEY(0)
+                                RESTSCREEN(09,04,21,70,tela1)
+                                LOOP
+
+                ENDCASE
+        ENDDO
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* FIM **************************************8
+**************************
+* CABECALHO LIST.CIRURGIAS
+**************************
+
+FUNCTION cabciru(fpag,fdata1,fdata2)
+***********************
+
+LOCAL traco
+
+traco := REPLI('=',80)
+
+WHILE .T.
+
+        @ PROW()+1,34 SAY memp_resa
+        @ PROW(),34 SAY memp_resa
+        @ PROW()+1,31 SAY 'Listagem de Cirurgias'
+        @ PROW()+1,02 SAY fir+ma
+        @ PROW(),31 SAY 'Periodo de'
+        @ PROW(),42 SAY fdata1
+        @ PROW(),51 SAY 'a'
+        @ PROW(),53 SAY fdata2
+        @ PROW(),72 SAY 'PAG.'
+        @ PROW(),77 SAY STRZERO(fpag,3)
+        @ PROW()+1,02 SAY 'Sistema Controle Medico'
+        @ PROW(),72 SAY DATE()
+        @ PROW()+1,00 SAY traco
+        DEVPOS(PROW()+1,1);DEVOUT('  Data')
+        DEVPOS(PROW(),11);DEVOUT('Cliente')
+        DEVPOS(PROW(),37);DEVOUT('Cirurgia')
+        DEVPOS(PROW(),66);DEVOUT('Valor')
+        DEVPOS(PROW(),74);DEVOUT('Conv.')
+        @ PROW()+1,00 SAY traco
+        RETURN NIL
+ENDDO
+
+************************** F I M ********************************************
+

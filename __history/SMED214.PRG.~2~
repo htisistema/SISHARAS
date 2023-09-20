@@ -1,0 +1,127 @@
+**********************
+* CONSULTA DE CLIENTES
+**********************
+
+FUNCTION smed214
+****************
+LOCAL lci,cci,lba,cba,tela212
+
+PRIVATE mregistro,mnome,mvalor,mfator,mmod,mrsoc,mdata,mcconv
+
+lci := 05
+cci := 02
+lba := 21
+cba := 79
+
+****************************************************
+* VERIFICAR NIVEL DE ACESSO DA SENHA
+****************************************************
+* Niveis de acesso: 1 e 2
+****************************************************
+IF ! nivel('1','2')
+        atencao('Acesso nao Autorizado !!!')
+        RETURN NIL
+ENDIF
+****************************************************
+WHILE .T.
+        tela212 := SAVESCREEN(00,00,24,79)
+        *****************
+        SELE('cli')
+        SET ORDER TO 1
+        *****************
+        WHILE .T.
+                mcconv := codconv
+                vcconv(@mcconv)
+                Mensagem('<ESC> Retornar - <'+setcim+'> Prox. Reg. - <'+setbaix+'> Reg. Ant.')
+
+                setcor(3)
+                botao(lci,cci,lba,cba)
+                @ lci+5,cci+1 TO lci+5,cba-1
+                @ lci+13,cci+1 TO lci+13,cba-1
+                setcor(1)
+                DEVPOS(lci+1,cci+2);DEVOUT('Registro:')
+                DEVPOS(lci+1,cci+19);DEVOUT('Nome:')
+                DEVPOS(lci+2,cci+2);DEVOUT('Data:')
+                DEVPOS(lci+2,cci+18);DEVOUT('Codigo Convenio:')
+                DEVPOS(lci+3,cci+2);DEVOUT('Plano:')
+                DEVPOS(lci+3,cci+36);DEVOUT('Empresa:')
+                DEVPOS(lci+4,cci+2);DEVOUT('Validade:')
+                DEVPOS(lci+4,cci+22);DEVOUT('R.G.:')
+                DEVPOS(lci+4,cci+43);DEVOUT('Data Nasc.:')
+                DEVPOS(lci+4,cci+65);DEVOUT('Idade:')
+                DEVPOS(lci+6,cci+2);DEVOUT('Sexo:')
+                DEVPOS(lci+6,cci+11);DEVOUT('Cor:')
+                DEVPOS(lci+6,cci+19);DEVOUT('Est.Civ.:')
+                DEVPOS(lci+6,cci+39);DEVOUT('Natural:')
+                DEVPOS(lci+7,cci+2);DEVOUT('Endereco:')
+                DEVPOS(lci+8,cci+2);DEVOUT('Bairro:')
+                DEVPOS(lci+8,cci+37);DEVOUT('Cidade:')
+                DEVPOS(lci+9,cci+2);DEVOUT('UF:')
+                DEVPOS(lci+9,cci+10);DEVOUT('CEP:')
+                DEVPOS(lci+9,cci+26);DEVOUT('Fone:')
+                DEVPOS(lci+10,cci+2);DEVOUT('Emp.onde Trabalha:')
+                DEVPOS(lci+10,cci+43);DEVOUT('Profissao:')
+                DEVPOS(lci+11,cci+2);DEVOUT('Responsavel:')
+                DEVPOS(lci+12,cci+2);DEVOUT('Indicado Por:')
+                DEVPOS(lci+14,cci+2);DEVOUT('Conjuge:')
+                DEVPOS(lci+14,cci+43);DEVOUT('Empresa:')
+                DEVPOS(lci+15,cci+2);DEVOUT('Profissao:')
+                DEVPOS(lci+15,cci+35);DEVOUT('Fone:')
+                SETCOLOR(vcor[3])
+                DEVPOS(lci+1,cci+12);DEVOUT(registro)
+                DEVPOS(lci+1,cci+25);DEVOUT(nome)
+                DEVPOS(lci+2,cci+8);DEVOUT(data)
+                DEVPOS(lci+2,cci+35);DEVOUT(codconv)
+                DEVPOS(lci+2,cci+37);DEVOUT('-'+mrsoc)
+                DEVPOS(lci+3,cci+9);DEVOUT(plano)
+                DEVPOS(lci+3,cci+45);DEVOUT(empresa)
+                DEVPOS(lci+4,cci+12);DEVOUT(val_cart)
+                DEVPOS(lci+4,cci+28);DEVOUTPICT(rg,'@@R 9999999/XXX-XX')
+                DEVPOS(lci+4,cci+55);DEVOUT(datans)
+                DEVPOS(lci+4,cci+72);DEVOUT(STR(INT((DATE() - datans)/365),2))
+                DEVPOS(lci+6,cci+8);DEVOUT(sexo)
+                DEVPOS(lci+6,cci+16);DEVOUT(cor)
+                DEVPOS(lci+6,cci+48);DEVOUT(natural)
+                DEVPOS(lci+7,cci+12);DEVOUT(endereco)
+                DEVPOS(lci+8,cci+10);DEVOUT(bairro)
+                DEVPOS(lci+8,cci+45);DEVOUT(cidade)
+                DEVPOS(lci+9,cci+6);DEVOUT(est)
+                DEVPOS(lci+9,cci+15);DEVOUT(cep)
+                DEVPOS(lci+9,cci+32);DEVOUT(fone)
+                DEVPOS(lci+10,cci+21);DEVOUT(emp_cli)
+                DEVPOS(lci+10,cci+54);DEVOUT(profissao)
+                DEVPOS(lci+11,cci+15);DEVOUT(resp)
+                DEVPOS(lci+12,cci+16);DEVOUT(indica)
+                DEVPOS(lci+14,cci+11);DEVOUT(conjuge)
+                DEVPOS(lci+14,cci+54);DEVOUT(emp_conj)
+                DEVPOS(lci+15,cci+13);DEVOUT(prof_conj)
+                DEVPOS(lci+15,cci+41);DEVOUTPICT(fone_conj,'(999)999-9999')
+                SETCOLOR(vcor[1])
+                INKEY(0)
+                IF LASTKEY() = 5
+                        SKIP
+                        IF EOF()
+                                SKIP -1
+                                atencao('Fim do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 24
+                        SKIP -1
+                        IF BOF()
+                                atencao('Inicio do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 27
+                        SET CURSOR ON
+                        RESTSCREEN(00,00,24,79,tela212)
+                        RETURN NIL
+                ENDIF
+        ENDDO
+ENDDO
+RETURN NIL
+******************************* F I M ******************
+

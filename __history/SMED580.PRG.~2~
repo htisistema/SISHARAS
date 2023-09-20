@@ -1,0 +1,222 @@
+***************************
+* MENU DECL.COMPARECIMENTO
+***************************
+
+FUNCTION smed580
+****************
+LOCAL mprg:='SMED580'
+LOCAL opcao,lci,cci,lba,cba
+
+lci := cci := 0
+lba := 15
+cba := 29
+opcao := 0
+op_tela(12,01,15,29,' Declaracao Comparecimento ')
+WHILE .T.
+        apaga(00,00,30,79)
+        exibi_prg(mprg)
+        setcor(1)
+        @ lci+1,cci+1 PROMPT ' Declaracao p/Paciente     ' MESSAGE '** Declaracao de Comparecimento do Paciente, <ESC> p/Retorno **'
+        @ lci+2,cci+1 PROMPT ' Declaracao p/Acompanhante ' MESSAGE '** Declaracao de Comparecimento do Acompanhate, <ESC> p/Retorno **'
+
+        SET INTEN ON
+        MENU TO opcao
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+
+        DO CASE
+                CASE opcao = 1
+                        smed581()
+                CASE opcao = 2
+                        smed582()
+        ENDCASE
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+
+************************** F I M *********************************************
+* EMITE DECLARACAO DE COMPARECIMENTOS
+*************************************
+FUNCTION smed581
+****************
+LOCAL mprg:='SMED581'   
+LOCAL lin,lin1,lin2,lin3,lin4,mdeclara,linhas := 0,mdata,i;
+      ,mperiodo,extenso,opcao,mnome,mqtd:=0
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+PRIVATE traco
+
+lci := cci := 0
+lba := 21
+cba := 73
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(17,10,22,73,' DECLARACAO DE COMPARECIMENTO ')
+WHILE .T.
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        SET INTEN ON
+        mperiodo := SPACE(9)
+        mdata := CTOD('  /  /  ')
+        mnome := SPACE(35)
+        lin1 := '         '
+        lin2 := ' compareceu ao meu Consultorio  no  dia  '
+        lin3 := '  Durante o  '
+        lin4 := '  expediente.'
+        mqtd := i := 0
+        opcao := SPACE(1)
+        traco := REPLI('-',80)
+        apaga(23,00,23,79)
+        Mensagem('Preencha os Campos ou Tecle <ESC> p/Retornar')
+
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome.............:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Data ............:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Expediente ......:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Quantidade Copias:')
+        @ lci+1,cci+21 GET mnome PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        mdata := DATE()
+        @ lci+2,cci+21 GET mdata PICT '  /  /  '
+        @ lci+3,cci+21 GET mperiodo PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        mensagem('Quantidade Copias:')
+        mqtd := 1
+        @ lci+4,cci+21 GET mqtd PICT '9' VALID IF(EMPTY(mqtd),.F.,.T.)
+        READ
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('SMED581.REL')
+                LOOP
+        ENDIF
+        mdeclara := lin1+IF(EMPTY(mnome),mnome,RTRIM(mnome))+lin2+DTOC(mdata)+lin3+IF(EMPTY(mperiodo),mperiodo,RTRIM(mperiodo))+lin4
+        FOR i = 1 TO mqtd
+                cabec()
+                @ PROW()+4,23 SAY 'DECLARACAO  DE  COMPARECIMENTO'
+                @ PROW()+4,01 SAY ' '
+
+                linhas := MLCOUNT(mdeclara,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(mdeclara,60,linha,,10)
+                        @ PROW()+1,10 SAY PADR(RTRIM(LIN),60)
+                        @ PROW()+1,10 SAY ' '
+                NEXT
+
+                @ PROW()+6,30 SAY 'Recife,'
+                @ PROW(),37 SAY mdata
+                @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                EJECT
+        NEXT
+        SET DEVI TO  SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('SMED581.REL')
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M  *************************************************
+* EMITE DECLARACAO DE COMPARECIMENTOS DO ACOMPANHANTE
+*************************************
+FUNCTION smed582
+****************
+LOCAL mprg:='SMED582'   
+LOCAL lin,lin1,lin2,lin3,lin4,lin5,mdeclara,linhas := 0,mdata,i;
+      ,mperiodo,extenso,opcao,mnome,mqtd:=0,mnome_aco
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+PRIVATE traco
+
+lci := cci := 0
+lba := 21
+cba := 73
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(16,10,22,73,' DECLARACAO DE COMPARECIMENTO ')
+WHILE .T.
+        SET INTEN ON
+        mperiodo := SPACE(9)
+        mdata := CTOD('  /  /  ')
+        mnome := mnome_aco := SPACE(35)
+        lin1 := '         '
+        lin2 := ' compareceu ao meu Consultorio  no  dia  '
+        lin3 := '  Durante o  '
+        lin4 := '  expediente acompanhando a Sra.'
+        lin5 := '  para atendimento medico.'
+        mqtd := i := 0
+        opcao := SPACE(1)
+        traco := REPLI('-',80)
+        apaga(00,00,30,79)
+        exibi_prg(mprg)
+        Mensagem('Preencha os Campos ou Tecle <ESC> p/Retornar')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome Acopanhante.:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome Paciente....:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Data ............:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Expediente ......:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Quantidade Copias:')
+        @ lci+1,cci+21 GET mnome_aco PICT '@!'
+        @ lci+2,cci+21 GET mnome PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        mdata := DATE()
+        @ lci+3,cci+21 GET mdata PICT '  /  /  '
+        @ lci+4,cci+21 GET mperiodo PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        mensagem('Quantidade Copias:')
+        mqtd := 1
+        @ lci+5,cci+21 GET mqtd PICT '9' VALID IF(EMPTY(mqtd),.F.,.T.)
+        READ
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('SMED582.REL')
+                LOOP
+        ENDIF
+        mdeclara := lin1+IF(EMPTY(mnome_aco),mnome_aco,RTRIM(mnome_aco))+lin2+DTOC(mdata)+lin3+IF(EMPTY(mperiodo),mperiodo,RTRIM(mperiodo))+lin4+IF(EMPTY(mnome),mnome,RTRIM(mnome))+lin5
+        FOR i = 1 TO mqtd
+                cabec()
+                @ PROW()+4,23 SAY 'DECLARACAO  DE  COMPARECIMENTO'
+                @ PROW()+4,01 SAY ' '
+
+                linhas := MLCOUNT(mdeclara,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(mdeclara,60,linha,,10)
+                        @ PROW()+1,10 SAY PADR(RTRIM(LIN),60)
+                        @ PROW()+1,10 SAY ' '
+                NEXT
+
+                @ PROW()+6,30 SAY 'Recife,'
+                @ PROW(),37 SAY mdata
+                @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                EJECT
+        NEXT
+        SET DEVI TO  SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('SMED582.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M  *************************************************
+

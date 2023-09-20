@@ -1,0 +1,134 @@
+*LIBERACAO DE SEMENS
+********************
+FUNCTION smed441
+*****************
+LOCAL mprg:='SMED441',mdocumento,opcao := ' ',;
+      m_dupr:={},cons_semen:={},m_doc:={},point:=0,cons_prop:={},cons_anim:={},mnum_registro,mobs_lib,;
+      cons_repass := {}
+
+PRIVATE mcod_cli,mcod_ani
+
+IF ! ver_nivel(mprg,'LIBERACAO DE SEMENS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(0,0,40,120,'LIBERACAO DE SEMENS',,1)
+WHILE .T.
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mdocumento := SPACE(10)
+        mcod_cli := mcod_ani := 0
+        mnum_registro := SPACE(8)
+        mobs_lib := SPACE(60)
+        limpa(00,00,40,120)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(1, 1);DEVOUT('Codigo Cliente.....:')
+        DEVPOS(2, 1);DEVOUT('Codigo da Animal...:')
+        @ 3,0 TO 3,MAXCOL()
+        DEVPOS(4, 1);DEVOUT('     Cliente                                        Animal                             Data Emissao   Documento Repass')
+        @ 5,0 TO 5,MAXCOL()
+        @ 0,22 GET mdocumento
+        @ 1,22 GET mcod_cli PICT '99999' VALID ver_prop(mcod_cli,1,28) WHEN EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_prop(mcod_cli,1,28)
+        @ 2,22 GET mcod_ani PICT '99999' VALID ver_animal(mcod_ani,2,28) WHEN EMPTY(mcod_cli) .AND. EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_ani,2,28)
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        cons_semen := {}
+        IF ! EMPTY(mdocumento)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE documento = "+sr_cdbvalue(mdocumento)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_cli)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_prop = "+sr_cdbvalue(mcod_cli)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_ani)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_anim = "+sr_cdbvalue(mcod_ani)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSE
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE data_lib IS NULL",,.t.,@cons_semen)
+        ENDIF
+        IF LEN(cons_semen) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        i := 0
+        m_doc:={}
+        m_dupr := {}
+        FOR i = 1 TO LEN(cons_semen)
+                cons_prop:={}
+                cons_anim:={}
+                sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        //atencao('Nao foi encontrado este Cliente de Codigo: '+STR(cons_semen[i,3],5))
+                        LOOP
+                ENDIF
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                IF LEN(cons_anim) = 0
+                        //atencao('Nao foi encontrado este Animal de Codigo: '+STR(cons_semen[i,4],5))
+                        LOOP
+                ENDIF
+                                //  COD_PROP                    COD_ANIMAL                   DATA EMISSAO            DOCUMENTO
+                AADD(m_dupr,' '+STR(cons_semen[i,3],5)+'-'+cons_prop[1,1]+' '+STR(cons_semen[i,4],5)+'-'+cons_anim[1,1]+'  '+DTOC(cons_semen[i,1])+'   '+cons_semen[i,2]+'   '+cons_semen[i,23])
+                AADD(m_doc,{cons_semen[i,3],cons_semen[i,2]})
+        NEXT
+        IF LEN(m_dupr) = 0
+                atencao('Nenhum registro encontrado...')
+                LOOP
+        ENDIF
+        point := ACHOICE(6,1,39,119,m_dupr,,,point)
+        DO CASE
+                CASE LASTKEY()=27
+                        LOOP
+                CASE LASTKEY() = 13
+                        op_tela(0,0,27,90,'LIBERACAO DE SEMENS',,1)
+                        setcor(1)
+                        DEVPOS(0, 1);DEVOUT('Codigo Cliente.....:')
+                        DEVPOS(1, 1);DEVOUT('Data da Liberacao..:')
+                        DEVPOS(2, 1);DEVOUT('No.Registro da Egua:')
+                        DEVPOS(3, 1);DEVOUT('Observacao.........:')
+                        @ 4,0 TO 4,100
+                        DEVPOS(5, 1);DEVOUT('                   R E P A S S E S')
+                        DEVPOS(6, 1);DEVOUT('  Data    Documento   Nome'+SPACE(36)+'  CPF/CNPJ')
+                        @ 7,0 TO 7,100
+                        setcor(3)
+                        DEVPOS(0,22);DEVOUT(SUBSTR(m_dupr[point],2,45))
+                        cons_repass := {}
+                        sr_getconnection():exec("SELECT * FROM smedrepass WHERE documento = "+sr_cdbvalue(m_doc[point,2]),,.t.,@cons_repass)
+                        IF LEN(cons_repass) > 0
+                                y:=0
+                                FOR y = 1 TO LEN(cons_repass)
+                                        DEVPOS(7+y,1);DEVOUT(DTOC(cons_repass[y,1])+'  '+cons_repass[y,2]+'  '+cons_repass[y,4]+'  '+cons_repass[y,5]+'  '+cons_repass[y,12])
+                                        IF y > 20
+                                                SCROLL(7,0,26,90,1)
+                                        ENDIF
+                                NEXT
+                        ENDIF
+                        setcor(1)
+                        ver_debito(m_doc[point,1])
+                        @ 1,22 GET mdata
+                        @ 2,22 GET mnum_registro VALID IF(EMPTY(mnum_registro),.F.,.T.)
+                        @ 3,22 GET mobs_lib
+                        READ
+                        IF LASTKEY() = 27
+                                wvw_lclosewindow()
+                                EXIT
+                        ENDIF
+                        opcao := op_simnao('S','Confirma a LIBERACAO:')
+                        wvw_lclosewindow()
+                        IF opcao = "N"
+                                LOOP
+                        ENDIF
+                        sr_getconnection():exec("UPDATE smedsemen SET data_lib = "+sr_cdbvalue(mdata)+",oper_lib = "+sr_cdbvalue(cod_operado)+",obs_lib ="+sr_cdbvalue(mobs_lib)+",cod_abqm = "+sr_cdbvalue(mnum_registro)+" WHERE documento = "+sr_cdbvalue(m_doc[point,2]),,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+        ENDCASE
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

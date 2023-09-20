@@ -1,0 +1,540 @@
+*********************
+* TELA VANIA & MARLIZETE
+*********************
+
+FUNCTION smed(mmed)
+******************
+
+PRIVATE dsemana,vcor[8]
+
+PUBLIC senha_acess,nivel_acess,cod_operado,mmedico,cab_med,cor
+
+PUBLIC memp,resa,crm,cpf,fir,ma,mversao,mesp,mold
+
+******* T I P O   D E   S I S T E M A **************
+sistema := 'Controle Medico'
+mversao := 'Ver.: 6.0'
+****************************************************
+cor := SETCOLOR()
+fir := 'INS'
+ma := 'ERCOM-Informatica Ltda.'
+
+************************************************
+mold := '÷ƒ∑∫Ωƒ”∫'      // Molduras das janelas
+*************************************************
+
+CLEAR
+
+senha_acess := SPACE(8)
+nivel_acess := SPACE(1)
+cod_operado := SPACE(3)
+
+SET KEY 28 TO f1_help()
+SET KEY -1 TO f2_cli()
+SET KEY -2 TO f3_conv()
+SET KEY -3 TO f4_med()
+SET KEY -4 TO agenda()
+SET KEY -9 TO ctrl_w()
+SET KEY 276 TO alt_data()       // alt + t
+
+SET MESSAGE TO 24 CENTER
+SET WRAP ON
+SET TALK OFF
+SET SCOREBOARD OFF
+SET INTEN OFF
+SET DATE BRITI
+SET DATE FORMAT 'dd/mm/yy'
+SET DELE ON
+SET INTEN ON
+SET KEY 287 TO alt_senhaS        // ALT+S
+*SET ESCAPE OFF
+SET DEFAULT TO
+vcor[1] := 'b+/w,gr+/b+,B,,gr+/w'         && cor PRINCIPAL
+vcor[2] := 'gr+/w,x'                    && cor para MENSAGEM
+vcor[3] := 'gr+/w,x'                    && cor para os SAY
+vcor[4] := 'gr+/b+,x'                      && cor AMARELO
+vcor[5] := 'W+/B,x'                     && cor FUNDO
+vcor[6] := 'B+/W,x'                       && cor VERMELHA BRILHANTE
+vcor[7] := 'gr+/b+,x'                     && cor LOGOTIPO
+vcor[8] := 'bg+/bg+,bg+/bg+,x'          && cor p/OPCOES
+
+*vcor[1] := 'rb/w,gr+/rb,rb,,gr+/w'         && cor PRINCIPAL
+*vcor[2] := 'gr+/w,x'                    && cor para MENSAGEM
+*vcor[3] := 'gr+/w,x'                    && cor para os SAY
+*vcor[4] := 'gr+/rb,x'                      && cor AMARELO
+*vcor[5] := 'W+/rb,x'                     && cor FUNDO
+*vcor[6] := 'rb/W,x'                     && cor FUNDO DO I
+*vcor[7] := 'w+/b+,x'                    && cor LOGOTIPO
+*vcor[8] := 'N/N,N/N,rb,X'              && cor p/SENHAS
+
+SETCOLOR(vcor[1])
+apaga(00,00,24,79)
+IF mmed = NIL
+        clinica()
+ENDIF
+IF UPPER(mmed) = 'CLINICA'
+        clinica()
+ELSEIF UPPER(mmed) = 'MEDICO1'
+        vania()
+ELSEIF UPPER(mmed) = 'MEDICO2'
+        marli()
+ELSE
+        atencao('Os parametros que forao passado estao Invalidos')
+        CLEAR
+        QUIT
+ENDIF
+****************************** F I M *******************************
+******************************
+* TELA DA CLINICA
+******************************
+
+FUNCTION clinica
+****************
+
+LOCAL opcao,mopcao
+
+WHILE .T.
+        mmedico := 'CLINICA'
+        SETCOLOR(vcor[7])
+
+        @ 14,01 SAY ' ⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø  '
+        @ 15,01 SAY ' ≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€ '
+        @ 16,01 SAY ' ≥  ƒƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒƒ  ≥€ '
+        @ 17,01 SAY ' ≥    ƒƒƒƒƒ‹‹ƒƒƒƒƒ    ≥€ '
+        @ 18,01 SAY ' ≥   ƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒƒ  ≥€ '
+        @ 19,01 SAY ' ≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€ '
+        @ 20,01 SAY ' √ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥€ '
+        @ 21,01 SAY ' ≥Insercom Informatica≥€ '
+        @ 22,01 SAY ' ¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ€ '
+        @ 23,01 SAY '  ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ '
+        SETCOLOR(vcor[1])
+        CAIXA(mold,14,27,16,79,,,.T.)
+        DEVPOS(15,29);DEVOUT('"S M E D" - Sistema de Controle Medico.  '+mversao)
+        *DEVPOS(16,47);DEVOUT(mversao)
+
+        SETCOLOR(vcor[2])
+        CAIXA(mold,18,31,23,71,,,.T.)
+        SETCOLOR(vcor[1])
+        DEVPOS(18,45);DEVOUT(' M E N U ')
+        SETCOLOR(vcor[2])
+        @ 19,32 TO 19,70
+        @ 21,32 TO 21,70
+        SETCOLOR(vcor[1])
+        @ 20,32 SAY '    Medico 1    '
+        @ 20,55 SAY '    Medico 2    '
+        @ 22,42 SAY '  Fim do Sistema  '
+        SETCOLOR(vcor[6])
+        num := 80
+        FOR f=1 TO 161-num
+                @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±±‹‹±±±‹ ±±±±±±‹',80),161-f,num)
+                @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ ±±€ﬂﬂﬂﬂ  ﬂ±±€ﬂﬂ ±±€ﬂﬂﬂﬂ ±±€±±€±±€ ±±€ﬂ±±€',80),161-f,num)
+                @ 03,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±€ ±±±±±±‹   ±±€   ±±±±±‹  ±±€ ﬂﬂ±±€ ±±±±±±€',80),161-f,num)
+                @ 04,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂ±±€ ±±€  ﬂﬂﬂ±±€   ±±€   ±±€ﬂﬂﬂ  ±±€   ±±€ ±±€ ±±€',80),161-f,num)
+                @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±€ ±±€ ±±±±±±€   ±±€   ±±±±±±‹ ±±€   ±±€ ±±€ ±±€',80),161-f,num)
+                @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ    ﬂﬂ    ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂ',80),161-f,num)
+                @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹',80),f,num)
+                @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€',80),f,num)
+                @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€',80),f,num)
+                @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€',80),f,num)
+                @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€',80),f,num)
+                @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ',80),f,num)
+        NEXT f
+        @ 13,00 SAY REPLI('',80)
+        WHILE .T.
+                SETCOLOR(vcor[1])
+                opcao := 3
+                @ 20,32 PROMPT '    Medico 1    '
+                @ 20,55 PROMPT '    Medico 2    '
+                @ 22,42 PROMPT '  Fim do Sistema  '
+                SET INTEN ON
+                MENU TO opcao
+
+                IF LASTKEY() = 27
+                        LOOP
+                ENDIF
+
+                DO CASE
+                        CASE opcao = 1
+                                ***** DRA.VANIA LIGIA *************
+                                memp := 'Medico'
+                                resa := ' 1'
+                                crm := 'CRMPE: 9999'
+                                cpf := 'CPF: 999.999.999/99'
+                                mesp := 'ESPECIALIDADE'
+                                cab_med := 'VANIA'
+                                *************************************
+                                MKDIR('C:\SMED\VANIA')
+                                SET DEFAULT TO C:\SMED\VANIA
+                                CLEAR
+                                ************** TELA DE APRESENTACAO ************
+                                tela('"SMED" - Sistema de Controle Medico')
+                                ************************************************
+                                SETCOLOR(vcor[6])
+                                num := 80
+                                FOR f=1 TO 161-num
+                                        @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±‹ ±±±‹‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±±±±±‹ ',80),161-f,num)
+                                        @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€±±€±±€  ﬂ±±€ﬂﬂ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€ﬂﬂﬂﬂ ',80),161-f,num)
+                                        @ 03,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€ ﬂ±±±€   ±±€   ±±±±±€ﬂ ±±€ ±±€ ±±€     ±±±±±‹  ',80),161-f,num)
+                                        @ 04,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€   ±±€   ±±€   ±±€ﬂ±±‹ ±±€ ±±€ ±±€     ±±€ﬂﬂﬂ  ',80),161-f,num)
+                                        @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±€ ±±€   ±±€   ±±€   ±±€ ±±€ ±±±±±±€ ±±±±±±‹ ±±±±±±‹ ',80),161-f,num)
+                                        @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ    ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ ',80),161-f,num)
+                                        @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹      ±±‹',80),f,num)
+                                        @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€      ±±€',80),f,num)
+                                        @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€      ±±€',80),f,num)
+                                        @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€      ±±€',80),f,num)
+                                        @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€      ±±€',80),f,num)
+                                        @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ       ﬂﬂ',80),f,num)
+                                NEXT f
+                                SETCOLOR(vcor[7])
+                                men_giro('Insercom Informatica Ltda.',21,02,20)
+                                SETCOLOR('w/b*,w+/bg+,,,w+/bg')
+                                DEVPOS(24,33);DEVOUT('Aguarde, Gerando Arquivos..')
+                                SETCOLOR(vcor[1])
+                                dbfs()
+                        CASE opcao = 2
+                                ***** DRA.MARIZETE *************
+                                memp := 'Medico'
+                                resa := ' 1'
+                                crm := 'CRMPE: 9999'
+                                cpf := 'CPF: 999.999.999/99'
+                                mesp := 'ESPECIALIDADE'
+                                cab_med := 'MARLI'
+                                *************************************
+                                MKDIR('C:\SMED\MARLI')
+                                SET DEFAULT TO C:\SMED\MARLI
+                                CLEAR
+                                ************** TELA DE APRESENTACAO ************
+                                tela('"SMED" - Sistema de Controle Medico')
+                                ************************************************
+                                SETCOLOR(vcor[6])
+                                num := 80
+                                FOR f=1 TO 161-num
+
+                                        @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±‹ ±±±‹‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±±±±±‹ ',80),161-f,num)
+                                        @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€±±€±±€  ﬂ±±€ﬂﬂ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€ﬂﬂﬂﬂ ',80),161-f,num)
+                                        @ 03,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€ ﬂ±±±€   ±±€   ±±±±±€ﬂ ±±€ ±±€ ±±€     ±±±±±‹  ',80),161-f,num)
+                                        @ 04,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€   ±±€   ±±€   ±±€ﬂ±±‹ ±±€ ±±€ ±±€     ±±€ﬂﬂﬂ  ',80),161-f,num)
+                                        @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±€ ±±€   ±±€   ±±€   ±±€ ±±€ ±±±±±±€ ±±±±±±‹ ±±±±±±‹ ',80),161-f,num)
+                                        @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ    ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ ',80),161-f,num)
+                                        @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹       ±±‹ ±±‹',80),f,num)
+                                        @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€       ±±€ ±±€',80),f,num)
+                                        @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€ ±±€',80),f,num)
+                                        @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€ ±±€',80),f,num)
+                                        @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€       ±±€ ±±€',80),f,num)
+                                        @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ        ﬂﬂ  ﬂﬂ',80),f,num)
+                                NEXT f
+                                SETCOLOR(vcor[7])
+                                men_giro('Insercom Informatica Ltda.',21,02,20)
+                                SETCOLOR('w/b*,w+/bg+,,,w+/bg')
+                                DEVPOS(24,33);DEVOUT('Aguarde, Gerando Arquivos..')
+
+                                SETCOLOR(vcor[1])
+                                dbfs()
+                        CASE opcao = 3
+                                mopcao := 2
+                                apaga(22,32,22,70)
+                                @ 22,42 PROMPT ' Sim '
+                                @ 22,52 PROMPT ' Nao '
+                                SET INTEN ON
+                                MENU TO mopcao
+
+                                IF LASTKEY() = 27
+                                        LOOP
+                                ENDIF
+
+                                DO CASE
+                                        CASE mopcao = 1
+                                                SET CURSOR ON
+                                                SETCOLOR('W/N,X')
+                                                CLOSE ALL
+                                                CLEAR
+                                                SETCOLOR(vcor[7])
+                                                @ 01,01 SAY '⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø '
+                                                @ 02,01 SAY '≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€'
+                                                @ 03,01 SAY '≥   ƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒ   ≥€'
+                                                @ 04,01 SAY '≥    ƒƒƒƒƒ‹‹ƒƒƒƒƒ    ≥€'
+                                                @ 05,01 SAY '≥   ƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒ   ≥€'
+                                                @ 06,01 SAY '≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€'
+                                                @ 07,01 SAY '√ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥€'
+                                                @ 08,01 SAY '≥Insercom Informatica≥€'
+                                                @ 09,01 SAY '¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ€'
+                                                @ 10,01 SAY ' ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ'
+                                                SETCOLOR('W/N,X')
+                                                @ 01,31 SAY '‹‹‹ ‹‹‹ ‹ ‹‹‹‹ ‹‹‹‹ ‹‹‹‹ ‹‹‹‹ ‹‹‹‹ ‹‹‹‹‹ '
+                                                @ 02,31 SAY ' €  € € € €‹‹‹ €‹   €‹‹€ €    €  € € € € '
+                                                @ 03,31 SAY '‹€‹ € €‹€ ‹‹‹€ €‹‹‹ € €‹ €‹‹‹ €‹‹€ € € € '
+                                                @ 04,31 SAY '‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹‹'
+                                                @ 05,31 SAY '                                         '
+                                                @ 06,31 SAY 'Av.Bernardo Vieira de Melo, 4243 - Sl.24 '
+                                                @ 07,31 SAY 'Piedade - Jaboatao dos Guararapes - PE   '
+                                                @ 08,31 SAY 'CEP.54410-000                            '
+                                                @ 09,31 SAY 'TeleFax: (081) 361.4400                  '
+*                                               @ 12,02 SAY REPLI('ﬂ',LEN('Copia Exclusiva: '+memp_resa))
+*                                               @ 13,02 SAY 'Copia Exclusiva: '
+*                                               SETCOLOR(vcor[5])
+*                                               DEVPOS(13,19);DEVOUT(memp_resa)
+*                                               SETCOLOR('W/N,X')
+*                                               @ 14,02 SAY REPLI('‹',LEN('Copia Exclusiva: '+memp_resa))
+                                                CAIXA(mold,16,02,19,56,,,.T.)
+                                                DEVPOS(17,04);DEVOUT('A tentativa de COPIA deste Sistema pode acarretar')
+                                                DEVPOS(18,04);DEVOUT('Problemas irrevesiveis para seu Computador')
+                                                DEVPOS(20,00);DEVOUT('')
+                                                SETCOLOR(cor)
+                                                QUIT
+                                                RETURN NIL
+                                        CASE mopcao = 2
+                                                LOOP
+                                ENDCASE
+                ENDCASE
+        ENDDO
+ENDDO
+*************************** f i m *******************************
+******************************
+* TELA DA VANIA
+******************************
+
+FUNCTION vania
+****************
+
+LOCAL opcao
+
+WHILE .T.
+        ***** DRA.VANIA LIGIA *************
+        memp := 'Medico'
+        resa := ' 1'
+        crm := 'CRMPE: 9999'
+        cpf := 'CPF: 999.999.999/99'
+        mesp := 'ESPECIALIDADE'
+        mmedico := 'VANIA'
+        cab_med := 'VANIA'
+        *************************************
+        MKDIR('C:\SMED\VANIA')
+        SET DEFAULT TO C:\SMED\VANIA
+        CLEAR
+        ************** TELA DE APRESENTACAO ************
+        tela('"SMED" - Sistema de Controle Medico')
+        ************************************************
+        SETCOLOR(vcor[6])
+        num := 80
+        FOR f=1 TO 161-num
+
+                @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±‹ ±±±‹‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±±±±±‹ ',80),161-f,num)
+                @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€±±€±±€  ﬂ±±€ﬂﬂ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€ﬂﬂﬂﬂ ',80),161-f,num)
+                @ 03,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€ ﬂ±±±€   ±±€   ±±±±±€ﬂ ±±€ ±±€ ±±€     ±±±±±‹  ',80),161-f,num)
+                @ 04,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€   ±±€   ±±€   ±±€ﬂ±±‹ ±±€ ±±€ ±±€     ±±€ﬂﬂﬂ  ',80),161-f,num)
+                @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±€ ±±€   ±±€   ±±€   ±±€ ±±€ ±±±±±±€ ±±±±±±‹ ±±±±±±‹ ',80),161-f,num)
+                @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ    ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ ',80),161-f,num)
+                @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹       ±±‹',80),f,num)
+                @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€       ±±€',80),f,num)
+                @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€',80),f,num)
+                @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€',80),f,num)
+                @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€       ±±€',80),f,num)
+                @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ        ﬂﬂ',80),f,num)
+        NEXT f
+        SETCOLOR(vcor[7])
+        men_giro('Insercom Informatica Ltda.',21,02,20)
+        SETCOLOR('w/b*,w+/bg+,,,w+/bg')
+        DEVPOS(24,33);DEVOUT('Aguarde, Gerando Arquivos..')
+
+        SETCOLOR(vcor[1])
+        dbfs()
+ENDDO
+*************************** f i m *******************************
+******************************
+* TELA DA MARLIZETE
+******************************
+
+FUNCTION marli
+****************
+
+LOCAL opcao
+
+WHILE .T.
+        ***** DRA.MARIZETE *************
+        memp := 'Medico'
+        resa := ' 2'
+        crm := 'CRMPE: 9999'
+        cpf := 'CPF: 999.999.999/99'
+        mesp := 'ESPECIALIDADE'
+        mmedico := 'MARLI'
+        cab_med := 'MARLI'
+        *************************************
+        MKDIR('C:\SMED\MARLI')
+        SET DEFAULT TO C:\SMED\MARLI
+        CLEAR
+        ************** TELA DE APRESENTACAO ************
+        tela('"SMED" - Sistema de Controle Medico')
+        ************************************************
+        SETCOLOR(vcor[6])
+        num := 80
+        FOR f=1 TO 161-num
+
+                @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±‹ ±±±‹‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±±±±±‹ ',80),161-f,num)
+                @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€±±€±±€  ﬂ±±€ﬂﬂ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€ﬂﬂﬂﬂ ',80),161-f,num)
+                @ 03,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€ ﬂ±±±€   ±±€   ±±±±±€ﬂ ±±€ ±±€ ±±€     ±±±±±‹  ',80),161-f,num)
+                @ 04,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€   ±±€   ±±€   ±±€ﬂ±±‹ ±±€ ±±€ ±±€     ±±€ﬂﬂﬂ  ',80),161-f,num)
+                @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±€ ±±€   ±±€   ±±€   ±±€ ±±€ ±±±±±±€ ±±±±±±‹ ±±±±±±‹ ',80),161-f,num)
+                @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ    ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ ',80),161-f,num)
+                @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹       ±±‹ ±±‹',80),f,num)
+                @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€       ±±€ ±±€',80),f,num)
+                @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€ ±±€',80),f,num)
+                @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€ ±±€',80),f,num)
+                @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€       ±±€ ±±€',80),f,num)
+                @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ        ﬂﬂ  ﬂﬂ',80),f,num)
+        NEXT f
+        SETCOLOR(vcor[7])
+        men_giro('Insercom Informatica Ltda.',21,02,20)
+        SETCOLOR('w/b*,w+/bg+,,,w+/bg')
+        DEVPOS(24,33);DEVOUT('Aguarde, Gerando Arquivos..')
+
+        SETCOLOR(vcor[1])
+        dbfs()
+ENDDO
+***********************************************************************
+********************************
+* CABECALHO DE RECIBOS/RECEITAS
+********************************
+
+FUNCTION cabec
+**************
+
+IF cab_med = 'VANIA'
+        @ PROW()+3,00 SAY CHR(14)+CHR(15)
+        @ PROW(),01 SAY memp_resa
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY traco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),00 SAY mesp
+        @ PROW()+1,00 SAY CHR(14)+CHR(15)
+        @ PROW(),00 SAY crm
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY traco
+        RETURN NIL
+ENDIF
+IF cab_med = 'MARLI'
+        @ PROW()+3,00 SAY CHR(14) + CHR(15)
+        @ PROW(),00 SAY memp_resa
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY traco
+        @ PROW()+1,00 SAY CHR(14)
+        @ PROW(),00 SAY mesp
+        @ PROW()+1,00 SAY CHR(14) + CHR(15)
+        @ PROW(),00 SAY crm
+        @ PROW()+1,00 SAY CHR(18)
+        @ PROW(),00 SAY traco
+        RETURN NIL
+ENDIF
+************************** F I M ***********************************
+*****************************************
+* FUNCAO PARA O RODAPE
+*****************************************
+
+FUNCTION rodape
+***************
+
+IF cab_med = 'VANIA'
+        DEVPOS(57,57);DEVOUT(TIME()+' Hrs.')
+        DEVPOS(58,00);DEVOUT(traco)
+        DEVPOS(59,02);DEVOUT('Rua Ana Camelo da Silva, 163 - Boa Viagem - Fone: (081) 325.0040/465.8558')
+        DEVPOS(60,02);DEVOUT('CEP.: 51020 - Recife - Pernambuco.')
+        RETURN NIL
+ENDIF
+IF cab_med = 'MARLI'
+        DEVPOS(55,57);DEVOUT(TIME()+' Hrs.')
+        DEVPOS(56,00);DEVOUT(traco)
+        DEVPOS(57,02);DEVOUT('Consultorio')
+        DEVPOS(58,02);DEVOUT('Rua Ana Camelo da Silva, 163 ')
+        DEVPOS(59,02);DEVOUT('Boa Viagem - Recife - PE.')
+        DEVPOS(59,49);DEVOUT('Residencia:')
+        DEVPOS(60,02);DEVOUT('Fone: (081) 325.0040/465.8558')
+        DEVPOS(60,49);DEVOUT('Fone: (081) 325.1592')
+        RETURN NIL
+ENDIF
+****************************** f i m **********************************************
+***************************
+* TELA DE APRESENTACAO
+***************************
+
+FUNCTION apresenta
+******************
+
+LOCAL tela
+
+tela := SAVESCREEN(00,00,24,79)
+
+IF mmedico = 'VANIA'
+        CLEAR GETS
+        CLEAR
+        ************** TELA DE APRESENTACAO ************
+        tela('"SMED" - Sistema de Controle Medico')
+        ************************************************
+        SETCOLOR(vcor[6])
+        num := 80
+        FOR f=1 TO 161-num
+
+                @ 01,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±‹ ±±±‹‹ ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±±±±±‹ ',80),161-f,num)
+                @ 02,00 say SUBSTR(SPACE(num) + PADC('±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€±±€±±€  ﬂ±±€ﬂﬂ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€ﬂﬂﬂﬂ ',80),161-f,num)
+                @ 03,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€ ﬂ±±±€   ±±€   ±±±±±€ﬂ ±±€ ±±€ ±±€     ±±±±±‹  ',80),161-f,num)
+                @ 04,00 say SUBSTR(SPACE(num) + PADC('±±€     ±±€ ±±€ ±±€   ±±€   ±±€   ±±€ﬂ±±‹ ±±€ ±±€ ±±€     ±±€ﬂﬂﬂ  ',80),161-f,num)
+                @ 05,00 say SUBSTR(SPACE(num) + PADC('±±±±±±‹ ±±±±±±€ ±±€   ±±€   ±±€   ±±€ ±±€ ±±±±±±€ ±±±±±±‹ ±±±±±±‹ ',80),161-f,num)
+                @ 06,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ    ﬂﬂ    ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ ',80),161-f,num)
+                @ 07,00 say SUBSTR(SPACE(num) + PADC('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±‹  ±±‹ ±±±±±±‹ ±±±±±±‹       ±±‹',80),f,num)
+                @ 08,00 say SUBSTR(SPACE(num) + PADC('±±€±±€±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€ ±±€ ±±€ﬂﬂﬂﬂ ±±€ﬂ±±€       ±±€',80),f,num)
+                @ 09,00 say SUBSTR(SPACE(num) + PADC('±±€ ﬂﬂ±±€ ±±±±±‹  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€',80),f,num)
+                @ 10,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±€ﬂﬂﬂ  ±±€ ±±€ ±±€ ±±€     ±±€ ±±€       ±±€',80),f,num)
+                @ 11,00 say SUBSTR(SPACE(num) + PADC('±±€   ±±€ ±±±±±±‹ ±±±±±€ﬂ ±±€ ±±±±±±‹ ±±±±±±€       ±±€',80),f,num)
+                @ 12,00 say SUBSTR(SPACE(num) + PADC(' ﬂﬂ    ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ        ﬂﬂ',80),f,num)
+        NEXT f
+        SETCOLOR(vcor[7])
+        men_giro('Insercom Informatica Ltda.',21,02,20)
+        SETCOLOR(vcor[1])
+        CAIXA(mold,00,00,24,79,,tela,.T.)
+        RETURN NIL
+ENDIF
+IF mmedico = 'MARLI'
+        CLEAR
+        DEVPOS(01,03);DEVOUT('                  ±±±±±‹  ±±±±±±‹ ±±±±±±‹                             ')
+        DEVPOS(02,03);DEVOUT('                  ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€ﬂ±±€                             ')
+        DEVPOS(03,03);DEVOUT('                  ±±€ ±±€ ±±±±±€ﬂ ±±±±±±€                             ')
+        DEVPOS(04,03);DEVOUT('                  ±±€ ±±€ ±±€ﬂ±±‹ ±±€ ±±€                             ')
+        DEVPOS(05,03);DEVOUT('                  ±±±±±€ﬂ ±±€ ±±€ ±±€ ±±€  ±±‹                        ')
+        DEVPOS(06,03);DEVOUT('                   ﬂﬂﬂﬂﬂ   ﬂﬂ  ﬂﬂ  ﬂﬂ  ﬂﬂ   ﬂﬂ                        ')
+        DEVPOS(07,03);DEVOUT('±±±‹‹±±±‹ ±±±±±±‹ ±±±±±±‹ ±±‹     ±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ±±±±±±‹ ')
+        DEVPOS(08,03);DEVOUT('±±€±±€±±€ ±±€ﬂ±±€ ±±€ﬂ±±€ ±±€     ±±€  ﬂﬂ±±€ﬂ ±±€ﬂﬂﬂﬂ  ﬂ±±€ﬂﬂ ±±€ﬂﬂﬂﬂ ')
+        DEVPOS(09,03);DEVOUT('±±€ ﬂﬂ±±€ ±±±±±±€ ±±±±±€ﬂ ±±€     ±±€   ±±€   ±±±±±‹    ±±€   ±±±±±‹  ')
+        DEVPOS(10,03);DEVOUT('±±€   ±±€ ±±€ ±±€ ±±€ﬂ±±‹ ±±€     ±±€  ±±€    ±±€ﬂﬂﬂ    ±±€   ±±€ﬂﬂﬂ  ')
+        DEVPOS(11,03);DEVOUT('±±€   ±±€ ±±€ ±±€ ±±€ ±±€ ±±±±±±‹ ±±€ ±±±±±±‹ ±±±±±±‹   ±±€   ±±±±±±‹ ')
+        DEVPOS(12,03);DEVOUT(' ﬂﬂ    ﬂﬂ  ﬂﬂ  ﬂﬂ  ﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂ  ﬂﬂﬂﬂﬂﬂ  ﬂﬂﬂﬂﬂﬂ    ﬂﬂ    ﬂﬂﬂﬂﬂﬂ ')
+
+        @ 13,01 SAY REPLI('',78)
+        SETCOLOR(vcor[7])
+
+        @ 14,03 SAY ' ⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø  '
+        @ 15,03 SAY ' ≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€ '
+        @ 16,03 SAY ' ≥  ƒƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒƒ  ≥€ '
+        @ 17,03 SAY ' ≥    ƒƒƒƒƒ‹‹ƒƒƒƒƒ    ≥€ '
+        @ 18,03 SAY ' ≥   ƒƒƒƒƒƒ‹‹ƒƒƒƒƒƒƒ  ≥€ '
+        @ 19,03 SAY ' ≥ ƒƒƒƒ‹‹‹‹‹‹‹‹‹‹ƒƒƒƒ ≥€ '
+        @ 20,03 SAY ' √ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒ¥€ '
+        @ 21,03 SAY ' ≥Insercom Informatica≥€ '
+        @ 22,03 SAY ' ¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ€ '
+        @ 23,03 SAY '  ﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂﬂ '
+        SETCOLOR(vcor[2])
+        CAIXA(mold,14,31,22,73,,,.T.)
+        SETCOLOR(vcor[1])
+        DEVPOS(15,33);DEVOUT('"S M E D" - Sistema de Controle Medico')
+        DEVPOS(16,47);DEVOUT('Versao: '+mversao)
+        SETCOLOR(vcor[2])
+        @ 17,32 TO 17,72
+        @ 18,33 SAY 'Av.Bernardo Vieira de Melo, 4243 - s/24'
+        @ 19,33 SAY 'Candeias - Jaboatao dos Guararapes - PE'
+        @ 20,33 SAY 'TeleFax.: (081) 361.4400               '
+        DEVPOS(21,33);DEVOUT('Desenvolvido por:')
+        DEVPOS(21,COL()+1);DEVOUT('Jose Helio Beltrao Jr.')
+        DEVPOS(23,33);DEVOUT('Pressione qualquer tecla p/Retornnar')
+        SETCOLOR(vcor[1])
+        INKEY(0)
+        CAIXA(mold,00,00,24,79,,tela,.T.)
+        RETURN NIL
+ENDIF
+

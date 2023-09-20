@@ -1,0 +1,371 @@
+*************************************
+* RECEITAS POR CODIGO DE MEDICAMENTOS
+*************************************
+
+FUNCTION smed541(mnome,mdata,mqtd_rece)
+****************
+LOCAL mprg:='SMED541'
+LOCAL opcao,tela,mrece,msele,y:=0
+
+PRIVATE mcod1,mcod2,mcod3,mcod4,mcod5,mcod6,muso1,muso2,muso3,muso4,muso5,muso6,;
+        mdose1,mdose2,mdose3,mdose4,mdose5,mdose6,mposo1,mposo2,mposo3,mposo4,mposo5,;
+        mposo6,mnome1,mnome2,mnome3,mnome4,mnome5,mnome6,lci,cci,lba,cba,traco,;
+        mquantd
+
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+
+traco := REPLI('-',80)
+
+lci := cci := 0
+lba := 22
+cba := 77
+muso1 := muso2 := muso3 := muso4 := muso5 := muso6 := SPACE(7)
+mcod1 := mcod2 := mcod3 := mcod4 := mcod5 := mcod6 := SPACE(5)
+mnome1 := mnome2 := mnome3 := mnome4 := mnome5 := mnome6 := SPACE(15)
+mdose1 := mdose2 := mdose3 := mdose4 := mdose5 := mdose6 := SPACE(24)
+mposo1 := mposo2 := mposo3 := mposo4 := mposo5 := mposo6 := SPACE(50)
+IF mnome = NIL
+        mnome := SPACE(35)
+        mdata := DATE()
+        mqtd_rece := 1
+ENDIF
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+op_tela(03,02,22,77,'RECEITAS POR CODIGO DE MEDICAMENTOS')
+FOR Y = 1 TO mqtd_rece
+        limpa(00,00,30,90)
+        exibi_prg(mprg)                
+        mquantd := 1
+        opcao := SPACE(1)
+        Mensagem('Preencha os Codigo - <ESC> p/Abandonar')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome Cliente:')
+        DEVPOS(lci+1,cci+53);DEVOUT('Data:')
+        @ lci+2,cci+1 TO lci+2,cba-1
+        DEVPOS(lci+3,cci+2);DEVOUT('Codigo')
+        DEVPOS(lci+3,cci+11);DEVOUT('Uso')
+        DEVPOS(lci+3,cci+20);DEVOUT('Nome Med.')
+        DEVPOS(lci+3,cci+40);DEVOUT('Dosagem:')
+        DEVPOS(lci+4,cci+10);DEVOUT('Posologia:')
+        DEVPOS(lci+19,cci+2);DEVOUT('Cod.da Receita:')
+        DEVPOS(lci+20,cci+2);DEVOUT('Quantid.Copias:')
+        @ lci+5,cci+1 TO lci+5,cba-1
+        @ lci+1,cci+16 GET mnome PICT '@!'
+        @ lci+1,cci+59 GET mdata PICT '99/99/99'
+
+        @ lci+7,cci+2 GET mcod1 PICT '99999' VALID med(mcod1,1)
+        @ lci+9,cci+2 GET mcod2 PICT '99999' VALID med(mcod2,2) WHEN mcod1 <> ' '
+        @ lci+11,cci+2 GET mcod3 PICT '99999' VALID med(mcod3,3) WHEN mcod2 <> ' '
+        @ lci+13,cci+2 GET mcod4 PICT '99999' VALID med(mcod4,4) WHEN mcod3 <> ' '
+        @ lci+15,cci+2 GET mcod5 PICT '99999' VALID med(mcod5,5) WHEN mcod4 <> ' '
+        @ lci+17,cci+2 GET mcod6 PICT '99999' VALID med(mcod6,6) WHEN mcod5 <> ' '
+        @ 20,cci+18 GET mquantd PICT '999' VALID IF(EMPTY(mquantd),.F.,.T.)
+        READ
+
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        mensagem('Espere o Final da Impressao OK')
+        IF ! imp_arq('SMED.REL')
+                LOOP
+        ENDIF
+        prinrece(mnome,mdata)
+	IF mimp_tipo = 2
+                lertexto('SMED.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+        msele := SELE()
+        *************
+        SELE('rece')
+        *************
+        GO BOTT
+        mrece := STRZERO(VAL(cod_rece)+1,5)
+        opcao := 'S'
+        mensagem('Codigo da RECEITA:')
+        setcor(3)
+        DEVPOS(19,cci+18);DEVOUT(mrece)
+        setcor(1)
+        opcao := op_simnao('S','Deseja Grava a Receita[S/n]:')
+        IF opcao = 'S'
+                IF ADIREG()
+                        REPLA cod_rece WITH mrece
+                        REPLA codigo1 WITH mcod1
+                        REPLA codigo2 WITH mcod2
+                        REPLA codigo3 WITH mcod3
+                        REPLA codigo4 WITH mcod4
+                        REPLA codigo5 WITH mcod5
+                        REPLA codigo6 WITH mcod6
+                        SELE(msele)
+                        COMMIT
+                        UNLOCK
+                        LOOP
+                ELSE
+                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                        LOOP
+                ENDIF
+        ELSE
+                SELE(msele)
+                LOOP
+        ENDIF
+NEXT
+wvw_lclosewindow()
+RETURN NIL
+********************** f i m ***********************************
+**************************
+* VERIFICA O MEDICAMENTO
+**************************
+
+FUNCTION med(rcod,posicao)
+*******************
+
+LOCAL msele
+
+WHILE .T.
+        msele := SELE()
+
+        IF rcod = SPACE(5)
+                SELE(msele)
+                RETURN .T.
+        ENDIF
+        ****************
+        SELE('dro')
+        SET ORDER TO 2
+        GO TOP
+        ****************
+        SEEK rcod
+        IF ! FOUND()
+                Atencao('Codigo nao Cadastrado !!!')
+                SELE(msele)
+                RETURN .F.
+        ENDIF
+
+        IF posicao = 1
+                muso1 := uso_med
+                mcod1 := cod_med
+                mnome1 := nomecom
+                mdose1 := dose_quant
+                mposo1 := posologia
+                setcor(3)
+                DEVPOS(lci+7,cci+9);DEVOUT(muso1)
+                DEVPOS(lci+7,cci+18);DEVOUT(mnome1)
+                DEVPOS(lci+7,cci+40);DEVOUT(mdose1)
+                DEVPOS(lci+8,cci+10);DEVOUT(mposo1)
+                setcor(1)
+        ENDIF
+        IF posicao = 2
+                muso2 := uso_med
+                mcod2 := cod_med
+                mnome2 := nomecom
+                mdose2 := dose_quant
+                mposo2 := posologia
+                setcor(3)
+                DEVPOS(lci+9,cci+9);DEVOUT(muso2)
+                DEVPOS(lci+9,cci+18);DEVOUT(mnome2)
+                DEVPOS(lci+9,cci+40);DEVOUT(mdose2)
+                DEVPOS(lci+10,cci+10);DEVOUT(mposo2)
+                setcor(1)
+        ENDIF
+        IF posicao = 3
+                muso3 := uso_med
+                mcod3 := cod_med
+                mnome3 := nomecom
+                mdose3 := dose_quant
+                mposo3 := posologia
+                setcor(1)
+                DEVPOS(lci+11,cci+9);DEVOUT(muso3)
+                DEVPOS(lci+11,cci+18);DEVOUT(mnome3)
+                DEVPOS(lci+11,cci+40);DEVOUT(mdose3)
+                DEVPOS(lci+12,cci+10);DEVOUT(mposo3)
+                setcor(1)
+        ENDIF
+        IF posicao = 4
+                muso4 := uso_med
+                mcod4 := cod_med
+                mnome4 := nomecom
+                mdose4 := dose_quant
+                mposo4 := posologia
+                setcor(3)
+                DEVPOS(lci+13,cci+9);DEVOUT(muso4)
+                DEVPOS(lci+13,cci+18);DEVOUT(mnome4)
+                DEVPOS(lci+13,cci+40);DEVOUT(mdose4)
+                DEVPOS(lci+14,cci+10);DEVOUT(mposo4)
+                setcor(1)
+        ENDIF
+        IF posicao = 5
+                muso5 := uso_med
+                mcod5 := cod_med
+                mnome5 := nomecom
+                mdose5 := dose_quant
+                mposo5 := posologia
+                setcor(3)
+                DEVPOS(lci+15,cci+9);DEVOUT(muso5)
+                DEVPOS(lci+15,cci+18);DEVOUT(mnome5)
+                DEVPOS(lci+15,cci+40);DEVOUT(mdose5)
+                DEVPOS(lci+16,cci+10);DEVOUT(mposo5)
+                setcor(1)
+        ENDIF
+        IF posicao = 6
+                muso6 := uso_med
+                mcod6 := cod_med
+                mnome6 := nomecom
+                mdose6 := dose_quant
+                mposo6 := posologia
+                setcor(3)
+                DEVPOS(lci+17,cci+9);DEVOUT(muso6)
+                DEVPOS(lci+17,cci+18);DEVOUT(mnome6)
+                DEVPOS(lci+17,cci+40);DEVOUT(mdose6)
+                DEVPOS(lci+18,cci+10);DEVOUT(mposo6)
+                setcor(1)
+                setcor(1)
+        ENDIF
+        SELE(msele)
+        RETURN .T.
+ENDDO
+*********************************** F I M ******************
+*********************
+* IMPRIMI A RECEITA
+*********************
+
+FUNCTION prinrece(rnome,rdata)
+******************************
+
+LOCAL telaprin,i,y:=0
+
+WHILE .T.
+        IF cab_med = 'ENOQUE'
+                FOR i = 1 TO mquantd
+                        pitalico(.T.)
+                        cabec()
+                        imprt(impressora,'E',4)
+                        @ PROW(),14 SAY 'R E C E I T A'
+                        imprt(impressora,'N')
+                        @ PROW()+2,01 SAY ' '
+                        @ PROW()+1,02 SAY 'Para o Sr.(a).:'
+                        @ PROW(),18 SAY rnome
+                        @ PROW(),18 SAY rnome
+
+                        IF mnome1 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso1)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome1)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose1)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo1)
+                        ENDIF
+                        IF mnome2 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso2)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome2)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose2)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo2)
+                        ENDIF
+
+                        IF mnome3 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso3)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome3)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose3)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo3)
+                        ENDIF
+
+                        IF mnome4 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso4)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome4)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose4)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo4)
+                        ENDIF
+
+                        IF mnome5 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso5)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome5)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose5)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo5)
+                        ENDIF
+
+                        IF mnome6 <> SPACE(15)
+                                DEVPOS(PROW()+2,05);DEVOUT('Uso '+muso6)
+                                DEVPOS(PROW()+1,05);DEVOUT(mnome6)
+                                DEVPOS(PROW(),PCOL()+10);DEVOUT(mdose6)
+                                DEVPOS(PROW()+1,05);DEVOUT(mposo6)
+                        ENDIF
+                        @ PROW()+3,20 SAY 'Recife,'
+                        @ PROW(),27 SAY rdata
+                        @ PROW()+4,00 SAY PADC(REPLI('-',LEN(memp_resa)),50)
+                        @ PROW()+1,00 SAY PADC(memp_resa,50)
+                        @ PROW()+1,00 SAY PADC(crm,50)
+                        rodape()
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                        pitalico(.F.)
+                NEXT
+        ELSE
+                FOR i = 1 TO mquantd
+                        pitalico(.T.)
+                        cabec()
+                        imprt(impressora,'E',4)
+                        @ PROW(),14 SAY 'R E C E I T A'
+                        imprt(impressora,'N')
+                        @ PROW()+3,01 SAY ' '
+                        @ PROW()+1,05 SAY 'Para o Sr.(a).'
+                        @ PROW()+2,05 SAY rnome
+                        @ PROW(),05 SAY rnome
+
+                        IF mnome1 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso1)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome1)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose1)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo1)
+                        ENDIF
+                        IF mnome2 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso2)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome2)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose2)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo2)
+                        ENDIF
+
+                        IF mnome3 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso3)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome3)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose3)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo3)
+                        ENDIF
+
+                        IF mnome4 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso4)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome4)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose4)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo4)
+                        ENDIF
+
+                        IF mnome5 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso5)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome5)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose5)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo5)
+                        ENDIF
+
+                        IF mnome6 <> SPACE(15)
+                                DEVPOS(PROW()+2,10);DEVOUT('Uso '+muso6)
+                                DEVPOS(PROW()+1,10);DEVOUT(mnome6)
+                                DEVPOS(PROW(),PCOL()+20);DEVOUT(mdose6)
+                                DEVPOS(PROW()+1,10);DEVOUT(mposo6)
+                        ENDIF
+                        @ PROW()+3,30 SAY 'Recife,'
+                        @ PROW(),37 SAY rdata
+                        @ PROW()+4,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                        @ PROW(),00 SAY PADC(memp_resa,80)
+                        @ PROW()+1,00 SAY PADC(crm,80)
+                        rodape()
+                        @ PROW()+1,90 SAY ' '
+                        EJECT
+                        pitalico(.F.)
+                NEXT
+        ENDIF
+        SET DEVI TO  SCREEN;SET PRINT TO;SET PRINT OFF
+        RETURN NIL
+ENDDO
+RETURN NIL
+******************************* f i m *******************************
+

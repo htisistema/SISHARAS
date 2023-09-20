@@ -1,0 +1,919 @@
+**********************
+* CONSULTA DE CLIENTES
+**********************
+
+FUNCTION smed311
+****************
+LOCAL mprg:='SMED311',;
+      tecla,mdatn,mresp,mind,mguia,mexame,mradiologia,;
+      telahist,opcaohis,mtela,tela311,opcao,histmemo,m_hist:={},m_ponto:={},;
+      mdata_con,lci,cci,lba,cba,mlin1,mlin2,mlin3,mlin4,mlin5,mlin6,mponto:=0,i,linhas,;
+      mult_mest1,mpro_nasc1,mdat_nasc1,;
+      mult_mest2,mpro_nasc2,mdat_nasc2,;
+      mult_mest3,mpro_nasc3,mdat_nasc3,;
+      mult_mest4,mpro_nasc4,mdat_nasc4,;
+      mult_mest5,mpro_nasc5,mdat_nasc5
+
+PRIVATE mreg,mnome,mcconv
+
+IF ! ver_nivel(mprg,'** CONSULTA ** DE CLIENTES PELO MEDICO','1',nivel_acess)
+        RETURN NIL
+ENDIF
+lci := cci := 00
+lba := 32
+cba := 79
+
+IF mconsulta = 'C'
+        op_tela(00,00,32,79,' Consulta ')
+ELSE
+        op_tela(00,00,32,79,' Retorno de Consulta ')
+ENDIF
+
+WHILE .T.
+        exibi_prg(mprg)
+        ASIZE(m_ponto,0)
+        ASIZE(m_hist,0)
+        mlin1 := mlin2 := mlin3 := mlin4 := mlin5 := mlin6 := SPACE(60)
+        mexame := SPACE(1)
+        mradiologia := SPACE(1)
+        opcao := SPACE(1)
+        opcaohis := 0
+        tecla := 0
+        mreg := 0
+        mcconv := SPACE(2)
+        mnome := SPACE(35)
+        mdatn := CTOD('  /  /  ')
+        mresp := SPACE(30)
+        mind := SPACE(30)
+        mguia := SPACE(16)
+        Mensagem('Preencha o Campo ou Tecle <ESC> Retornar')
+        mreg := smcli->registro
+        mcconv := smcli->codconv
+        mnome := smcli->nome
+*        telahist := SAVESCREEN(02,00,23,79)
+        setcor(3)
+        @ lci+3,cci TO lci+3,cba DOUBLE
+        setcor(1)
+        @ lci+1,cci CLEAR TO lci+2,cba
+        DEVPOS(lci+1,cci+2);DEVOUT('Reg.:')
+        DEVPOS(lci+1,cci+15);DEVOUT('Nome:')
+        DEVPOS(lci+1,cci+58);DEVOUT('Idade:')
+        DEVPOS(lci+2,cci+02);DEVOUT('Convenio:')
+        DEVPOS(lci+2,cci+44);DEVOUT('Estado Civil:')
+        setcor(3)
+        DEVPOS(lci+1,cci+08);DEVOUT(mreg)
+        DEVPOS(lci+1,cci+21);DEVOUT(mnome)
+        DEVPOS(lci+1,cci+65);DEVOUT(STR(INT((DATE() - smcli->datans)/365),2))
+        DEVPOS(lci+2,cci+12);DEVOUT(mrsoc)
+        IF smcli->estcivil = 'C'
+                DEVPOS(lci+2,cci+58);DEVOUT('Casada')
+        ELSEIF smcli->estcivil = 'S'
+                DEVPOS(lci+2,cci+58);DEVOUT('Solteira')
+        ELSEIF smcli->estcivil = 'D'
+                DEVPOS(lci+2,cci+58);DEVOUT('Divorciada')
+        ELSEIF smcli->estcivil = 'V'
+                DEVPOS(lci+2,cci+58);DEVOUT('Viuva')
+        ELSE
+                DEVPOS(lci+2,cci+58);DEVOUT(' ')
+        ENDIF
+
+        setcor(1)
+        opcaohis := 0
+        mult_mest1:=smcli->ult_mest1
+        mult_mest2:=smcli->ult_mest2
+        mult_mest3:=smcli->ult_mest3
+        mult_mest4:=smcli->ult_mest4
+        mult_mest5:=smcli->ult_mest5
+        mpro_nasc1:=smcli->pro_nasc1
+        mpro_nasc2:=smcli->pro_nasc2
+        mpro_nasc3:=smcli->pro_nasc3
+        mpro_nasc4:=smcli->pro_nasc4
+        mpro_nasc5:=smcli->pro_nasc5
+        mdat_nasc1:=smcli->dat_nasc1
+        mdat_nasc2:=smcli->dat_nasc2
+        mdat_nasc3:=smcli->dat_nasc3
+        mdat_nasc4:=smcli->dat_nasc4
+        mdat_nasc5:=smcli->dat_nasc5
+        WHILE .T.
+                Mensagem('USE <'+setesq+'> <'+setdir+'>  -  Tecle <ENTER> P/Confirmar')
+                setcor(3)
+                @ lci+5,cci TO lci+5,cba
+                setcor(1)
+
+                @ lci+4,cci+02 PROMPT ' Historia '
+                @ lci+4,COL()+1 PROMPT ' Exame Clinico '
+                @ lci+4,COL()+1 PROMPT ' H/Diagnost. '
+                @ lci+4,COL()+1 PROMPT ' Conduta '
+                @ lci+4,COL()+1 PROMPT ' Exames '
+                IF mmedico = 'VANIA' .OR. mmedico = 'MARLI'
+                        @ lci+4,COL()+1 PROMPT ' Dat.Parto '
+                ELSE
+                        @ lci+4,COL()+1 PROMPT ' Manutencao '
+                ENDIF
+                @ lci+4,COL()+1 PROMPT ' Fim '
+                SET INTEN ON
+                MENU TO opcaohis
+                mtela := SAVESCREEN(00,00,24,79)
+                IF LASTKEY() = 27
+                        opcaohis := 7
+                        LOOP
+                ENDIF
+                *****************
+                SELE('smcli');ORDSETFOCUS(1)
+                *****************
+                DO CASE
+                        CASE opcaohis = 1
+                                ASIZE(m_hist,0)
+                                ASIZE(m_ponto,0)
+                                ******************
+                                SELE('hist');ORDSETFOCUS(1)
+                                GO TOP
+                                IF hist->(DBSEEK(mreg))
+                                        AADD(m_hist,'Data:'+DTOC(hist->data)+' - '+hist->descricao)
+                                        AADD(m_ponto,RECNO())
+                                        mdata_con := hist->data
+                                        SKIP
+                                        WHILE ! EOF() .AND. mreg = hist->codcli
+                                                IF mdata_con = hist->data
+                                                        AADD(m_hist,'                '+hist->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                ELSEIF ! EOF()
+                                                        AADD(m_hist,REPLI('-',cci+76-cci+03))
+                                                        AADD(m_ponto,0)
+                                                        AADD(m_hist,'Data:'+DTOC(hist->data)+' - '+hist->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                        mdata_con := hist->data
+                                                ENDIF
+                                                SKIP
+                                        ENDDO
+                                        AADD(m_hist,PADC('****************************  F  I  M  ****************************',cci+76-cci+03))
+                                        AADD(m_ponto,0)
+                                ENDIF
+                                setcor(3)
+                                botao(lci+3,cci+01,lba-5,cci+78,,' Historia Clinica ')
+                                IF ! EMPTY(m_hist)
+                                        mponto := LEN(m_hist)
+                                        Mensagem('<ENTER> p/alterar ou <ESC>p/Inclusao  - <ESC> p/Abandonar')
+                                        mponto := ACHOICE(lci+4,cci+02,lba-6,cci+77,m_hist,,,mponto)
+                                        IF LASTKEY() = 13
+                                                IF m_ponto[mponto] = 0
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                GO m_ponto[mponto]
+                                                mlin1 := hist->descricao
+                                                mdata_con := hist->data
+                                                botao(lba-4,cci+01,lba-2,cci+78,,' Alteracao Historico ')
+                                                setcor(1)
+                                                DEVPOS(lba-3,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-3,cci+16);DEVOUT('-')
+                                                @ lba-3,cci+7 GET mdata_con
+                                                @ lba-3,cci+18 GET mlin1
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                IF EMPTY(mlin1)
+                                                        opcao := 'N'
+                                                        opcao := op_simnao('N','Confirma a Exclusao [s/N]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        DELE
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        opcao := 'S'
+                                                        opcao := op_simnao('S','Confirma a Alteracao [S/n]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        hist->descricao := mlin1
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+
+                                                ENDIF
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ELSE
+                                                mlin1 := SPACE(60)
+                                                mlin2 := SPACE(60)
+                                                mlin3 := SPACE(60)
+                                                mlin4 := SPACE(60)
+                                                mlin5 := SPACE(60)
+                                                mlin6 := SPACE(60)
+                                                mdata_con := mdata
+                                                botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Historico ')
+                                                setcor(1)
+                                                DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                                mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                                @ lba-6,cci+7 GET mdata_con
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                                setcor(3)
+                                                mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                                setcor(1)
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                i := 0
+                                                linhas := MLCOUNT(mlin1,60)
+
+                                                FOR i = 1 TO  linhas
+                                                        mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                        ADIREG()
+                                                        hist->codcli    := mreg
+                                                        hist->data      := mdata_con
+                                                        hist->hora      := TIME()
+                                                        hist->descricao := mlin3
+                                                        hist->operador  := cod_operado
+                                                NEXT
+                                                DBCOMMITALL()
+                                                DBUNLOCKALL()
+                                        ENDIF
+                                ELSE
+                                        mlin1 := SPACE(60)
+                                        mlin2 := SPACE(60)
+                                        mlin3 := SPACE(60)
+                                        mlin4 := SPACE(60)
+                                        mlin5 := SPACE(60)
+                                        mlin6 := SPACE(60)
+                                        mdata_con := mdata
+                                        botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Historico ')
+                                        setcor(1)
+                                        DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                        DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                        mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                        @ lba-6,cci+7 GET mdata_con
+                                        READ
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                        setcor(3)
+                                        mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                        setcor(1)
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        i := 0
+                                        linhas := MLCOUNT(mlin1,60)
+
+                                        FOR i = 1 TO  linhas
+                                                mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                ADIREG()
+                                                hist->codcli    := mreg
+                                                hist->data      := mdata_con
+                                                hist->hora      := TIME()
+                                                hist->descricao := mlin3
+                                                hist->operador  := cod_operado
+                                        NEXT
+                                        DBCOMMITALL()
+                                        DBUNLOCKALL()
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,mtela)
+                                LOOP
+                        CASE opcaohis = 2
+                                ASIZE(m_hist,0)
+                                ASIZE(m_ponto,0)
+                                ******************
+                                SELE('exam');ORDSETFOCUS(1)
+                                GO TOP
+                                IF exam->(DBSEEK(mreg))
+                                        AADD(m_hist,'Data:'+DTOC(exam->data)+' - '+exam->descricao)
+                                        AADD(m_ponto,RECNO())
+                                        mdata_con := exam->data
+                                        SKIP
+                                        WHILE ! EOF() .AND. mreg = exam->codcli
+                                                IF mdata_con = exam->data
+                                                        AADD(m_hist,'                '+exam->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                ELSEIF ! EOF()
+                                                        AADD(m_hist,REPLI('-',cci+76-cci+03))
+                                                        AADD(m_ponto,0)
+                                                        AADD(m_hist,'Data:'+DTOC(exam->data)+' - '+exam->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                        mdata_con := exam->data
+                                                ENDIF
+                                                SKIP
+                                        ENDDO
+                                        AADD(m_hist,PADC('****************************  F  I  M  ****************************',cci+76-cci+03))
+                                        AADD(m_ponto,0)
+                                ENDIF
+                                setcor(3)
+                                botao(lci+6,cci+01,lba-5,cci+78,,' Exame Clinico ')
+                                IF ! EMPTY(m_hist)
+                                        Mensagem('<ENTER> p/alterar ou <ESC>p/Inclusao  - <ESC> p/Abandonar')
+                                        mponto := LEN(m_hist)
+                                        mponto := ACHOICE(lci+7,cci+02,lba-6,cci+77,m_hist,,,mponto)
+                                        IF LASTKEY() = 13
+                                                IF m_ponto[mponto] = 0
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                GO m_ponto[mponto]
+                                                mlin1 := exam->descricao
+                                                mdata_con := exam->data
+                                                botao(lba-4,cci+01,lba-2,cci+78,,' Alteracao Exame Clinico ')
+                                                setcor(1)
+                                                DEVPOS(lba-3,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-3,cci+16);DEVOUT('-')
+                                                @ lba-3,cci+7 GET mdata_con
+                                                @ lba-3,cci+18 GET mlin1
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                IF EMPTY(mlin1)
+                                                        opcao := 'N'
+                                                        opcao := op_simnao('N','Confirma a Exclusao [s/N]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        DELE
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        opcao := 'S'
+                                                        opcao := op_simnao('S','Confirma a Alteracao [S/n]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        exam->descricao := mlin1
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+
+                                                ENDIF
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ELSE
+                                                mlin1 := SPACE(60)
+                                                mlin2 := SPACE(60)
+                                                mlin3 := SPACE(60)
+                                                mlin4 := SPACE(60)
+                                                mlin5 := SPACE(60)
+                                                mlin6 := SPACE(60)
+                                                mdata_con := mdata
+                                                botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Exame ')
+                                                setcor(1)
+                                                DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                                mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                                @ lba-6,cci+7 GET mdata_con
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                                setcor(3)
+                                                mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                                setcor(1)
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                i := 0
+                                                linhas := MLCOUNT(mlin1,60)
+
+                                                FOR i = 1 TO  linhas
+                                                        mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                        ADIREG()
+                                                        exam->codcli    := mreg
+                                                        exam->data      := mdata_con
+                                                        exam->hora      := TIME()
+                                                        exam->descricao := mlin3
+                                                        exam->operador  := cod_operado
+                                                NEXT
+                                                DBCOMMITALL()
+                                                DBUNLOCKALL()
+                                        ENDIF
+                                ELSE
+                                        mlin1 := SPACE(60)
+                                        mlin2 := SPACE(60)
+                                        mlin3 := SPACE(60)
+                                        mlin4 := SPACE(60)
+                                        mlin5 := SPACE(60)
+                                        mlin6 := SPACE(60)
+                                        mdata_con := mdata
+                                        botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Exame ')
+                                        setcor(1)
+                                        DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                        DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                        mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                        @ lba-6,cci+7 GET mdata_con
+                                        READ
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                        setcor(3)
+                                        mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                        setcor(1)
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        i := 0
+                                        linhas := MLCOUNT(mlin1,60)
+
+                                        FOR i = 1 TO  linhas
+                                                mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                ADIREG()
+                                                exam->codcli    := mreg
+                                                exam->data      := mdata_con
+                                                exam->hora      := TIME()
+                                                exam->descricao := mlin3
+                                                exam->operador  := cod_operado
+                                        NEXT
+                                        DBCOMMITALL()
+                                        DBUNLOCKALL()
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,mtela)
+                                LOOP
+                        CASE opcaohis = 3
+                                ASIZE(m_hist,0)
+                                ASIZE(m_ponto,0)
+                                ******************
+                                SELE('diag');ORDSETFOCUS(1)
+                                GO TOP
+                                IF diag->(DBSEEK(mreg))
+                                        AADD(m_hist,'Data:'+DTOC(diag->data)+' - '+diag->descricao)
+                                        AADD(m_ponto,RECNO())
+                                        mdata_con := diag->data
+                                        SKIP
+                                        WHILE ! EOF() .AND. mreg = diag->codcli
+                                                IF mdata_con = diag->data
+                                                        AADD(m_hist,'                '+diag->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                ELSEIF ! EOF()
+                                                        AADD(m_hist,REPLI('-',cci+76-cci+03))
+                                                        AADD(m_ponto,0)
+                                                        AADD(m_hist,'Data:'+DTOC(diag->data)+' - '+diag->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                        mdata_con := diag->data
+                                                ENDIF
+                                                SKIP
+                                        ENDDO
+                                        AADD(m_hist,PADC('****************************  F  I  M  ****************************',cci+76-cci+03))
+                                        AADD(m_ponto,0)
+                                ENDIF
+                                setcor(3)
+                                botao(lci+6,cci+01,lba-5,cci+78,,' Diagnostico ')
+                                IF ! EMPTY(m_hist)
+                                        Mensagem('<ENTER> p/alterar ou <ESC>p/Inclusao  - <ESC> p/Abandonar')
+                                        mponto := LEN(m_hist)
+                                        mponto := ACHOICE(lci+7,cci+02,lba-6,cci+77,m_hist,,,mponto)
+                                        IF LASTKEY() = 13
+                                                IF m_ponto[mponto] = 0
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                GO m_ponto[mponto]
+                                                mlin1 := diag->descricao
+                                                mdata_con := diag->data
+                                                botao(lba-4,cci+01,lba-2,cci+78,,' Alteracao Diagnostico ')
+                                                setcor(1)
+                                                DEVPOS(lba-3,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-3,cci+16);DEVOUT('-')
+                                                @ lba-3,cci+7 GET mdata_con
+                                                @ lba-3,cci+18 GET mlin1
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                IF EMPTY(mlin1)
+                                                        opcao := 'N'
+                                                        opcao := op_simnao('N','Confirma a Exclusao [s/N]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        DELE
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        opcao := 'S'
+                                                        opcao := op_simnao('S','Confirma a Alteracao [S/n]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        diag->descricao := mlin1
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+
+                                                ENDIF
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ELSE
+                                                mlin1 := SPACE(60)
+                                                mlin2 := SPACE(60)
+                                                mlin3 := SPACE(60)
+                                                mlin4 := SPACE(60)
+                                                mlin5 := SPACE(60)
+                                                mlin6 := SPACE(60)
+                                                mdata_con := mdata
+                                                botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Diagnostico ')
+                                                setcor(1)
+                                                DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                                mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                                @ lba-6,cci+7 GET mdata_con
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                                setcor(3)
+                                                mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                                setcor(1)
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                i := 0
+                                                linhas := MLCOUNT(mlin1,60)
+
+                                                FOR i = 1 TO  linhas
+                                                        mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                        ADIREG()
+                                                        diag->codcli    := mreg
+                                                        diag->data      := mdata_con
+                                                        diag->hora      := TIME()
+                                                        diag->descricao := mlin3
+                                                        diag->operador  := cod_operado
+                                                NEXT
+                                                DBCOMMITALL()
+                                                DBUNLOCKALL()
+                                        ENDIF
+                                ELSE
+                                        mlin1 := SPACE(60)
+                                        mlin2 := SPACE(60)
+                                        mlin3 := SPACE(60)
+                                        mlin4 := SPACE(60)
+                                        mlin5 := SPACE(60)
+                                        mlin6 := SPACE(60)
+                                        mdata_con := mdata
+                                        botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Diagnostico ')
+                                        setcor(1)
+                                        DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                        DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                        mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                        @ lba-6,cci+7 GET mdata_con
+                                        READ
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                        setcor(3)
+                                        mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                        setcor(1)
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        i := 0
+                                        linhas := MLCOUNT(mlin1,60)
+
+                                        FOR i = 1 TO  linhas
+                                                mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                ADIREG()
+                                                diag->codcli    := mreg
+                                                diag->data      := mdata_con
+                                                diag->hora      := TIME()
+                                                diag->descricao := mlin3
+                                                diag->operador  := cod_operado
+                                        NEXT
+                                        DBCOMMITALL()
+                                        DBUNLOCKALL()
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,mtela)
+                                LOOP
+                        CASE opcaohis = 4
+                                ASIZE(m_hist,0)
+                                ASIZE(m_ponto,0)
+                                ******************
+                                SELE('cond');ORDSETFOCUS(1)
+                                GO TOP
+                                IF cond->(DBSEEK(mreg))
+                                        AADD(m_hist,'Data:'+DTOC(cond->data)+' - '+cond->descricao)
+                                        AADD(m_ponto,RECNO())
+                                        mdata_con := cond->data
+                                        SKIP
+                                        WHILE ! EOF() .AND. mreg = cond->codcli
+                                                IF mdata_con = cond->data
+                                                        AADD(m_hist,'                '+cond->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                ELSEIF ! EOF()
+                                                        AADD(m_hist,REPLI('-',cci+76-cci+03))
+                                                        AADD(m_ponto,0)
+                                                        AADD(m_hist,'Data:'+DTOC(cond->data)+' - '+cond->descricao)
+                                                        AADD(m_ponto,RECNO())
+                                                        mdata_con := cond->data
+                                                ENDIF
+                                                SKIP
+                                        ENDDO
+                                        AADD(m_hist,PADC('****************************  F  I  M  ****************************',cci+76-cci+03))
+                                        AADD(m_ponto,0)
+                                ENDIF
+                                setcor(3)
+                                botao(lci+6,cci+01,lba-5,cci+78,,' Conduta Medica ')
+                                IF ! EMPTY(m_hist)
+                                        Mensagem('<ENTER> p/alterar ou <ESC>p/Inclusao  - <ESC> p/Abandonar')
+                                        mponto := LEN(m_hist)
+                                        mponto := ACHOICE(lci+7,cci+02,lba-6,cci+77,m_hist,,,mponto)
+                                        IF LASTKEY() = 13
+                                                IF m_ponto[mponto] = 0
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                GO m_ponto[mponto]
+                                                mlin1 := cond->descricao
+                                                mdata_con := cond->data
+                                                botao(lba-4,cci+01,lba-2,cci+78,,' Alteracao Conduta Medica ')
+                                                setcor(1)
+                                                DEVPOS(lba-3,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-3,cci+16);DEVOUT('-')
+                                                @ lba-3,cci+7 GET mdata_con
+                                                @ lba-3,cci+18 GET mlin1
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                IF EMPTY(mlin1)
+                                                        opcao := 'N'
+                                                        opcao := op_simnao('N','Confirma a Exclusao [s/N]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        DELE
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        opcao := 'S'
+                                                        opcao := op_simnao('S','Confirma a Alteracao [S/n]:')
+                                                        IF LASTKEY() = 27 .OR. opcao = 'N'
+                                                                RESTSCREEN(00,00,24,79,mtela)
+                                                                LOOP
+                                                        ENDIF
+                                                        BLOQREG()
+                                                        cond->descricao := mlin1
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+
+                                                ENDIF
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ELSE
+                                                mlin1 := SPACE(60)
+                                                mlin2 := SPACE(60)
+                                                mlin3 := SPACE(60)
+                                                mlin4 := SPACE(60)
+                                                mlin5 := SPACE(60)
+                                                mlin6 := SPACE(60)
+                                                mdata_con := mdata
+                                                botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Conduta Medica ')
+                                                setcor(1)
+                                                DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                                DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                                mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                                @ lba-6,cci+7 GET mdata_con
+                                                READ
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                                setcor(3)
+                                                mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                                setcor(1)
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,mtela)
+                                                        LOOP
+                                                ENDIF
+                                                i := 0
+                                                linhas := MLCOUNT(mlin1,60)
+
+                                                FOR i = 1 TO  linhas
+                                                        mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                        ADIREG()
+                                                        cond->codcli    := mreg
+                                                        cond->data      := mdata_con
+                                                        cond->hora      := TIME()
+                                                        cond->descricao := mlin3
+                                                        cond->operador  := cod_operado
+                                                NEXT
+                                                DBCOMMITALL()
+                                                DBUNLOCKALL()
+                                        ENDIF
+                                ELSE
+                                        mlin1 := SPACE(60)
+                                        mlin2 := SPACE(60)
+                                        mlin3 := SPACE(60)
+                                        mlin4 := SPACE(60)
+                                        mlin5 := SPACE(60)
+                                        mlin6 := SPACE(60)
+                                        mdata_con := mdata
+                                        botao(lba-7,cci+01,lba,cci+78,,' INCLUSAO Conduta Medica ')
+                                        setcor(1)
+                                        DEVPOS(lba-6,cci+2);DEVOUT('Data:')
+                                        DEVPOS(lba-6,cci+16);DEVOUT('-')
+                                        mensagem('Preencha a Data ou <ESC> p/Abandonar')
+                                        @ lba-6,cci+7 GET mdata_con
+                                        READ
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        Mensagem('Descrevar e tecle <F10>p/Gravar ou <ESC>p/abandonar')
+                                        setcor(3)
+                                        mlin1 := MEMOEDIT(mlin2,lba-6,cci+18,lba-1,cba-1,,,,,,)
+                                        setcor(1)
+                                        IF LASTKEY() = 27
+                                                RESTSCREEN(00,00,24,79,mtela)
+                                                LOOP
+                                        ENDIF
+                                        i := 0
+                                        linhas := MLCOUNT(mlin1,60)
+
+                                        FOR i = 1 TO  linhas
+                                                mlin3 := MEMOLINE(mlin1,60,i,,)
+                                                ADIREG()
+                                                cond->codcli    := mreg
+                                                cond->data      := mdata_con
+                                                cond->hora      := TIME()
+                                                cond->descricao := mlin3
+                                                cond->operador  := cod_operado
+                                        NEXT
+                                        DBCOMMITALL()
+                                        DBUNLOCKALL()
+                                ENDIF
+                                RESTSCREEN(00,00,24,79,mtela)
+                                LOOP
+                        CASE opcaohis = 5
+                        CASE opcaohis = 6
+                                botao(lci+6,cci,lba-10,cba,,' Datas de Partos ')
+                                DEVPOS(lci+7,cci+1);DEVOUT('Dat.Ult.Mestruacao:')
+                                DEVPOS(lci+7,cci+29);DEVOUT('Dat.Provavel:')
+                                DEVPOS(lci+7,cci+51);DEVOUT('Nascimento:')
+                                DEVPOS(lci+8,cci+1);DEVOUT('Dat.Ult.Mestruacao:')
+                                DEVPOS(lci+8,cci+29);DEVOUT('Dat.Provavel:')
+                                DEVPOS(lci+8,cci+51);DEVOUT('Nascimento:')
+                                DEVPOS(lci+9,cci+1);DEVOUT('Dat.Ult.Mestruacao:')
+                                DEVPOS(lci+9,cci+29);DEVOUT('Dat.Provavel:')
+                                DEVPOS(lci+9,cci+51);DEVOUT('Nascimento:')
+                                DEVPOS(lci+10,cci+1);DEVOUT('Dat.Ult.Mestruacao:')
+                                DEVPOS(lci+10,cci+29);DEVOUT('Dat.Provavel:')
+                                DEVPOS(lci+10,cci+51);DEVOUT('Nascimento:')
+                                DEVPOS(lci+11,cci+1);DEVOUT('Dat.Ult.Mestruacao:')
+                                DEVPOS(lci+11,cci+29);DEVOUT('Dat.Provavel:')
+                                DEVPOS(lci+11,cci+51);DEVOUT('Nascimento:')
+                                @ lci+7,cci+20 GET mult_mest1 VALID data_pro(mult_mest1,@mpro_nasc1)
+                                @ lci+7,cci+42 GET mpro_nasc1
+                                @ lci+7,cci+62 GET mdat_nasc1
+                                @ lci+8,cci+20 GET mult_mest2 VALID data_pro(mult_mest2,@mpro_nasc2)
+                                @ lci+8,cci+42 GET mpro_nasc2
+                                @ lci+8,cci+62 GET mdat_nasc2
+                                @ lci+9,cci+20 GET mult_mest3 VALID data_pro(mult_mest3,@mpro_nasc3)
+                                @ lci+9,cci+42 GET mpro_nasc3
+                                @ lci+9,cci+62 GET mdat_nasc3
+                                @ lci+10,cci+20 GET mult_mest4 VALID data_pro(mult_mest4,@mpro_nasc4)
+                                @ lci+10,cci+42 GET mpro_nasc4
+                                @ lci+10,cci+62 GET mdat_nasc4
+                                @ lci+11,cci+20 GET mult_mest5 VALID data_pro(mult_mest5,@mpro_nasc5)
+                                @ lci+11,cci+42 GET mpro_nasc5
+                                @ lci+11,cci+62 GET mdat_nasc5
+                                READ
+                                IF LASTKEY() = 27
+                                        RESTSCREEN(00,00,24,79,mtela)
+                                        LOOP
+                                ENDIF
+                                opcao := op_simnao('S','Confirma as Data Acima [S/n]:')
+                                IF opcao = 'S'
+                                        BLOQREG()
+                                        smcli->ult_mest1 := mult_mest1
+                                        smcli->pro_nasc1 := mpro_nasc1
+                                        smcli->dat_nasc1 := mdat_nasc1
+                                        smcli->ult_mest2 := mult_mest2
+                                        smcli->pro_nasc2 := mpro_nasc2
+                                        smcli->dat_nasc2 := mdat_nasc2
+                                        smcli->ult_mest3 := mult_mest3
+                                        smcli->pro_nasc3 := mpro_nasc3
+                                        smcli->dat_nasc3 := mdat_nasc3
+                                        smcli->ult_mest4 := mult_mest4
+                                        smcli->pro_nasc4 := mpro_nasc4
+                                        smcli->dat_nasc4 := mdat_nasc4
+                                        smcli->ult_mest5 := mult_mest5
+                                        smcli->pro_nasc5 := mpro_nasc5
+                                        smcli->dat_nasc5 := mdat_nasc5
+                                        DBCOMMIT()
+                                        RESTSCREEN(00,00,24,79,mtela)
+                                        LOOP
+                                ELSE
+                                        RESTSCREEN(00,00,24,79,mtela)
+                                        LOOP
+                                ENDIF
+                        CASE opcaohis = 7
+                                SET INTEN ON
+                                opcao := op_simnao('S','Confirma Consulta [S/n]:')
+                                IF opcao = 'S'
+                                        IF mconsulta = 'C'
+                                                *****************
+                                                SELE('smcli')
+                                                *****************
+                                                BLOQREG()
+                                                smcli-> datault := mdata
+                                                DBCOMMIT()
+                                                DBUNLOCK()
+                                                *****************
+                                                SELE('contr')
+                                                *****************
+                                                IF ADIREG()
+                                                        contr-> datacons := mdata
+                                                        contr-> cadnome := mnome
+                                                        contr-> registro := mreg
+                                                        contr-> situacao := 'C'
+                                                        contr-> codconv := mcconv
+                                                        contr-> modalidade := mmod
+                                                        contr-> valor := mvalor
+                                                        contr-> recibo := mrecib
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                                                        LOOP
+                                                ENDIF
+                                        ELSE
+                                                *****************
+                                                SELE('contr')
+                                                *****************
+                                                IF ADIREG()
+                                                        contr-> datacons := mdata
+                                                        contr-> cadnome := mnome
+                                                        contr-> registro := mreg
+                                                        contr-> situacao := 'R'
+                                                        contr-> codconv := mcconv
+                                                        contr-> modalidade := mmod
+                                                        contr-> recibo := 'N'
+                                                        DBCOMMIT()
+                                                        DBUNLOCK()
+                                                ELSE
+                                                        atencao('Nao foi possivel acessar o Arquivo !!!')
+                                                        LOOP
+                                                ENDIF
+                                        ENDIF
+                                        relatori(mrecib)
+                                        smed700()
+                                        DBUNLOCKALL()
+                                        wvw_lclosewindow()
+                                        RETURN NIL
+                                ENDIF
+                                IF opcao = 'N' .OR. LASTKEY() = 27
+                                        DBUNLOCKALL()
+                                        wvw_lclosewindow()
+                                        RETURN NIL
+                                ENDIF
+                ENDCASE
+        ENDDO
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* F I M ******************
+***************************************
+* VERIFICA DATA PROVAVEL DO NSACIMENTO
+***************************************
+FUNCTION data_pro(mdt,mpro)
+IF EMPTY(mdt)
+        mpro := mdt
+ELSE
+        mpro := mdt+270
+ENDIF
+RETURN .T.

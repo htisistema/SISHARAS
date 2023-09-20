@@ -1,0 +1,374 @@
+* INCLUSAO DE CLIENTE
+*********************
+FUNCTION sac130()
+*****************
+LOCAL MPRG:='SAC130',;
+      opcao,lba,cba,mrazao,mnome,mdata_cad,mendereco,;
+      mbairro,mtel1,mtel2,mcontato,mspc,;
+      mcomprado,mvendedor,mprazo_pag,marea,mlimite,mobs,mcodoper,;
+      mop_hist,mhistorico,li,ci,lb,cb,tela1,mdata_nas,mcomercio,mtipo,memail,memail1,memail2,memail3,;
+      mcpf,mcgc,minsc,mrg,morgao,mdat_emi,mbloqueio,matac_vare,;
+      mdesconto,;
+      mdata_bloq,mobs_bloq,mdepen:='N',mcomplemento,mnumero,mnaturalidade,mcons_cam:={},mboleto:='',mnum_os:=0,;
+      mop_forn:=''
+MEMVAR nivel_acess,mdata_sis,getlist
+PRIVATE mnome_vend,mcom_ven,mcidade,muf,mcep,mcod_cond:=0,mcod_profi:=0,mcod_cli,mcod_vend
+
+IF ! AbriArq('sacgrupo','grup');RETURN NIL;ENDIF
+IF ! ver_nivel(mprg,'INCLUSAO DE CLIENTE *** CADASTRO ***','125',nivel_acess,,'AMBIE')
+        RETURN NIL
+ENDIF
+IF ! AbriArq('regiao','reg');RETURN NIL;ENDIF
+
+lba := 22
+cba := 99
+
+li := ci := 00
+lb := 22
+cb := 79
+
+CLEAR GETS
+SET KEY 281 TO cliprod()
+SET KEY 286 TO alt_codcli() 	//ALT+A
+SET KEY -7 TO f8_cep()
+mcomercio := 'N'
+op_tela(00,00,44,90,' Inclusao de CLIENTES ',,'*')
+WHILE .T.
+        exibi_prg(mprg)
+        opcao := 'S'
+        IF mcomercio = 'N'
+                mcod_cli := 0
+                mrazao := mnome := SPACE(40)
+                mtipo := 'C'
+                mdata_nas := CTOD('  /  /  ')
+                mdata_bloq:= mdata_sis
+                mdata_cad := mdata_sis
+                mendereco := SPACE(35)
+                mbairro := SPACE(20)
+                mcidade := mnaturalidade := SPACE(25)
+                muf := SPACE(2)
+                mcep := SPACE(9)
+                mtel1 := mtel2 := mcgc := minsc := mrg := SPACE(14)
+                mcpf := SPACE(11)
+                morgao := SPACE(10)
+                mdat_emi := CTOD('  /  /  ')
+                mcomprado := mcontato := SPACE(15)
+                mprazo_pag := SPACE(6)
+                mlimite := mcod_vend := mcodoper := mdesconto := mcod_cond := mcod_forn := mcod_profi := 0
+                mobs := SPACE(60)
+                mobs_bloq := 'INCLUSAO DO CLIENTE'+SPACE(40)
+                mboleto := 'N'
+                IF mcpf = NIL
+                        mcpf := SPACE(11)
+                ENDIF
+                IF mcgc = NIL
+                        mcgc := SPACE(14)
+                ENDIF
+                mspc := 'S'
+                memail := SPACE(150)
+                memail1 := memail2 := memail3 := SPACE(70)
+                ml_obs1 := ml_obs2 := ml_obs3 := SPACE(77)
+                IF ver_serie() = '141473'
+                        mbloqueio := 'N'
+                ELSE
+                        mbloqueio := 'S'
+                ENDIF
+                mcomplemento := SPACE(25)
+                mnumero := SPACE(6)
+        ENDIF
+        mensagem('Digite o Nome do Cliente a ser Incluido - <ESC> p/Retornar')
+        DEVPOS(0,1);DEVOUT('Data Cadastro..:')
+        DEVPOS(1,1);DEVOUT('Codigo.........:')
+        DEVPOS(2,1);DEVOUT('Razao Social...:')
+        DEVPOS(3,1);DEVOUT('Fantasia.......:')
+        DEVPOS(4,1);DEVOUT('Tipo Cliente...:')
+        DEVPOS(5,1);DEVOUT('Data Nascimento:')
+        DEVPOS(6,1);DEVOUT('Endereco.......:')
+        DEVPOS(7,1);DEVOUT('Numero.........:')
+        DEVPOS(8,1);DEVOUT('Complemento....:')
+        DEVPOS(9,1);DEVOUT('Bairro.........:')
+        DEVPOS(10,1);DEVOUT('Cidade.........:')
+        DEVPOS(11,1);DEVOUT('UF.............:')
+        DEVPOS(12,1);DEVOUT('CEP............:')
+        DEVPOS(13,1);DEVOUT('CPF............:')
+        DEVPOS(14,1);DEVOUT('Numero RG......:')
+        DEVPOS(15,1);DEVOUT('Orgao Exp......:')
+        DEVPOS(16,1);DEVOUT('Emissao........:')
+        DEVPOS(17,1);DEVOUT('Fone...........:')
+        DEVPOS(18,1);DEVOUT('Fone...........:')
+        DEVPOS(19,1);DEVOUT('e-mail.........:')
+        DEVPOS(20,1);DEVOUT('CNPJ...........:')
+        DEVPOS(21,1);DEVOUT('Inscricao Est..:')
+        DEVPOS(22,1);DEVOUT('Comprador......:')
+        DEVPOS(23,1);DEVOUT('Contato........:')
+        DEVPOS(24,1);DEVOUT('Prazo Pag......:')
+        DEVPOS(25,1);DEVOUT('Boleto [S/N]...:')
+        DEVPOS(26,1);DEVOUT('Limite.........:')
+        DEVPOS(27,1);DEVOUT('Cons.SPC Inter.:')
+        DEVPOS(28,1);DEVOUT('Cond.Pagamento.:')
+        DEVPOS(29,1);DEVOUT('Bloq.Credito...:')
+        DEVPOS(30,1);DEVOUT('Data...........:')
+        DEVPOS(31,1);DEVOUT('Motivo.........:')
+        DEVPOS(32,1);DEVOUT('Vend.Respon....:')
+        DEVPOS(33,1);DEVOUT('Operador Resp..:')
+        DEVPOS(34,1);DEVOUT('Observacao.....:')
+        mdata_cad := mdata_sis
+        mop_hist := maniver  := 'N'
+        @ 0,18 GET mdata_cad PICT '99/99/99' VALID lim_get() WHEN men_get(4,70,'Caso deseja Incluir o codigo do cliente Tecle: <ALT> + A')
+	READ
+	IF ! EMPTY(mcod_cli)
+/*
+		aret:={}
+		sr_getconnection():exec("SELECT * FROM saccli WHERE cod_cli = "+sr_cdbvalue(mcod_cli),,.t.,@aret)
+		IF LEN(aret) > 0
+			****************
+			SELE('cli');ORDSETFOCUS(2)
+			****************
+		        LOOP
+		ENDIF
+		****************
+		SELE('cli');ORDSETFOCUS(2)
+		****************
+*/
+                setcor(3)
+                DEVPOS(0,13);DEVOUT(STR(mcod_cli))
+                setcor(1)
+	ENDIF
+        @ 2,18 GET mrazao PICT '@!' VALID IF(EMPTY(mrazao),.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+		SET KEY 281 TO 
+		SET KEY 286 TO 
+		SET KEY -9  TO 
+		SET KEY -7  TO 
+                RETURN NIL
+        ENDIF
+        mcidade := SUBSTR(UPPER(m_set[1,134]),1,20)
+        @ 3,18 GET mnome PICT '@!'
+        @ 4,18 GET mtipo PICT '@!' VALID mtipo $ 'A,B,C,D,E,F,O,P,R,S,U' .AND. lim_get() WHEN men_get(4,70,'Tipos: <C>Cliente <R>Revenda <P>otencial <F>ilial <U>Funcionarios <A>ssociado <O>Outros <E>xcluido <S>upermercado')
+        @ 5,18 GET mdata_nas
+        @ 6,18 GET mendereco PICT '@!'
+        @ 7,18 GET mnumero PICT '@!'
+        @ 8,18 GET mcomplemento PICT '@!'
+        @ 9,18 GET mbairro PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        mcidade := saccid(,mcidade,,m_set[1,19],@mcep)
+        @ 10,18 SAY mcidade
+        @ 11,18 GET muf PICT '@!' VALID IF(EMPTY(muf),.F.,v_uf(muf))
+        @ 12,18 GET mcep PICT '99999999'
+        @ 13,18 GET mcpf PICT '@@R 999.999.999-99' VALID pesq_cpf(mcpf,'cli','*')
+        @ 14,18 GET mrg PICT '@!' WHEN ! EMPTY(mcpf)
+        @ 15,18 GET morgao PICT '@!' WHEN ! EMPTY(mcpf)
+        @ 16,18 GET mdat_emi  WHEN ! EMPTY(mcpf)
+        @ 17,18 GET mtel1
+        @ 18,18 GET mtel2
+        @ 19,18 GET memail PICT '@S60' VALID lim_get() WHEN men_get(0,0,'Exemplo: sac@HTIsistemas.com.br;teste@hotmail.com (Separa os email por ponto e virgual ";" )')
+        @ 20,18 GET mcgc PICT '@@R 99.999.999/9999-99' VALID pesq_cgc(mcgc,'cli','*','cli') WHEN EMPTY(mcpf)
+        @ 21,18 GET minsc PICT '@!' WHEN EMPTY(mcpf)     //VALID IF( TestaIe( minsc, muf ),.T.,.F.)             //WHEN ! EMPTY(mcgc)
+        @ 22,18 GET mcomprado PICT '@!'
+        @ 23,18 GET mcontato PICT '@!'
+        @ 24,18 GET mprazo_pag PICT '@R 99-99-99'
+        @ 25,18 GET mboleto PICT '@!' VALID mboleto $ 'S,N'
+        @ 26,18 GET mlimite PICT '999,999.99'
+        @ 27,18 GET mspc PICT '@!' WHEN ver_nivel(mprg+'SPC','INCLUSAO DE CLIENTE *** VERIFICAR O SPC INTERNO ***','15',nivel_acess,'*')  VALID mspc $ 'S,N'
+        @ 28,18 GET mcod_cond PICT '999' VALID ver_cond(mcod_cond,28,23)
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        ver_cond(mcod_cond,28,23)
+        @ 29,18 GET mbloqueio PICT '@!' WHEN ver_nivel(mprg+'BLOQ','INCLUSAO DE CLIENTE *** BLOQUEIO DE CREDITO DO CLIENTE ***','15',nivel_acess,'*') VALID mbloqueio $ 'S,N'
+        @ 30,18 GET mdata_bloq WHEN mbloqueio = 'S' VALID IF(EMPTY(mdata_bloq),.F.,.T.)
+        @ 31,18 GET mobs_bloq WHEN mbloqueio = 'S' VALID IF(EMPTY(mobs_bloq),.F.,.T.)
+        READ
+        IF mbloqueio = 'N'
+                mdata_bloq := CTOD('  /  /  ')
+                mobs_bloq  := SPACE(60)
+                setcor(3)
+                DEVPOS(30,18);DEVOUT(mdata_bloq)
+                DEVPOS(31,18);DEVOUT(mobs_bloq)
+                setcor(1)
+        ENDIF
+        @ 32,18 GET mcod_vend PICT '999' VALID IF(EMPTY(mcod_vend),.F.,ven(mcod_vend,32,23))
+        READ
+        ven(mcod_vend,32,23)
+        @ 33,18 GET mcodoper PICT '999' VALID ven(mcodoper)
+        @ 34,18 GET mobs
+        @ 35,18 GET ml_obs1
+        @ 36,18 GET ml_obs2
+        READ
+        IF LASTKEY() = 27
+                wvw_lclosewindow()
+                RETURN NIL
+        ENDIF
+        opcao := op_simnao('S','Confirma a Inclusao do Cliente [S/n]:')
+        IF opcao = 'N'
+                LOOP
+        ELSE
+                IF EMPTY(muf)
+                        mensagem('Nao foi preenchido a campo do Estado, Campo Obrigatorio !!!')
+                        @ 11,42 GET muf PICT '@!' VALID IF(EMPTY(muf),.F.,v_uf(muf))
+                        READ
+                        IF LASTKEY() = 27
+                                LOOP
+                        ENDIF
+                ENDIF
+                IF EMPTY(mcod_cli)
+        		aret:={}
+	              	sr_getconnection():exec("SELECT MAX(cod_cli) FROM saccli",,.t.,@aret)
+                        IF EMPTY(aret[1,1])
+                                mcod_cli := 1
+                        ELSE
+                                mcod_cli := aret[1,1]+1
+                        ENDIF
+        	ENDIF
+	        nulo := 'NULL'
+                sr_getconnection():exec('INSERT INTO saccli ('+;
+                'cod_cli   ,'+; //1
+                'razao     ,'+; //2
+                'nome      ,'+; //3
+                'data_cad  ,'+; //4
+                'data_atu  ,'+; //5
+                'tipo      ,'+; //6
+                'nascimento,'+; //7
+                'endereco  ,'+; //8
+                'bairro    ,'+; //9
+                'cidade    ,'+; //10
+                'uf        ,'+; //11
+                'cep       ,'+; //12
+                'email     ,'+; //14
+                'tel1      ,'+; //15
+                'tel2      ,'+; //16
+                'cgc       ,'+; //18
+                'insc      ,'+; //19
+                'cpf       ,'+; //20
+                'rg        ,'+; //21
+                'orgao     ,'+; //22
+                'dat_emi   ,'+; //23
+                'comprado  ,'+; //24
+                'contato   ,'+; //25
+                'limite    ,'+; //27 
+                'cod_cond  ,'+; //114
+                'spc       ,'+; //29
+                'obs       ,'+; //30
+                'prazo_pag ,'+; //31
+                'bloqueio  ,'+; //32
+                'desconto  ,'+; //33
+                'codvend   ,'+; //34
+                'codoper   ,'+; //35
+                'codforn   ,'+; //93
+                'l_obs1    ,'+; //94
+                'l_obs2    ,'+; //95
+                'l_obs3    ,'+; //96
+                'cod_profi ,'+; //112
+                'data_bloq ,'+; //113
+                'obs_bloq   ,'+; //114
+                'numero     ,'+; //115
+                'complemento,'+; //116
+                'naturalidade,'+; //117
+                'SR_DELETED )'+;
+                ' VALUES ('+;
+                sr_cdbvalue(mcod_cli                                    )+','+; //1
+                sr_cdbvalue(mrazao                                      )+','+; //2
+                sr_cdbvalue(mnome                                       )+','+; //3
+                sr_cdbvalue(mdata_cad                                   )+','+; //4
+                sr_cdbvalue(mdata_cad                                   )+','+; //5
+                sr_cdbvalue(mtipo                                       )+','+; //6
+                IF(! EMPTY(mdata_nas),sr_cdbvalue(mdata_nas),nulo)+','+; //7
+                sr_cdbvalue(mendereco                                   )+','+; //8
+                sr_cdbvalue(mbairro                                     )+','+; //9
+                sr_cdbvalue(mcidade                                     )+','+; //10
+                sr_cdbvalue(muf                                         )+','+; //11
+                sr_cdbvalue(mcep                                        )+','+; //12
+                sr_cdbvalue(memail                                      )+','+; //14
+                sr_cdbvalue(mtel1                                       )+','+; //15
+                sr_cdbvalue(mtel2                                       )+','+; //16
+                sr_cdbvalue(mcgc                                        )+','+; //18
+                sr_cdbvalue(minsc                                       )+','+; //19
+                sr_cdbvalue(mcpf                                        )+','+; //20
+                sr_cdbvalue(mrg                                         )+','+; //21
+                sr_cdbvalue(morgao                                      )+','+; //22
+                IF(! EMPTY(mdat_emi),sr_cdbvalue(mdat_emi),nulo)+','+; //23
+                sr_cdbvalue(mcomprado                                   )+','+; //24
+                sr_cdbvalue(mcontato                                    )+','+; //25
+                sr_cdbvalue(mlimite                                     )+','+; //27
+                sr_cdbvalue(STRZERO(mcod_cond,3)                        )+','+; //114
+                sr_cdbvalue(mspc                                        )+','+; //29
+                sr_cdbvalue(mobs                                        )+','+; //30
+                sr_cdbvalue(mprazo_pag+mboleto                          )+','+; //31
+                sr_cdbvalue(mbloqueio                                   )+','+; //32
+                sr_cdbvalue(mdesconto                                   )+','+; //33
+                sr_cdbvalue(STRZERO(mcod_vend,3)                         )+','+; //34
+                sr_cdbvalue(STRZERO(mcodoper,3)                         )+','+; //35
+                sr_cdbvalue(STRZERO(mcod_forn,4)                        )+','+; //93
+                sr_cdbvalue(ml_obs1                                     )+','+; //94
+                sr_cdbvalue(ml_obs2                                     )+','+; //95
+                sr_cdbvalue(ml_obs3                                     )+','+; //96
+                sr_cdbvalue(STRZERO(mcod_profi,5)                       )+','+; //112
+                IF(! EMPTY(mdata_bloq),sr_cdbvalue(mdata_bloq),nulo)     +','+; //113
+                sr_cdbvalue(mobs_bloq                                   )+','+; //114
+                sr_cdbvalue(mnumero                                     )+','+; //115
+                sr_cdbvalue(mcomplemento                                )+','+; //116
+                sr_cdbvalue(mnaturalidade                               )+','+; //117
+                sr_cdbvalue(' ')+')',,.f.)
+                sr_getconnection():exec("COMMIT",,.f.)
+                ****************
+                SELE('cli');ORDSETFOCUS(1)
+                ****************
+                setcor(3)
+                DEVPOS(1,18);DEVOUT(STR(mcod_cli))
+                setcor(1)
+                INKEY(2)
+                //SET KEY -9 TO fecha_pd
+                CLEAR GETS
+                mp := '*'
+                opcao := op_simnao('N','Deseja imprimir o cadastro do cliente [S/n]:')
+                IF opcao = 'S'
+                        sac5cad1(mcod_cli)
+                ENDIF
+                ****************
+                SELE('cli');ORDSETFOCUS(2)
+                ****************
+                wvw_lclosewindow()
+                RETURN mp
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+*********************** f i m ************************************
+FUNCTION alt_codcli()
+***************
+LOCAL aret:={}
+MEMVAR mcod_cli
+CLEAR GETS
+op_tela(10,10,12,50,' ALTERACAO DO CODIGO DO CLIENTE ')
+DEVPOS(01,00);DEVOUT('Digite o Codigo do Cliente:')
+@ 01,COL()+1 GET mcod_cli PICT '99999' VALID IF(EMPTY(mcod_cli),.F.,.T.)
+READ
+wvw_lclosewindow()
+IF LASTKEY() = 27
+	****************
+	SELE('cli');ORDSETFOCUS(2)
+	****************
+        mcod_cli := 0
+	RETURN .F.
+ENDIF
+aret:={}
+sr_getconnection():exec("SELECT * FROM saccli WHERE cod_cli = "+sr_cdbvalue(mcod_cli),,.t.,@aret)
+IF LEN(aret) > 0
+	atencao('Este codigo ja existe nao pode ser usado...')
+	****************
+	SELE('cli');ORDSETFOCUS(2)
+	****************
+        mcod_cli := 0
+        RETURN .F.
+ENDIF
+****************
+SELE('cli');ORDSETFOCUS(2)
+****************
+RETURN .T.

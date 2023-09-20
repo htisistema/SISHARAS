@@ -1,0 +1,105 @@
+* INCLUSAO de Semens
+********************
+FUNCTION smed440
+*****************
+LOCAL mprg:='SMED440',mdata,mdocumento,mvalor,mobs_emi,opcao := ' ',mnum_ped,;
+      mqtd_dose:=0,y:= 0
+
+PRIVATE mcod_cli,mcod_ani,cons_semen:={}
+
+IF ! ver_nivel(mprg,'INCLUSAO DE SEMENS','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(0,0,47,120,'INCLUSAO DE SEMENS',,1)
+WHILE .T.
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mdocumento := mnum_ped := SPACE(10)
+        mcod_cli := mcod_ani := 0
+        mqtd_dose:=1
+        mvalor := 0
+        mobs_emi := SPACE(60)
+        limpa(00,00,47,120)
+        exibi_prg(mprg)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar - <F1> p/Consultar')
+        DEVPOS(0, 1);DEVOUT('Data de Emissao....:')
+        DEVPOS(1, 1);DEVOUT('Codigo Cliente.....:')
+        DEVPOS(2, 1);DEVOUT('Codigo da Animal...:')
+        DEVPOS(3, 1);DEVOUT('Numero do Pedido...:')
+        DEVPOS(4, 1);DEVOUT('Valor da Dose R$...:')
+        DEVPOS(5, 1);DEVOUT('Quantidade de Doses:')
+        DEVPOS(6, 1);DEVOUT('Observacao.........:')
+        @ 7,0 TO 7,120
+        DEVPOS(8, 1);DEVOUT('  Data    Documento  Animal   Liberar  Com.Asso. Lib.Cert. Rp Observacao')
+        @ 9,0 TO 9,120
+        @ 0,22 GET mdata
+        @ 1,22 GET mcod_cli PICT '99999' VALID IF(EMPTY(mcod_cli),.F.,ver_prop(mcod_cli,1,28))
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_prop(mcod_cli,1,28)
+        cons_semen:={}
+        sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_prop = "+sr_cdbvalue(mcod_cli),,.t.,@cons_semen)
+        setcor(3)
+        IF LEN(cons_semen) > 0
+                y:=0
+                FOR y = 1 TO LEN(cons_semen)
+                        DEVPOS(9+y,1);DEVOUT(DTOC(cons_semen[y,1])+'  '+cons_semen[y,2]+'    '+STR(cons_semen[y,4],5)+'  '+DTOC(cons_semen[y,8])+'   '+DTOC(cons_semen[y,12])+'  '+DTOC(cons_semen[y,19])+' '+cons_semen[y,23]+'  '+cons_semen[y,14])
+                        IF y > 39
+                                SCROLL(10,0,46,100,1)
+                        ENDIF
+                NEXT
+        ENDIF
+        setcor(1)
+        @ 2,22 GET mcod_ani PICT '99999' VALID IF(EMPTY(mcod_ani),.F.,ver_animal(mcod_ani,2,28))
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_ani,2,28)
+        @ 3,22 GET mnum_ped
+        @ 4,22 GET mvalor PICT '999,999.99'
+        @ 5,22 GET mqtd_dose PICT '999'
+        @ 6,22 GET mobs_emi
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        i:=0
+        FOR i = 1 TO mqtd_dose
+                sr_getconnection():exec('INSERT INTO smeddocsemen (data) VALUES ('+sr_cdbvalue(mdata)+')',,.f.)
+                sr_getconnection():exec('COMMIT',,.f.)
+                cons_doc := {}
+                sr_getconnection():exec("SELECT MAX(documento) FROM smeddocsemen ",,.t.,@cons_doc)
+
+                sr_getconnection():exec('INSERT INTO smedsemen ('+;
+                        'data        ,'+;//1
+                        'documento   ,'+;//2
+                        'cod_prop    ,'+;//3
+                        'cod_anim    ,'+;//4
+                        'valor       ,'+;//6
+                        'oper_emissao,'+;//7
+                        'obs_emi     ,'+;//8
+                        'num_ped     ,'+;//8
+                        'SR_DELETED )'+;
+                        ' VALUES ('+;
+                        sr_cdbvalue(mdata               )+','+; //1
+                        sr_cdbvalue(cons_doc[1,1]       )+','+; //2
+                        sr_cdbvalue(mcod_cli            )+','+; //3
+                        sr_cdbvalue(mcod_ani            )+','+; //4
+                        sr_cdbvalue(mvalor              )+','+; //5
+                        sr_cdbvalue(cod_operado         )+','+; //6
+                        sr_cdbvalue(mobs_emi            )+','+; //7
+                        sr_cdbvalue(mnum_ped            )+','+; //7
+                        sr_cdbvalue(' ')+')',,.f.)
+                sr_getconnection():exec('COMMIT',,.f.)
+        NEXT
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

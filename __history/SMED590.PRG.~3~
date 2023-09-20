@@ -1,0 +1,783 @@
+*************************
+* MENU CADASTRO/HISTORICO
+*************************
+
+FUNCTION smed590
+*****************
+
+LOCAL opcao,lci,cci,lba,cba
+
+lci := cci := 0
+lba := 17
+cba := 69
+mnome := SPACE(35)
+mdata := DATE()
+msinal := SPACE(1)
+opcao := 0
+
+*********************************************
+CLOSE ALL
+USE smedcli ALIAS cli SHARED NEW
+USE smedconv ALIAS conv SHARED NEW
+USE smedtab ALIAS tab SHARED NEW
+*********************************************
+op_tela(13,48,17,69,'MENU CADASTRO/HISTORICO')
+
+WHILE .T.
+        apaga(00,00,30,79)
+        setcor(1)
+        @ lci+1,cci+1 PROMPT ' Cadastro Cliente   ' MESSAGE '** Emiti o CADASTRO PESSOAL do Cliente, <ESC> p/Retorno **'
+        @ lci+2,cci+1 PROMPT ' Historico Clinico  ' MESSAGE '** Emiti o HISTORICO CLINICO do Cliente, <ESC> p/Retorno **'
+        @ lci+3,cci+1 PROMPT ' Historico p/Data   ' MESSAGE '** Emissao de HISTORICO p/ data de atendimento, <ESC> p/Retorno **'
+
+        SET INTEN ON
+        MENU TO opcao
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+
+        DO CASE
+                CASE opcao = 1
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smedcad()               && LIST.CADASTRO INDIVIDUAL
+                CASE opcao = 2
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed590_1()               &&
+                CASE opcao = 3
+                        IF ! nivel('1','2')
+                                atencao('Acesso nao Autorizado !!!')
+                                LOOP
+                        ENDIF
+                        smed590_2()               &&
+        ENDCASE
+ENDDO
+CLOSE ALL
+wvw_lclosewindow()
+RETURN NIL 
+
+
+
+************************** f i m  ******************************************************
+
+*************************************************
+* EMISSAO DO HISTORICO CLINICO
+*************************************************
+
+FUNCTION smed590_1
+****************
+
+LOCAL lci,cci,lba,cba,opcao,opcaohis;
+      ,opchist,opcexam,opcdiag,opccond,telaopc,mcont,mpag;
+      ,mnome
+
+PRIVATE mrsoc,traco
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+lci := cci := 0
+lba := 21
+cba := 74
+
+traco := REPLI('-',80)
+op_tela(16,24,30,74)
+ 
+WHILE .T.
+        mcont = 0
+        opchist := opcexam := opcdiag := opccond := SPACE(1)
+        opcaohis := 0
+        opcao := SPACE(1)
+        mnome := SPACE(35)
+        mrsoc := SPACE(30)
+        apaga(00,00,30,79)
+        setcor(1)
+        *****************
+        SELE('smcli')
+        SET ORDER TO 1
+        GO TOP
+        *****************
+        Mensagem('Preencha o Campo ou Tecle <ESC> P/Retornar')
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome....:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Registro:')
+        DEVPOS(lci+2,cci+19);DEVOUT('Data:')
+        DEVPOS(lci+2,cci+35);DEVOUT('Cod.Conv.:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Convenio:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Dat.Nasc:')
+        DEVPOS(lci+4,cci+22);DEVOUT('Idade:')
+        DEVPOS(lci+4,cci+33);DEVOUT('Sexo:')
+
+        DEVPOS(lci+6,cci+2);DEVOUT('Historia Clinico.[S/N]:')
+        DEVPOS(lci+7,cci+2);DEVOUT('Exame Clinico....[S/N]:')
+        DEVPOS(lci+8,cci+2);DEVOUT('H/Diagnostico....[S/N]:')
+        DEVPOS(lci+9,cci+2);DEVOUT('Conduta......... [S/N]:')
+        @ lci+1,cci+12 GET mnome PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        ***********************
+        SEEK RTRIM(mnome)
+        ***********************
+
+        IF ! FOUND()
+                atencao('Nome nao Existente no Arquivo !!!')
+                LOOP
+        ENDIF
+        WHILE .T.
+                mcconv := codconv
+                vcconv(@mcconv)
+                Mensagem('<ESC> Retornar - <ENTER> Imprimir - <'+setcim+'> Prox.Reg. - <'+setbaix+'> Reg.Ant.')
+                *****************
+                SELE('smcli')
+                SET ORDER TO 1
+                *****************
+                setcor(3)
+                DEVPOS(lci+1,cci+8);DEVOUT(nome)
+                DEVPOS(lci+2,cci+12);DEVOUT(registro)
+                DEVPOS(lci+2,cci+25);DEVOUT(DTOC(data))
+                DEVPOS(lci+2,cci+46);DEVOUT(codconv)
+                DEVPOS(lci+3,cci+12);DEVOUT(mrsoc)
+                DEVPOS(lci+4,cci+12);DEVOUT(DTOC(datans))
+                DEVPOS(lci+4,cci+29);DEVOUT(STR(INT((DATE() - datans)/365),2))
+                DEVPOS(lci+4,cci+39);DEVOUT(sexo)
+                setcor(1)
+                tecla = INKEY(0)
+
+
+                IF tecla = 5
+                        SKIP
+                        LOOP
+                ENDIF
+
+                IF tecla = 24
+                        SKIP -1
+                        LOOP
+                ENDIF
+
+                IF tecla = 27
+                        SET CURSOR ON
+                        wvw_lclosewindow()
+                        RETURN NIL
+                ENDIF
+                IF tecla = 13
+                        SET CURSOR ON
+                        EXIT
+                ENDIF
+
+        ENDDO
+        @ lci+6,cci+26 GET opchist PICT '@!' VALID opchist $ 'S,N'
+        @ lci+7,cci+26 GET opcexam PICT '@!' VALID opcexam $ 'S,N'
+        @ lci+8,cci+26 GET opcdiag PICT '@!' VALID opcdiag $ 'S,N'
+        @ lci+9,cci+26 GET opccond PICT '@!' VALID opccond $ 'S,N'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        IF ! imp_arq('SMED590.REL')
+                EXIT
+        ENDIF
+        IF opchist = 'S'
+                mpag = 1
+                cabec()
+                cabhist('HISTORIA CLINICA')
+                linhas := MLCOUNT(historico,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(historico,60,linha,,)
+                        @ PROW()+1,10 SAY LIN
+                        IF PROW() = 41
+                                mpag = mpag +1
+                                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                @ PROW(),00 SAY PADC(memp_resa,80)
+                                @ PROW()+1,00 SAY PADC(crm,80)
+                                rodape()
+                                @ PROW()+1,00 SAY PADC(mpag,80)
+                                @ 60,00 SAY traco
+                                EJECT
+                                cabec()
+                                cabhist('HISTORIA CLINICA')
+                        ENDIF
+                NEXT
+
+                @ PROW()+3,30 SAY 'Recife,'
+                @ PROW(),37 SAY DATE()
+                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW(),00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                @ PROW()+1,00 SAY PADC(mpag,80)
+                EJECT
+        ENDIF
+        IF opcexam = 'S'
+                mcont = 0
+                mpag = 1
+                cabec()
+                cabhist('EXAME CLINICO')
+                linhas := MLCOUNT(probinden,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(probinden,60,linha,,)
+                        @ PROW()+1,10 SAY LIN
+                        IF PROW() = 41
+                                mpag = mpag +1
+                                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                @ PROW(),00 SAY PADC(memp_resa,80)
+                                @ PROW()+1,00 SAY PADC(crm,80)
+                                rodape()
+                                @ PROW()+1,00 SAY PADC(mpag,80)
+                                EJECT
+                                cabec()
+                                cabhist('EXAME CLINICO')
+                        ENDIF
+                NEXT
+
+                @ PROW()+3,30 SAY 'Recife,'
+                @ PROW(),37 SAY DATE()
+                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW(),00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                @ PROW()+1,00 SAY PADC(mpag,80)
+                EJECT
+        ENDIF
+        IF opcdiag = 'S'
+                mpag = 1
+                cabec()
+                cabhist('DIAGNOSTICO')
+                        linhas := MLCOUNT(diagnostic,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(diagnostic,60,linha,,)
+                        @ PROW()+1,10 SAY LIN
+                        IF PROW() = 41
+                                mpag = mpag +1
+                                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                @ PROW(),00 SAY PADC(memp_resa,80)
+                                @ PROW()+1,00 SAY PADC(crm,80)
+                                rodape()
+                                @ PROW()+1,00 SAY PADC(mpag,80)
+                                EJECT
+                                cabec()
+                                cabhist('DIAGNOSTICO')
+                        ENDIF
+                NEXT
+
+                @ PROW()+3,30 SAY 'Recife,'
+                @ PROW(),37 SAY DATE()
+                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW(),00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                @ PROW()+1,00 SAY PADC(mpag,80)
+                EJECT
+        ENDIF
+        IF opccond = 'S'
+                mpag = 1
+                cabhist('CONDUTA MEDICA',mpag)
+                linhas := MLCOUNT(presc,60)
+
+                FOR linha = 1 TO  linhas
+                        LIN := MEMOLINE(presc,60,linha,,)
+                        @ PROW()+1,10 SAY LIN
+                        IF PROW() = 41
+                                mpag = mpag +1
+                                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                @ PROW(),00 SAY PADC(memp_resa,80)
+                                @ PROW()+1,00 SAY PADC(crm,80)
+                                rodape()
+                                @ PROW()+1,00 SAY PADC(mpag,80)
+                                EJECT
+                                cabec()
+                                cabhist('CONDUTA MEDICA')
+                        ENDIF
+                NEXT
+
+                @ PROW()+3,30 SAY 'Recife,'
+                @ PROW(),37 SAY DATE()
+                @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                @ PROW()+1,00 SAY PADC(memp_resa,80)
+                @ PROW(),00 SAY PADC(memp_resa,80)
+                @ PROW()+1,00 SAY PADC(crm,80)
+                rodape()
+                @ PROW()+1,00 SAY PADC(mpag,80)
+                EJECT
+        ENDIF
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        conf_impressao('SMED590.REL')
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+************************** F I M **************************
+* EMISSAO DO HISTORICO CLINICO  P/DATA DE ATENDIMENTO
+******************************************************
+FUNCTION smed590_2
+****************
+LOCAL lci,cci,lba,cba,opcao,opcaohis;
+      ,opchist,opcexam,opcdiag,opccond,telaopc,mcont,mpag;
+      ,mnome,mdata1,mdata2,mregistro,mflag
+
+PRIVATE mrsoc,traco,mcod_conv
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+traco := REPLI('-',80)
+lci := cci := 0
+lba := 21
+cba := 44
+op_tela(09,04,21,44,'EMISSAO DO HISTORICO CLINICO P/DATA DE ATENDIMENTO')
+WHILE .T.
+        mflag := mregistro := mcont := opcaohis := 0
+        mdata1 := mdata2 := CTOD('  /  /  ')
+        opchist := opcexam := opcdiag := opccond := opcao := SPACE(1)
+        mnome := SPACE(35)
+        mrsoc := SPACE(30)
+
+        setcor(1)
+        apaga(00,00,30,79)
+
+        *****************
+        SELE('smcli')
+        SET ORDER TO 1
+        *****************
+        Mensagem('Preencha o Campo ou Tecle <ESC> P/Retornar')
+        DEVPOS(lci+1,cci+1);DEVOUT('Data Inicial....:')
+        DEVPOS(lci+2,cci+1);DEVOUT('Data Final......:')
+        @ lci+3,cci TO lci+3,cba
+        DEVPOS(lci+4,cci+1);DEVOUT('Historia Clinico:')
+        DEVPOS(lci+5,cci+1);DEVOUT('Exame Clinico...:')
+        DEVPOS(lci+6,cci+1);DEVOUT('H/Diagnostico...:')
+        DEVPOS(lci+7,cci+1);DEVOUT('Conduta.........:')
+        DEVPOS(lci+8,cci+1);DEVOUT('Marque com um <X> que Deseja')
+        @ lci+9,cci TO lci+9,cba
+        DEVPOS(lci+10,cci+1);DEVOUT('Digite o No.do Ultimo Registro Impresso')
+        DEVPOS(lci+11,cci+1);DEVOUT('Registro: ')
+        @ lci+1,cci+20 GET mdata1
+        @ lci+2,cci+20 GET mdata2 VALID IF(mdata1 > mdata2,.F.,.T.) WHEN ! EMPTY(mdata1)
+
+        @ lci+4,cci+20 GET opchist PICT '@!' VALID opchist $ 'X, '
+        @ lci+5,cci+20 GET opcexam PICT '@!' VALID opcexam $ 'X, '
+        @ lci+6,cci+20 GET opcdiag PICT '@!' VALID opcdiag $ 'X, '
+        @ lci+7,cci+20 GET opccond PICT '@!' VALID opccond $ 'X, '
+        @ lci+11,cci+11 GET mregistro PICT '99999' VALID ver_cli(STRZERO(mregistro,5),lci+11,cci+17)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        IF ! imp_arq('SMED590.REL')
+                LOOP
+        ENDIF
+        WHILE ! EOF()
+                IF ! EMPTY(mdata1)
+                        IF smcli->datault > mdata2 .OR. smcli->datault < mdata1
+                                SKIP;LOOP
+                        ENDIF
+                ENDIF
+                IF ! EMPTY(mregistro) .AND. mflag = 0
+                        IF smcli->registro <> STRZERO(mregistro,5)
+                                SKIP;LOOP
+                        ELSE
+                                mflag := 1
+                        ENDIF
+                ENDIF
+                linhas := MLCOUNT(historico,60)
+                IF opchist = 'X' .AND. linhas > 0
+                        mpag = 1
+                        histcab('HISTORIA CLINICA',mpag)
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(historico,60,linha,,)
+                                @ PROW()+1,10 SAY LIN
+                                IF PROW() = 57
+                                        mpag = mpag +1
+                                        @ 58,00 SAY traco
+                                        @ 59,00 SAY PADC('Continua na Pagina: '+STRZERO(mpag,3),80)
+                                        EJECT
+                                        histcab('HISTORIA CLINICA',mpag)
+                                ENDIF
+                        NEXT
+                        EJECT
+                ENDIF
+                linhas := MLCOUNT(probinden,60)
+                IF opcexam = 'X' .AND. linhas > 0
+                        SET DEVI TO PRINT
+                        mcont = 0
+                        mpag = 1
+                        cabec()
+                        cabhist('EXAME CLINICO')
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(probinden,60,linha,,)
+                                @ PROW()+1,10 SAY LIN
+                                IF PROW() = 46
+                                        mpag = mpag +1
+                                        @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                        @ PROW(),00 SAY PADC(memp_resa,80)
+                                        @ PROW()+1,00 SAY PADC(crm,80)
+                                        rodape()
+                                        @ PROW()+1,00 SAY PADC(mpag,80)
+                                        EJECT
+                                        cabec()
+                                        cabhist('EXAME CLINICO')
+                                ENDIF
+                        NEXT
+
+                        @ PROW()+3,30 SAY 'Recife,'
+                        @ PROW(),37 SAY DATE()
+                        rodape()
+                        @ PROW()+1,00 SAY PADC(mpag,80)
+                        EJECT
+                ENDIF
+                linhas := MLCOUNT(diagnostic,60)
+                IF opcdiag = 'X' .AND. linhas > 0
+                        SET DEVI TO PRINT
+                        mpag = 1
+                        cabec()
+                        cabhist('DIAGNOSTICO')
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(diagnostic,60,linha,,)
+                                @ PROW()+1,10 SAY LIN
+                                IF PROW() = 46
+                                        mpag = mpag +1
+                                        @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                        @ PROW(),00 SAY PADC(memp_resa,80)
+                                        @ PROW()+1,00 SAY PADC(crm,80)
+                                        rodape()
+                                        @ PROW()+1,00 SAY PADC(mpag,80)
+                                        EJECT
+                                        cabec()
+                                        cabhist('DIAGNOSTICO')
+                                ENDIF
+                        NEXT
+
+                        @ PROW()+3,30 SAY 'Recife,'
+                        @ PROW(),37 SAY DATE()
+                        rodape()
+                        @ PROW()+1,00 SAY PADC(mpag,80)
+                        EJECT
+                ENDIF
+                linhas := MLCOUNT(presc,60)
+                IF opccond = 'X' .AND. linhas > 0
+                        SET DEVI TO PRINT
+                        mpag = 1
+                        cabhist('CONDUTA MEDICA',mpag)
+
+                        FOR linha = 1 TO  linhas
+                                LIN := MEMOLINE(presc,60,linha,,)
+                                @ PROW()+1,10 SAY LIN
+                                IF PROW() = 46
+                                        mpag = mpag +1
+                                        @ PROW()+3,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+                                        @ PROW()+1,00 SAY PADC(memp_resa,80)
+                                        @ PROW(),00 SAY PADC(memp_resa,80)
+                                        @ PROW()+1,00 SAY PADC(crm,80)
+                                        rodape()
+                                        @ PROW()+1,00 SAY PADC(mpag,80)
+                                        EJECT
+                                        cabec()
+                                        cabhist('CONDUTA MEDICA')
+                                ENDIF
+                        NEXT
+
+                        @ PROW()+3,30 SAY 'Recife,'
+                        @ PROW(),37 SAY DATE()
+                        rodape()
+                        @ PROW()+1,00 SAY PADC(mpag,80)
+                        EJECT
+                ENDIF
+                SKIP
+        ENDDO
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('SMED590.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+
+************************** F I M **************************
+*************************************************
+* EMISSAO DO CADASTRO CLIENTES
+*************************************************
+
+FUNCTION smedcad
+****************
+
+LOCAL lci,cci,lba,cba,opcao,mnome,mtela
+
+PRIVATE mrsoc,traco
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+traco := REPLI('-',80)
+
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+lci := cci := 0
+lba := 21
+cba := 74
+op_tela(16,24,21,74,'EMISSAO DO CADASTRO CLIENTES')
+ 
+WHILE .T.
+        mcont := opcaohis := 0
+        opchist := opcexam := opcdiag := opccond := SPACE(1)
+        opcao := SPACE(1)
+        mnome := SPACE(35)
+        mrsoc := SPACE(30)
+
+        setcor(1)
+        apaga(23,00,23,79)
+
+        *****************
+        SELE('smcli');SET ORDER TO 1
+        *****************
+        Mensagem('Preencha o Campo ou Tecle <ESC> P/Retornar')
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Registro:')
+        DEVPOS(lci+2,cci+19);DEVOUT('Data:')
+        DEVPOS(lci+2,cci+35);DEVOUT('Cod.Conv.:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Convenio:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Dat.Nasc:')
+        DEVPOS(lci+4,cci+22);DEVOUT('Idade:')
+        DEVPOS(lci+4,cci+33);DEVOUT('Sexo:')
+        DEVPOS(17,26);DEVOUT('Nome:')
+        SET INTEN ON
+        @ lci+1,cci+8 GET mnome PICT '@!'
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+
+        IF EMPTY(mnome)
+                LOOP
+        ENDIF
+        ***********************
+        SEEK RTRIM(mnome)
+        ***********************
+
+        IF ! FOUND()
+                atencao('Nome nao Existente no Arquivo !!!')
+                LOOP
+        ENDIF
+        WHILE .T.
+                mcconv := codconv
+                vcconv(@mcconv)
+                Mensagem('<ESC> Retornar - <ENTER> Imprimir - <'+setcim+'> Prox.Reg. - <'+setbaix+'> Reg.Ant.')
+                *****************
+                SELE('smcli');SET ORDER TO 1
+                *****************
+                setcor(3)
+                DEVPOS(lci+1,cci+8);DEVOUT(nome)
+                DEVPOS(lci+2,cci+12);DEVOUT(registro)
+                DEVPOS(lci+2,cci+25);DEVOUT(DTOC(data))
+                DEVPOS(lci+2,cci+46);DEVOUT(codconv)
+                DEVPOS(lci+3,cci+12);DEVOUT(mrsoc)
+                DEVPOS(lci+4,cci+12);DEVOUT(DTOC(datans))
+                DEVPOS(lci+4,cci+29);DEVOUT(STR(INT((DATE() - datans)/365),2))
+                DEVPOS(lci+4,cci+39);DEVOUT(sexo)
+                setcor(1)
+                tecla = INKEY(0)
+
+
+                IF tecla = 5
+                        SKIP
+                        LOOP
+                ENDIF
+
+                IF tecla = 24
+                        SKIP -1
+                        LOOP
+                ENDIF
+
+                IF tecla = 27
+                        SET CURSOR ON
+                        wvw_lclosewindow()
+                        RETURN NIL
+                ENDIF
+
+                IF tecla = 13
+                        SET CURSOR ON
+                        EXIT
+                ENDIF
+
+        ENDDO
+        IF ! imp_arq('SMED590.REL')
+                LOOP
+        ENDIF
+        cabec()
+        @ PROW()+3,28 SAY 'C A D A S T R O '
+        @ PROW(),28 SAY 'C A D A S T R O '
+        @ PROW()+4,12 SAY 'Registro:'
+        @ PROW(),22 SAY registro
+        @ PROW(),31 SAY 'Data do Cadastramento:'
+        @ PROW(),54 SAY DTOC(data)
+
+        @ PROW(),12 SAY 'Registro:'
+        @ PROW(),31 SAY 'Data do Cadastramento:'
+
+        @ PROW()+2,12 SAY 'Nome:'
+        @ PROW(),18 SAY nome
+
+        @ PROW(),12 SAY 'Nome:'
+
+        @ PROW()+2,12 SAY 'Codigo do Convenio:'
+        @ PROW(),32 SAY codconv
+        @ PROW(),38 SAY 'Convenio:'
+        @ PROW(),48 SAY mrsoc
+
+        @ PROW(),12 SAY 'Codigo do Convenio:'
+        @ PROW(),38 SAY 'Convenio:'
+
+        @ PROW()+2,12 SAY 'Dat.Nasc:'
+        @ PROW(),22 SAY DTOC(datans)
+        @ PROW(),33 SAY 'Idade:'
+        @ PROW(),40 SAY STR(INT((DATE() - datans)/365),2)
+        @ PROW(),46 SAY 'Sexo:'
+        @ PROW(),52 SAY sexo
+
+        @ PROW(),12 SAY 'Dat.Nasc:'
+        @ PROW(),33 SAY 'Idade:'
+        @ PROW(),46 SAY 'Sexo:'
+
+        @ PROW()+2,12 SAY 'Cor:'
+        @ PROW(),17 SAY cor
+        @ PROW(),20 SAY 'Est.Civ.:'
+        @ PROW(),30 SAY estcivil
+        @ PROW(),33 SAY 'Profissao:'
+        @ PROW(),44 SAY profissao
+
+        @ PROW(),12 SAY 'Cor:'
+        @ PROW(),20 SAY 'Est.Civ.:'
+        @ PROW(),33 SAY 'Profissao:'
+
+        @ PROW()+2,12 SAY 'Natural:'
+        @ PROW(),21 SAY natural
+
+        @ PROW(),12 SAY 'Natural:'
+
+        @ PROW()+2,12 SAY 'Endereco:'
+        @ PROW(),22 SAY endereco
+
+        @ PROW(),12 SAY 'Endereco:'
+
+        @ PROW()+2,12 SAY 'Bairro:'
+        @ PROW(),20 SAY bairro
+
+        @ PROW(),12 SAY 'Bairro:'
+
+        @ PROW()+2,12 SAY 'Cidade:'
+        @ PROW(),20 SAY cidade
+        @ PROW(),48 SAY 'UF:'
+        @ PROW(),52 SAY est
+
+        @ PROW(),12 SAY 'Cidade:'
+        @ PROW(),48 SAY 'UF:'
+
+        @ PROW()+2,12 SAY 'CEP:'
+        @ PROW(),17 SAY cep
+        @ PROW(),29 SAY 'Fone:'
+        @ PROW(),35 SAY fone
+
+        @ PROW(),12 SAY 'CEP:'
+        @ PROW(),29 SAY 'Fone:'
+
+        @ PROW()+2,12 SAY 'Responsavel:'
+        @ PROW(),25 SAY resp
+
+        @ PROW(),12 SAY 'Responsavel:'
+
+        @ PROW()+2,12 SAY 'Indicado Por:'
+        @ PROW(),26 SAY indica
+
+        @ PROW(),12 SAY 'Indicado Por:'
+        @ PROW()+5,30 SAY 'Recife,'
+        @ PROW(),37 SAY DATE()
+        @ PROW()+6,00 SAY PADC(REPLI('-',LEN(memp_resa)),80)
+        @ PROW()+1,00 SAY PADC(memp_resa,80)
+        @ PROW(),00 SAY PADC(memp_resa,80)
+        @ PROW()+1,00 SAY PADC(crm,80)
+        rodape()
+
+        @ PROW()+1,00 SAY ' '
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+        RESTSCREEN(18,60,22,77,mtela)
+        RESTSCREEN(lci,cci,lba,cba,tela221)
+        IF ! imp_arq('SMED590.REL')
+                LOOP
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+
+
+********************** f i m **********************************************************
+
+FUNCTION histcab(mtit,mp)
+
+WHILE .T.
+
+        @ PROW(),00 SAY memp_resa
+        @ PROW(),00 SAY PADL(DATE(),80)
+        @ PROW()+1,00 SAY 'HISTORICO GERAL DO CLIENTE'
+        @ PROW(),00 SAY PADL('Pag.: '+STRZERO(mp,3),80)
+        @ PROW()+1,00 SAY traco
+        @ PROW()+1,00 SAY 'Reg.:'
+        @ PROW(),PCOL()+1 SAY registro
+        @ PROW(),PCOL()+2 SAY 'Nome:'
+        @ PROW(),PCOL()+1 SAY nome
+        @ PROW(),PCOL()+2 SAY 'Data Nasc.:'
+        @ PROW(),PCOL()+1 SAY datans
+        @ PROW()+1,00 SAY 'Data Ult.Consulta:'
+        @ PROW(),PCOL()+1 SAY smcli->datault
+        @ PROW(),PCOL()+3 SAY 'Convenio: '+smcli->codconv
+        ver_conv(smcli->codconv,PROW(),PCOL()+2,'*')
+        @ PROW()+1,00 SAY traco
+        @ PROW()+2,28 SAY mtit
+        @ PROW()+1,01 SAY ' '
+        RETURN NIL
+ENDDO
+********************** f i m **********************************************************
+
+FUNCTION cabhist(mtit)
+
+WHILE .T.
+
+        @ PROW()+1,33 SAY 'HISTORICO GERAL DO CLIENTE'
+        @ PROW(),33 SAY 'HISTORICO GERAL DO CLIENTE'
+        @ PROW()+1,00 SAY traco
+        @ PROW()+1,02 SAY 'Reg.:'
+        @ PROW(),07 SAY registro
+        @ PROW(),15 SAY 'Nome:'
+        @ PROW(),21 SAY nome
+        @ PROW(),59 SAY 'Data Nasc.:'
+        @ PROW(),71 SAY datans
+        @ PROW()+1,00 SAY traco
+        @ PROW()+3,28 SAY mtit
+        @ PROW(),28 SAY mtit
+        @ PROW()+2,01 SAY ' '
+        RETURN NIL
+ENDDO
+

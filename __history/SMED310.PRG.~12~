@@ -1,0 +1,117 @@
+*************************
+* MENU Cliente
+*************************
+FUNCTION smed310(mtp)
+*****************
+LOCAL mprg:='SMED310';
+      ,point,mregistro,mnome,opcao
+
+PRIVATE mprazo:=0,mmod,mfator,mrsoc,mvalor,mdata,mconsulta,mrecib
+
+IF ! ver_nivel(mprg,'CONSULTA DE CLIENTES PELO MEDICO','1',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(07,08,19,69,' CONSULTA DE ANIMAIS ')
+*****************************************************
+IF ! abriarq('smedcli','smcli');RETURN NIL;ENDIF
+IF ! abriarq('smedhist','hist');RETURN NIL;ENDIF
+IF ! abriarq('smedexam','exam');RETURN NIL;ENDIF
+IF ! abriarq('smeddiag','diag');RETURN NIL;ENDIF
+IF ! abriarq('smedcond','cond');RETURN NIL;ENDIF
+*****************************************************
+pode=.T.
+WHILE .T.
+        IF mtp = NIL
+                f7_animal('C')
+        ENDIF
+        IF LASTKEY()=27
+                EXIT
+        ENDIF
+        mvalor := 0
+        mdata := DATE()
+        mregistro := 0
+        mnome := SPACE(35)
+        mconsulta := SPACE(1)
+        point=RECNO()
+        mregistro := smcli->registro
+        setcor(1)
+        mreg := smcli->registro
+        mnome := smcli->nome
+        DEVPOS(1,2);DEVOUT('Data Cadastro:')
+        DEVPOS(2,2);DEVOUT('Registro.....:')
+        DEVPOS(3,2);DEVOUT('Numero Assoc.:')
+        DEVPOS(4,2);DEVOUT('Data Nascim..:')
+        DEVPOS(5,2);DEVOUT('Idade........:')
+        DEVPOS(6,2);DEVOUT('Responsavel..:')
+        //DEVPOS(7,2);DEVOUT('Indicado Por :')
+        //DEVPOS(8,2);DEVOUT('Profissao ...:')
+        //DEVPOS(9,2);DEVOUT('Ult.Consulta.:')
+        //DEVPOS(9,27);DEVOUT('Prox.Consulta:')
+        setcor(3)
+        @ 10,1 TO 10,70
+        DEVPOS(1,17);DEVOUT(DTOC(smcli->data))
+        DEVPOS(2,17);DEVOUT(STR(smcli->registro,5))
+        DEVPOS(2,COL());DEVOUT('-'+smcli->nome)
+        DEVPOS(3,17);DEVOUT(DTOC(smcli->data))
+        DEVPOS(4,17);DEVOUT(DTOC(smcli->datans))
+        DEVPOS(5,17);DEVOUT(STR(INT((DATE() - smcli->datans)/365),2))
+        DEVPOS(6,17);DEVOUT(smcli->resp)
+        //DEVPOS(7,17);DEVOUT(smcli->indica)
+        //DEVPOS(8,17);DEVOUT(smcli->profissao)
+        //DEVPOS(9,17);DEVOUT(DTOC(smcli->datault))
+        //DEVPOS(9,42);DEVOUT(DTOC(smcli->datault+mprazo))
+        INKEY(0)
+        /*
+        IF mtp = NIL
+                mensagem("<C>onsulta - <U>so Medico - <ESC>Retorna" )
+                INKEY(0)
+                IF LASTKEY()=ASC("C") .OR. LASTKEY()=ASC("c")
+                        IF mmod = 'CH' .OR. mmod = 'SR'
+                                mrecib = 'N'
+                        ENDIF
+                        IF mmod = 'CR'
+                                mrecib = 'S'
+                        ENDIF
+                        @ 11,21 GET mdata VALID IF(EMPTY(mdata),.F.,.T.)
+                        READ
+                        IF LASTKEY() = 27
+                                UNLOCK
+                                LOOP
+                        ENDIF
+                        IF mdata - smcli->datault >= mprazo
+                                mconsulta := 'C'
+                        ELSE
+                                mconsulta := 'R'
+                        ENDIF
+                        smed311()
+                ELSEIF LASTKEY()=ASC("U") .OR. LASTKEY()=ASC("u")
+                        smed313()
+                ELSEIF LASTKEY()=27
+                        EXIT
+                ENDIF
+        ELSE
+                IF mmod = 'CH' .OR. mmod = 'SR'
+                        mrecib = 'N'
+                ENDIF
+                IF mmod = 'CR'
+                        mrecib = 'S'
+                ENDIF
+                @ 11,21 GET mdata VALID IF(EMPTY(mdata),.F.,.T.)
+                READ
+                IF LASTKEY() = 27
+                        UNLOCK
+                        LOOP
+                ENDIF
+                IF mdata - smcli->datault >= mprazo
+                        mconsulta := 'C'
+                ELSE
+                        mconsulta := 'R'
+                ENDIF
+                smed311()
+                EXIT
+        ENDIF
+        */
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+******************************* f i m *********************************************

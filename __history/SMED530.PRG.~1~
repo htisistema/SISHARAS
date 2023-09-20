@@ -1,0 +1,227 @@
+*******************************
+* LISTAGEM DAS CONSULTAS
+*******************************
+
+FUNCTION smed530
+****************
+LOCAL mprg:='SMED530',lci,cci,lba,cba,opcao,mdata1,mdata2,tdata;
+      ,mtotal,mpag,mcont,mnum,mtotch,mopcao,mop
+
+PRIVATE mmod,mcconv,point
+PRIVATE mtipo_imp,mimp_tipo:=0,mporta_imp
+********* VARIAVEIS DE IMPRESSAO *******************
+mtipo_imp := 'M'
+****************************************************
+
+mopcao := mop := SPACE(1)
+mnum := 1
+mtotal :=mtotch := mcont := 0
+mpag := 1
+mcconv := SPACE(2)
+lci :=  cci :=  0
+lba :=  18
+cba :=  45
+
+*********************************************
+CLOSE ALL
+USE smedmov ALIAS contr SHARED NEW
+USE smedconv ALIAS conv SHARED NEW
+USE smedtab ALIAS tab SHARED NEW
+*********************************************
+op_tela(10,06,18,45,'LISTAGEM DAS CONSULTAS')
+
+WHILE .T.
+        limpa(00,00,30,90)
+        exibi_prg(mprg)
+        Mensagem('Preencha as Datas ou Tecle <ESC> p/Retornar')
+        opcao := 0
+        mdata1 := mdata2 := CTOD('  /  /  ')
+        tdata := 0
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Data (Inicio do Periodo):')
+        DEVPOS(lci+2,cci+2);DEVOUT('Data (Final do Periodo ):')
+        DEVPOS(lci+3,cci+2);DEVOUT('Codigo do Convenio .....:')
+        setcor(3)
+        DEVPOS(lci+4,cci+2);DEVOUT('Cod.Convenio = [00] (Imprimi todos)')
+        setcor(1)
+        DEVPOS(lci+5,cci+2);DEVOUT('[R]etorno - [C]onsulta - [T]odos:')
+        SET INTEN ON
+        @ lci+1,cci+29 GET mdata1 PICT '@D'
+        READ
+
+        IF LASTKEY() = 27
+                CLOSE ALL
+                EXIT
+        ENDIF
+
+        IF EMPTY(mdata1)
+                LOOP
+        ENDIF
+
+        *********************
+        SELE('contr');ORDSETFOCUS(1)
+        **********************
+        SET SOFTSEEK ON
+
+        SEEK DTOS(mdata1)
+
+        SET SOFTSEEK OFF
+
+        IF EOF()
+               GO TOP
+        ENDIF
+        point := RECNO()
+
+        @ lci+2,cci+29 GET mdata2 PICT '@D' VALID IF(mdata2 < mdata1,.F.,.T.)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        Mensagem('p/Consultar Codigos de Convenios Tecle <F3>')
+
+        @ lci+3,cci+29 GET mcconv PICT '99' VALID vcconv(@mcconv)
+        @ lci+5,cci+36 GET mop PICT '@!' VALID mop $ 'R,C,T'
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        *********************
+        SELE('contr')
+        **********************
+        GO point
+        IF ! imp_arq('SMED530.REL')
+                LOOP
+        ENDIF
+        IF mcconv = '00'
+                cabcons(mpag,mdata1,mdata2)
+                mcont = 6
+                WHILE datacons <= mdata2 .AND. datacons >= mdata1 .AND. ! EOF()
+                        IF mop <> 'T'
+                                IF situacao <> mop
+                                        SKIP
+                                        LOOP
+                                ENDIF
+                        ENDIF
+                        IF mcont >= 58
+                                EJECT
+                                mpag = mpag + 1
+                                cabcons(mpag,mdata1,mdata2)
+                                mcont = 6
+                        ENDIF
+                        @ PROW()+1,02 SAY STRZERO(mnum,3)
+                        @ PROW(),07 SAY datacons
+                        @ PROW(),19 SAY situacao
+                        @ PROW(),25 SAY codconv
+                        @ PROW(),31 SAY cadnome
+                        @ PROW(),67 SAY valor PICT '99,999,999.99'
+                        mtotal = mtotal + valor
+                        mnum = mnum +1
+                        mcont = mcont + 1
+                        SKIP
+                        LOOP
+                ENDDO
+                IF mcont > 54
+                        cabcons(mpag,mdata1,mdata2)
+                        EJECT
+                ENDIF
+                @ PROW()+4,02 SAY 'Total em R$:'
+                @ PROW(),15 SAY mtotal PICT '99,999,999.99'
+                @ PROW()+1,56 SAY TIME()+' Hrs.'
+                EJECT
+                SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+		IF mimp_tipo = 2
+                        lertexto('SMED530.REL')
+		ELSEIF mtipo_imp = 'D'
+        		MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+		ENDIF
+                LOOP
+        ENDIF
+
+        cabcons(mpag,mdata1,mdata2)
+        mcont = 6
+        WHILE datacons <= mdata2 .AND. datacons >= mdata1 .AND. ! EOF()
+                IF mop <> 'T'
+                        IF situacao <> mop
+                                SKIP
+                                LOOP
+                        ENDIF
+                ENDIF
+                IF mcont >= 58
+                        EJECT
+                        mpag = mpag + 1
+                        cabcons(mpag,mdata1,mdata2)
+                        mcont = 6
+                ENDIF
+                IF mcconv = codconv
+                        @ PROW()+1,02 SAY STRZERO(mnum,3)
+                        @ PROW(),07 SAY datacons
+                        @ PROW(),19 SAY situacao
+                        @ PROW(),25 SAY codconv
+                        @ PROW(),31 SAY cadnome
+                        @ PROW(),67 SAY valor PICT '99,999,999.99'
+                        mtotal = mtotal + valor
+                        mcont = mcont + 1
+                        mnum = mnum + 1
+                ENDIF
+                SKIP
+                LOOP
+        ENDDO
+        IF mcont > 54
+                cabcons(mpag,mdata1,mdata2)
+                EJECT
+        ENDIF
+        @ PROW()+3,02 SAY 'Total em R$:'
+        @ PROW(),15 SAY mtotal PICT '99,999,999.99'
+        @ PROW()+1,56 SAY TIME()+' Hrs.'
+        EJECT
+        SET DEVI TO SCREEN;SET PRINT TO;SET PRINT OFF
+	IF mimp_tipo = 2
+                lertexto('SMED530.REL')
+	ELSEIF mtipo_imp = 'D'
+        	MYRUN('DOSPRINTER '+IF(m_cfg[79]='2','/SEL2','/SEL')+' /DEL '+ALLTRIM(m_cfg[12])+'HRB.REL')
+	ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
+****************************** F I M *******************************
+**************************
+* CABECALHO LIST.FATURAS
+**************************
+
+FUNCTION cabcons(fpag,fdata1,fdata2)
+***********************
+
+LOCAL traco
+
+traco := REPLI('=',80)
+
+WHILE .T.
+
+        @ PROW()+1,34 SAY memp_resa
+        @ PROW(),34 SAY memp_resa
+        @ PROW()+1,02 SAY fir+ma
+        @ PROW(),31 SAY 'Consultas Realizada no Periodo'
+        @ PROW(),72 SAY 'PAG.'
+        @ PROW(),77 SAY STRZERO(fpag,3)
+        @ PROW()+1,02 SAY 'Sistema Controle Medico'
+        @ PROW(),37 SAY fdata1
+        @ PROW(),46 SAY 'a'
+        @ PROW(),48 SAY fdata2
+        @ PROW(),72 SAY DATE()
+        @ PROW()+1,00 SAY traco
+        @ PROW()+1,02 SAY 'No.'
+        @ PROW(),09 SAY 'Data'
+        @ PROW(),17 SAY 'Proc.'
+        @ PROW(),24 SAY 'Conv.'
+        @ PROW(),33 SAY 'Nome do Cliente'
+        @ PROW(),73 SAY 'Valor'
+        @ PROW()+1,00 SAY traco
+        RETURN NIL
+ENDDO
+
+************************** F I M ********************************************
+
+
+
+

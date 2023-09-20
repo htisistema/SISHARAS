@@ -1,0 +1,780 @@
+*******************
+* MENU PRINCIPAL
+*******************
+FUNCTION smed0()
+***************
+MEMVAR mdata_sis,memp_resa,mversao,cod_operado,mcaminho,mol,sistema
+LOCAL opcao,tela,tela1,li:=8,ci:=6,lb:=20,cb:=77,mnome:=SPACE(45),mdata:=CTOD('  /  /  ')
+LOCAL aMPosIni   := {}, /* Posicao Inicial das Opcoes no Array aMTopWin */;
+      aMColunas  := {}, /* Colunas Iniciais das Opcoes Horizontais */;
+      aMCores    := {}, /* Cores do Menu */;
+      aMTop      := {}, /* Menu Horizontal */;
+      aMTopMsg   := {}, /* Mensagens de cada Opcao do Menu Horizontal */;
+      aMTopWin   := {}, /* Itens de cada Janela de Sub-Menu */;
+      aMTopWnMsg := {}, /* Mensagens das Opcoes do Sub-Menu */;
+      aAltKeys   := {}, /* Teclas Alternativas de Ativacao  */;
+      nOpcao     := 1,  /* Numero da Opcao Horizontal Selecionada */;
+      nItemMenu  := 0,  /* Item da Opcao Selecionada */;
+      cStatPdv   := "",  /* Status do PDV */;
+      mnitemmenu := 0
+PUBLIC setah,setav,setcim := CHR(24),setbaix := CHR(25),setesq := CHR(27),setdir := CHR(26),;
+       rl_pd[15]
+PRIVATE mcod_vend,;
+        prmtrow := 23
+
+setcor(3)
+limpa(01,00,24,79)
+setcor(10)
+DEVPOS(00,00);DEVOUT('ллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл')
+DEVPOS(24,00);DEVOUT('ллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллллл')
+setcor(4)
+//mdt := directory('smed.exe') [1][3]
+DEVPOS(00,00);DEVOUT('.:'+memp_resa+':.')
+limpa(23,00,23,79)
+setcor(1)
+limpa(01,00,22,79)
+setcor(8)
+botao(02,00,22,79)
+*@ 02,00 TO 02,79
+setcor(5)
+DEVPOS(22,30);DEVOUT('.:HRB Info:. >>SMED '+mversao+'<< Fone:(81)3325.6663')
+IF ! EMPTY(apre2)
+        BANNER(06,RTRIM(apre1),setcor(7))
+        BANNER(13,RTRIM(apre2),setcor(7))
+ELSE
+        setcor(7)
+        DEVPOS(08,02);DEVOUT(PADC(REPL('п',LEN(RTRIM(apre1))*8),76))
+        BANNER(09,RTRIM(apre1),setcor(7))
+        DEVPOS(15,02);DEVOUT(PADC(REPL('п',LEN(RTRIM(apre1))*8),76))
+ENDIF
+setcor(1)
+AADD(aMColunas,1)
+AADD(aMColunas,14)
+AADD(aMColunas,27)
+AADD(aMColunas,36)
+AADD(aMColunas,48)
+AADD(aMColunas,61)
+AADD(aMColunas,75)
+* --- Cores do Menu Pull-Down
+/*
+AADD(aMCores,"N/w")                   // Cor do Menu Horizontal e Mensagens
+AADD(aMCores,"w+/G")               // Cor da Opcao Barra Horizontal
+AADD(aMCores,"N/w")                   // Cor Janela Pull-Down Ativa
+AADD(aMCores,"N/W")                 // Cor Janela Pull-Down Inativa
+AADD(aMCores,"W/G")               // Cor Janela Pull-Down apos Selecao
+AADD(aMCores,"w/G")               // Cor Barra Horizontal apos Selecao
+*/
+AADD(aMCores,"N/w")                   // Cor do Menu Horizontal e Mensagens
+AADD(aMCores,"w+/B")               // Cor da Opcao Barra Horizontal
+AADD(aMCores,"N/w")                   // Cor Janela Pull-Down Ativa
+AADD(aMCores,"N/W")                 // Cor Janela Pull-Down Inativa
+AADD(aMCores,"W/B")               // Cor Janela Pull-Down apos Selecao
+AADD(aMCores,"w/B")               // Cor Barra Horizontal apos Selecao
+
+* Menu Horizontal Linha 1
+
+AADD(aMTop," 1-Arquivo")
+AADD(aMTop," 2-Consulta")
+AADD(aMTop," 3-Movimento")
+AADD(aMTop," 4-Caixa")
+AADD(aMTop," 5-Relatorio")
+AADD(aMTop," 6-Utilitario")
+AADD(aMTop," F I M")
+
+* Mensagens do Menu Horizontal
+
+AADD(aMTopMsg,"*** Cadastro em Geral ***")
+AADD(aMTopMsg,"*** Consulta em Geral ***")
+AADD(aMTopMsg,"*** Movimentos em Geral ***")
+AADD(aMTopMsg,"*** Caixa em Geral ***")
+AADD(aMTopMsg,"*** Relatorio em Geral ***")
+AADD(aMTopMsg,"*** Utilitarios ***")
+AADD(aMTopMsg,"*** Fim do Sistema ***")
+
+
+* Sub-Menu da 1a. Opcao do Menu Horizontal : CADASTRO
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' 0 -> Clientes                   ')
+AADD(aMTopWin,' 1 -> Convenios                  ')
+AADD(aMTopWin,' 2 -> Especialista (AGENDA)      ')
+AADD(aMTopWin,' 3 -> Medicos                    ')
+AADD(aMTopWin,' 4 -> Especialidades             ')
+AADD(aMTopWin,' 5 -> Medicamentos               ')
+AADD(aMTopWin,' 6 -> Receitas                   ')
+AADD(aMTopWin,' 7 -> Operador/Medicos           ')
+AADD(aMTopWin,' 8 -> Tabelas Precos             ')
+AADD(aMTopWin,' 9 -> Procedimentos A.M.B.       ')
+AADD(aMTopWin,' A -> Diagnostico C.I.D.         ')
+AADD(aMTopWin,' B -> Patologias                 ')
+AADD(aMTopWin,' C -> Cirurgias                  ')
+AADD(aMTopWin,' D -> Despesas                   ')
+AADD(aMTopWin,' E -> Contas Despesas            ')
+
+
+* Mensagens do Sub-Menu 1a. Opcao do Menu Horizontal : CADASTRO
+
+AADD(aMTopWnMsg,'** Cadastro de Clientes - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Convenios - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Especialista (AGENDA) - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Medicos - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Especialidade - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Medicamentos - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Receitas - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Operadores - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Tabela de Precos - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Procedimentos A.M.B. - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Diagnostico C.I.D. - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Patologias - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Cirurgias - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Despesas - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Cadastro de Conta Despesas - <ESC> p/Retornar **')
+
+
+* Sub-Menu da 2a. Opcao do Menu Horizontal : CONSULTA
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' 0 -> Consultas Confirmada       ')
+AADD(aMTopWin,' 1 -> Clientes                   ')
+AADD(aMTopWin,' 2 -> Convenios                  ')
+AADD(aMTopWin,' 3 -> Especialista                ')
+AADD(aMTopWin,' 4 -> Medicamentos                ')
+AADD(aMTopWin,' 5 -> Exclusao de Consulta       ')
+AADD(aMTopWin,' 6 -> Consulta CEP               ')
+AADD(aMTopWin,' 7 -> Consulta Cirurgias          ')
+AADD(aMTopWin,' 8 -> Colposcopia                ')
+
+* Mensagens do Sub-Menu 2a. Opcao do Menu Horizontal : CONSULTA
+
+AADD(aMTopWnMsg,'** Consulta Confirmadas, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta, Retorno de Consulta e Uso Medico, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta de CONVENIOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta de ESPECIALISTAS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta de MEDICAMENTOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Exclusao de CONSULTAS por periodo, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta de CEP, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta de Cirurgias, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Consulta do Exame de Colposcopia, <ESC> p/Retorno **')
+
+* Sub-Menu da 3a. Opcao do Menu Horizontal : MOVIMENTOS
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' 0 -> Agenda Pessoal             ')
+AADD(aMTopWin,' 1 -> Agenda Consultas           ')
+AADD(aMTopWin,' 2 -> Marcar Feriados            ')
+AADD(aMTopWin,' 3 -> Exclusao de Agendas        ')
+AADD(aMTopWin,' 4 -> Cirurgias                  ')
+AADD(aMTopWin,' 5 -> Contas a Pagar             ')
+AADD(aMTopWin,' 6 -> Baixa Doc. a Pagar         ')
+AADD(aMTopWin,' 7 -> Contas a Receber           ')
+AADD(aMTopWin,' 8 -> Baixa Doc. a Receber       ')
+
+* Mensagens do Sub-Menu 3a. Opcao do Menu Horizontal : CONSULTAS
+
+AADD(aMTopWnMsg,'** Agenda Pessoal, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Marca Consultas e Excaixe, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Marca os Feriados, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Excluir os Agenda Compromisso e Consulta, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Inclusao, Alteracao e Exclusao, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Inclusao, Alteracao e Exclusao, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Baixa de Documentos A Pagar - <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Inclusao, Alteracao e Exclusao - <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Baixa de Documentos A Receber - <ESC> p/Retorno **')
+
+* Sub-Menu da 4a. Opcao do Menu Horizontal : CAIXA
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' 0 -> Confirmacao de Consultas  ')
+AADD(aMTopWin,' 1 -> Relatorio de Movimentacao ')
+
+* Mensagens do Sub-Menu 4a. Opcao do Menu Horizontal : CAIXA
+
+AADD(aMTopWnMsg,'** Recebimentos do Pedidos de Vendas - <ESC> p/Retornar **')
+AADD(aMTopWnMsg,'** Relatorio de Movimentacao por Periodo - <ESC> p/Retornar **')
+
+* Sub-Menu da 5a. Opcao do Menu Horizontal : RELATORIO
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' 0 -> Listagem Geral               ')
+AADD(aMTopWin,' 1 -> Listagem Faturas             ')
+AADD(aMTopWin,' 2 -> Listagem Consultas           ')
+AADD(aMTopWin,' 3 -> Receitas                     ')
+AADD(aMTopWin,' 4 -> Recibos                      ')
+AADD(aMTopWin,' 5 -> Atestado                     ')
+AADD(aMTopWin,' 6 -> Declaracao de Comparecimento ')
+AADD(aMTopWin,' 7 -> Pedido de Exames             ')
+AADD(aMTopWin,' 8 -> Cadastro e Historicos        ')
+AADD(aMTopWin,' 9 -> Relatorio de Despesas        ')
+AADD(aMTopWin,' A -> Etiquetas em Geral           ')
+AADD(aMTopWin,' B -> Listagem de Medicamentos     ')
+AADD(aMTopWin,' C -> Listagem de Especialista     ')
+AADD(aMTopWin,' D -> Listagem de Convenios        ')
+AADD(aMTopWin,' E -> Estatisticas                 ')
+AADD(aMTopWin,' F -> Canhoto de Recibos           ')
+AADD(aMTopWin,' G -> Ficha Internamento           ')
+AADD(aMTopWin,' X -> Continucao               >>>>')
+
+* Mensagens do Sub-Menu 5a. Opcao do Menu Horizontal : LEITURAS
+
+AADD(aMTopWnMsg,'** Listagem GERAL dos CLIENTES, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem das FATURAS no Periodo, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem das CONSULTAS no Periodo, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti RECEITAS,<ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti RECIBOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti ATESTADOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti DECLARACAO DE COMPARECIMENTO, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti PEDIDO DE EXAMES, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti CADASTRO/HISTORICO GERAL Cliente, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Relatorio de Despesas, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emissao de Etiquetas, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem de todos os MEDICAMENTOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem de todos os ESPECIALISTAS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem de todos os CONVENIOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti as ESTATISTICAS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Listagem p/periodo dos RECIBOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emiti FICHA de INTERNAMENTO, <ESC> p/Retorno **')
+
+* Sub-Menu da 6a. Opcao do Menu Horizontal : MANUTENCAO
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin,' Niveis de Acessos    ')
+AADD(aMTopWin,' Ler Arquivo DOS      ')
+AADD(aMTopWin,' Calculadora          ')
+AADD(aMTopWin,' Calendario           ')
+AADD(aMTopWin,' Recibo da HRB        ')
+AADD(aMTopWin,' Informacoes HRB      ')
+
+* Mensagens do Sub-Menu 6a. Opcao do Menu Horizontal : MANUTENCAO
+
+AADD(aMTopWnMsg,'** Modulo de Niveis de Acesso, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Ler Arquivos do DOS, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Calculadora do sistema, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Calendario do sistema, <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Emissao de Recibo da HRB Informatica Ltda. , <ESC> p/Retorno **')
+AADD(aMTopWnMsg,'** Informacoes da HRB Informatica Ltda. , <ESC> p/Retorno **')
+
+* Sub-Menu da 7a. Opcao do Menu Horizontal : FIM
+
+AADD(aMPosIni,LEN(aMTopWin)+1)
+AADD(aMTopWin," Fim ")
+AADD(aMTopWin," Fim ")
+
+* Mensagens do Sub-Menu 7a. Opcao do Menu Horizontal : FIM    
+AADD(aMTopWnMsg,"Finalizar o Sistema")
+AADD(aMTopWnMsg,"Finalizar o Sistema")
+*
+* --- Primeira Linha de Mensagens
+prmtrow = 23
+* --- Chama funcao de Inicializacao do Menu
+
+PDOWNINIT(1,aMColunas,aMTop,aMTopWin,aMPosIni,,.T.,aMCores)
+set key 23 to
+opcao:=0
+limpa(23,00,23,79)
+
+IF ! senha();fim(,'*');ENDIF    // Solicitar senha do sistema
+
+setcor(4)
+DEVPOS(00,43);DEVOUT(datseman(mdata_sis)+', '+DTOC(mdata_sis)+' Hrs:')
+//SHOWTIME(00,COL(),.F.,setcor(11),.F.,.F.)
+setcor(4)
+DEVPOS(24,67);DEVOUT('Operador: '+ALLTRIM(cod_operado))
+setcor(1)
+IF nivel_acess = '1' .OR. mmedico = 'VANIA'
+        agenda()
+ENDIF
+WHILE .T.
+        exibi_prg('SMED0')
+        DBCLOSEALL()
+        * --- Faz o Menu Pull-Down
+        MENU(@nOpcao,@nItemMenu, aMTop, aMTopWin, aMColunas, aMPosIni, aMTopMsg, aMTopWnMsg)
+        IF nopcao == 0 .OR. LASTKEY() = 27
+                fim('SMED')
+                LOOP
+        ENDIF
+        DO CASE
+                CASE nOpcao = 1                  // Abertura
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        f7_cli('*')
+*                                       smed210()       && MENU DE CLIENTE
+                                CASE nitemmenu = 2
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed220()       && INCLUSAO CONVENIO
+                                CASE nitemmenu = 3
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed230()
+                                CASE nitemmenu = 4
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        f8_med('*')
+                                CASE nitemmenu = 5
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        f9_espe('*')
+                                CASE nitemmenu = 6
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed240()       && INCLUSAO REMEDIOS
+                                CASE nitemmenu = 7
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed250()       && INCLUSAO receitas
+                                CASE nitemmenu = 8
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        sacsenha('*')
+                                CASE nitemmenu = 9
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed270()       && ALTERACAO DA TABELA DE PRECO
+                                CASE nitemmenu = 10
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed280()       && TABELA DA procedimentos AMB.
+                                CASE nitemmenu = 11
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed290()       && TABELA DA diagnostico CID.
+                                CASE nitemmenu = 12
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed2p()       && CADASTRO DE PATOLOGIAS
+                                CASE nitemmenu = 13
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        smed260()       && CADASTRO DE CIRURGIA
+                                CASE nitemmenu = 14
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        CLOSE ALL
+                                        USE sacdesp ALIAS cdesp NEW SHARED
+                                        USE sacforn ALIAS forn NEW SHARED
+                                        f6_forn('*')       && CADASTRO DE DESPESAS
+                                        CLOSE ALL
+                                CASE nitemmenu = 15
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                RETURN NIL
+                                        ENDIF
+                                        sacdesp()
+                        ENDCASE
+                CASE nOpcao = 2                  // CONSULTA
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smedcons()       && CONSULTA CLIENTES
+                                CASE nitemmenu = 2
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+*                                       f7_cli()
+                                        smed310()       && CONSULTA CLIENTES
+                                CASE nitemmenu = 3
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed320()       && CONSULTA CONVENIOS
+                                CASE nitemmenu = 4
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed330()       && CONSULTA ESPECIALISTA
+                                CASE nitemmenu = 5
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed340()       && CONSULTA MEDICAMENTOS
+                                CASE nitemmenu = 6
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed350()       && EXCLUSAO DE CONSULTA
+                                CASE nitemmenu = 7
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        saccep()       && CONSULTA CEP'S
+                                CASE nitemmenu = 8
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed370()       && CONSULTA CIRURGIAS
+                                CASE nitemmenu = 9
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed360()       && CONSULTA COLPOSCOPIA
+                                        ENDCASE
+                CASE nOpcao = 3                  // MOVIMENTO
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        WHILE .T.
+                                                mensagem('<I>nclusao - <C>onsulta - <ESC> Abandonar')
+                                                setcor(3)
+                                                botao(li,ci,lb,cb)
+                                                setcor(1)
+                                                DEVPOS(li+1,ci+2);DEVOUT('Data do Compromisso:')
+                                                DEVPOS(li+2,ci+2);DEVOUT('Compromisso:')
+
+                                                SETCOLOR(vcor[3])
+                                                DEVPOS(li+1,ci+24);DEVOUT(DATE())
+                                                SETCOLOR(vcor[1])
+                                                INKEY(0)
+
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(00,00,24,79,tela)
+                                                        EXIT
+                                                ENDIF
+                                                IF LASTKEY() = ASC('I') .OR. LASTKEY() = ASC('i')
+                                                        IF ! nivel('1','2')
+                                                                atencao('Acesso nao Autorizado !!!')
+                                                                LOOP
+                                                        ENDIF
+                                                        smed420()       && INCLUSAO AGENDA
+                                                ENDIF
+                                                IF LASTKEY() = ASC('C') .OR. LASTKEY() = ASC('c')
+                                                        IF ! nivel('1','2')
+                                                                atencao('Acesso nao Autorizado !!!')
+                                                                LOOP
+                                                        ENDIF
+                                                        smed410()       && CONSULTA AGENDA
+                                                ENDIF
+                                        ENDDO
+                                CASE nitemmenu = 2
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed440()       && MARCAR CONSULTAS
+                                CASE nitemmenu = 3
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed450()       && MARCAR FERIADOS
+                                CASE nitemmenu = 4
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed430()       && EXCLUSAO AGENDA
+                                CASE nitemmenu = 5
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed470()       && AGENDA DE CIRURGIAS
+                                CASE nitemmenu = 6
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        con21()
+                                CASE nitemmenu = 7
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        con22()
+                                CASE nitemmenu = 8
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        con24()
+                                CASE nitemmenu = 9
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        con25()
+                        ENDCASE
+                CASE nOpcao = 4                  // CAIXA
+                        DO CASE
+                                CASE nitemmenu = 1
+                                *        RECEBIMENTO
+                                         smed480()
+                                CASE nitemmenu = 2
+                                *        RELATORIO DE MOVIMENTACAO
+                                         smed481()
+/*
+                                CASE nitemmenu = 3
+                                *        VALES
+                                        sacvale()
+                                CASE nitemmenu = 4
+                                *        DESPESAS
+                                         sac31_1()      // sac31.prg
+                                CASE nitemmenu = 5
+                                *        CANCELAMENTO DE DESPESAS
+                                         sac31_3()     // sac31.prg
+                                CASE nitemmenu = 6
+                                *        FECHAMENTO
+                                         sac33()
+                                CASE nitemmenu = 7
+                                *        CANCELAMENTO DE PEDIDOS
+                                         sac34()
+                                CASE nitemmenu = 8
+                                *        FATURAMENTO POR PERIODO
+                                         sac39()
+                                CASE nitemmenu = 9
+                                *        FUNDO DE CAIXA
+                                         sac36()
+                                CASE nitemmenu = 10
+                                *        RETIRADA DE DEPOSITO
+                                         sac37()
+                                CASE nitemmenu = 11
+                                *        BAIXA DE DUPLICATA
+                                         con25('*')
+                                CASE nitemmenu = 12
+                                *        ESTORNO DE RECEBIMENTOS
+                                        sac38()
+                                CASE nitemmenu = 13
+                                *        DESPESAS ADMINISTRATIVA
+                                         con211('*')
+                                CASE nitemmenu = 14
+                                *        BAIXA DE DOCUMENTOS APAGAR
+                                         con22(,'*')
+                                CASE nitemmenu = 15
+                                *          EMISSAO DE RECIBOS
+                                        mnitemmenu = 0
+                                        WHILE .T.
+                                                tela := SAVESCREEN(01,00,24,79)
+                                                limpa(23,00,23,79)
+                                                botao(08,18,15,40,,' Menu de Recibos ')
+                                                setcor(9)
+                                                @ 09,19 PROMPT ' ^0-> Recibo Firma    ' MESSAGE '*** Emissao de Recibo da Firma - <ESC> p/abandonar ***'
+                                                @ 10,19 PROMPT ' ^1-> Recibo Comissao ' MESSAGE '*** Emissao de recibo Pagemento de comissao - <ESC> p/abandonar ***'
+                                                @ 11,19 PROMPT ' ^2-> Recibo Pag.Func.' MESSAGE '*** Emissao de Recibo Pagamento a Funcionarios - <ESC> p/abandonar ***'
+                                                @ 12,19 PROMPT ' ^3-> Recibo Pag.Doc. ' MESSAGE '*** Emissao de Recibo Pagamento de Documentos a Receber - <ESC> p/abandonar ***'
+                                                @ 13,19 PROMPT ' ^4-> Recibo Avulso   ' MESSAGE '*** Emissao de Recibo Avulso - <ESC> p/abandonar ***'
+                                                @ 14,19 PROMPT ' ^5-> Recibo Entrega  ' MESSAGE '*** Emissao de Recibo Entrega de Mercadorias - <ESC> p/abandonar ***'
+                                                MENU TO mnitemmenu
+                                                IF LASTKEY() = 27
+                                                        RESTSCREEN(01,00,24,79,tela)
+                                                        EXIT
+                                                ENDIF
+                                                DO CASE
+                                                        CASE mnitemmenu = 1
+                                                                *********************************
+                                                                IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                                                                *********************************
+                                                                sacrec()
+                                                        CASE mnitemmenu = 2
+                                                                sacrccom()
+                                                        CASE mnitemmenu = 3
+                                                                *********************************
+                                                                IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                                                                *********************************
+                                                                sacrec1()       // mesmo prg sacrec.prg
+                                                        CASE mnitemmenu = 4
+                                                                *********************************
+                                                                IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                                                                *********************************
+                                                                sacrec2()       // mesmo prg sacrec.prg
+                                                        CASE mnitemmenu = 5
+                                                                *********************************
+                                                                IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                                                                *********************************
+                                                                sacrec3()       // mesmo prg sacrec.prg
+                                                        CASE mnitemmenu = 6
+                                                                *********************************
+                                                                IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                                                                IF ! AbriArq('sacped_s','ped_s');RETURN NIL;ENDIF
+                                                                IF ! AbriArq('smedcli','smcli');RETURN NIL;ENDIF
+                                                                *********************************
+                                                                sacrec4()       // mesmo prg sacrec.prg
+                                                ENDCASE
+                                        ENDDO
+                                CASE nitemmenu = 16
+                                *       PREENCHIMENTO DE CHEQUES
+                                        saccheq()
+                                CASE nitemmenu = 17
+                                *       EMISSAO DE CARNES       //prg sac30
+                                        emi_carne()
+                                CASE nitemmenu = 18
+                                *       EMISSAO DE CREDITOS
+                                        con24('C','CX')
+                                CASE nitemmenu = 19
+                                *       CONSULTA DE CEP'S
+                                        saccep()
+*/
+                        ENDCASE
+                CASE nOpcao = 5                  // RELATORIO
+                        SETCURSOR(1)
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed510()               && LIST.GERAL
+                                CASE nitemmenu = 2
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed520()               && FATURAS
+                                CASE nitemmenu = 3
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed530()               && LIST.CONSULTAS
+                                CASE nitemmenu = 4
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed540()               && RECEITAS
+                                CASE nitemmenu = 5
+                                        smed550()               && RECIBOS
+                                CASE nitemmenu = 6
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed560()               && ATESTADOS
+                                CASE nitemmenu = 7
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed580()               && DECLARACAO DE COMPARECIMENTO
+                                CASE nitemmenu = 8
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smedexa(mnome,mdata,1)   && PEDIDO DE EXAME
+                                CASE nitemmenu = 9
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed590()               && CADASTRO/HISTORICO CLINICO
+                                CASE nitemmenu = 10
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed5des()               && RELATORIO DE DESPESAS
+                                CASE nitemmenu = 11
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed5etq()               && ETIQUETAS DE CLIENTES
+                                CASE nitemmenu = 12
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed591()               && LIST. MEDICAMENTOS
+                                CASE nitemmenu = 13
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed592()               && LIST. ESPECIALISTAS
+                                CASE nitemmenu = 14
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed5cnv()              && LIST. CONVENIOS
+                                CASE nitemmenu = 15
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed593()               && ESTATISTICAS
+                                CASE nitemmenu = 16
+                                        IF ! nivel('1')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed594()               && CANHOTO DE RECIBO
+                                CASE nitemmenu = 17
+                                        IF ! nivel('1','2')
+                                                atencao('Acesso nao Autorizado !!!')
+                                                LOOP
+                                        ENDIF
+                                        smed595()               && FICHA DE INTERNAMENTO
+                                CASE nitemmenu = 18
+                                        smed500()
+                        ENDCASE
+                CASE nOpcao = 6                  // Manutencao do Sistema
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        f3_nivel()
+                                CASE nitemmenu = 2
+                                        sacler()
+                                CASE nitemmenu = 3
+                                        calcu()
+                                CASE nitemmenu = 4
+                                         cale()
+                                CASE nitemmenu = 5
+                                        sac63()
+                                CASE nitemmenu = 6
+                                        tela1 = SAVESCREEN(01,00,24,79)
+                                        tela('SMED - Sistema Controle Medico',1)
+                                        mensagem('Pressione qualquer tecla p/continuar')
+                                        INKEY(0)
+                                        RESTSCREEN(01,00,24,79,tela1)
+                        ENDCASE
+                CASE nOpcao = 7                  // FIM DO SISTEMAS
+                        DO CASE
+                                CASE nitemmenu = 1
+                                        fim(sistema+'('+mversao+')')
+                                CASE nitemmenu = 2
+                                        fim(sistema+'('+mversao+')')
+                        ENDCASE
+        ENDCASE
+ENDDO
+RETURN NIL
+
+************************************** F I M ***************************

@@ -1,0 +1,42 @@
+**************************
+* EXCLUSAO DE MEDICAMENTOS
+**************************
+FUNCTION smed243
+****************
+LOCAL mprg:='SMED243',lci,cci,lba,cba,opcao
+
+lci := cci := 0
+lba := 19
+cba := 77
+op_tela(05,14,10,80,'EXCLUSAO DE MEDICAMENTOS')
+WHILE .T.
+        exibi_prg(mprg)
+        opcao := SPACE(1)
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Cod.Medicamento ..:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome Comercial ...:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Nome da Droga ....:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Posologia ........:')
+        setcor(3)
+        DEVPOS(lci+1,cci+22);DEVOUT(dro->cod_med)
+        DEVPOS(lci+2,cci+22);DEVOUT(dro->nomecom)
+        DEVPOS(lci+3,cci+22);DEVOUT(dro->nomedroga)
+        DEVPOS(lci+4,cci+22);DEVOUT(dro->posologia)
+        setcor(1)
+        opcao := op_simnao('N','Confirma Exclusao:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                EXIT
+        ENDIF
+        IF BLOQREG()
+                sr_getconnection():exec("DELETE FROM smedro WHERE cod_med = "+sr_cdbvalue(dro->cod_med),,.f.)
+                sr_getconnection():exec("COMMIT",,.f.)
+                EXIT
+        ELSE
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                EXIT
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN
+********************** f i m ***********************************
+

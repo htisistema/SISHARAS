@@ -1,0 +1,731 @@
+************************************
+* FUNCAO PARA ATUALIZAR OS DBF'S
+***********************************
+FUNCTION smed_dbf(mtp)
+****************
+
+LOCAL mprg:='SAC_DBF',lci:=00,cci:=01,lba:=24,cba:=78,opcao_bkp,;
+      matriz :={},mdata_mov,mdata_caixa,mdata_cli,;
+      mdata_dupr,mdata_setup,mdata_conf,mdata_cfg,;
+      mdata_senha,mdata_log,mdata_dupp,mdata_cart,;
+      matualiza,mmov,mconf,mcaix,mdupr,mdupp,mcart,;
+      mcli,msetup,mcheq,mcfg,minsopera,mlog,mtela,;
+      mdata_ver,matual,mtela_bkp,mdata_arq,mespe,mdata_espe,matcli:={}
+
+CLOSE ALL
+USE saccfg ALIAS cfg SHARED NEW
+mtela := SAVESCREEN(00,00,24,79)
+mdata_conf := CTOD('28/05/2004')
+mdata_cheq := CTOD('08/03/2005')
+mdata_cart := CTOD('22/09/2005')
+mdata_log  := CTOD('09/11/2005')
+mdata_dupp := CTOD('15/03/2006')
+mdata_mov  := CTOD('03/04/2006')
+mdata_caixa:= CTOD('03/04/2006')
+mdata_espe := CTOD('04/04/2006')
+mdata_senha:= CTOD('16/04/2006')
+mdata_dupr := CTOD('24/08/2006')
+mdata_cfg  := CTOD('08/04/2008')
+mdata_setup:= CTOD('07/05/2008')
+mdata_cli  := CTOD('02/10/2008')
+matualiza := mmerc := mmov := mconf := mcaix := mdupr := mdupp := mespe :=;
+mcli := msetup:= mcheq := mcfg := minsopera := mlog := matual := mcart := ' '
+mdata_ver := CTOD(SUBSTR(cfg->ver_cfg,7,2)+'/'+SUBSTR(cfg->ver_cfg,4,2)+'/'+STRZERO(VAL(SUBSTR(cfg->ver_cfg,2,1)),2))
+IF mdata_ver < mdata_mov  ;matualiza := mmov := 'X'     ;ENDIF
+IF mdata_ver < mdata_caixa;matualiza := mcaix := 'X'    ;ENDIF
+IF mdata_ver < mdata_dupr ;matualiza := mdupr := 'X'    ;ENDIF
+IF mdata_ver < mdata_dupp ;matualiza := mdupp := 'X'    ;ENDIF
+IF mdata_ver < mdata_cli  ;matualiza := mcli := 'X'     ;ENDIF
+IF mdata_ver < mdata_setup;matualiza := msetup:= 'X'    ;ENDIF
+IF mdata_ver < mdata_cfg  ;matualiza := mcfg := 'X'     ;ENDIF
+IF mdata_ver < mdata_senha;matualiza := minsopera := 'X';ENDIF
+IF mdata_ver < mdata_log  ;matualiza := mlog := 'X'     ;ENDIF
+IF mdata_ver < mdata_cart ;matualiza  := mcart := 'X'   ;ENDIF
+IF mdata_ver < mdata_espe ;matualiza  := mespe := 'X'   ;ENDIF
+IF mtp <> NIL
+        matualiza := mmov := mconf := mcaix := mdupr := mdupp := mespe :=;
+        mcli := msetup:= mcheq := mcfg := minsopera := mlog := matual := mcart := 'X'
+ENDIF
+/*
+IF mcfg = 'X'
+        cfg->(DBCLOSEAREA())
+        DEVPOS(lci+21,cci+56);DEVOUT('**  SACCFG.DBF **')
+        IF ! ren_arq('SACCFG.DBF','SACCFGV.DBF','CFG')
+                DEVPOS(lci+21,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                matual := 'X'
+        ELSE
+                matriz:={ }
+                AADD(matriz,{'ver_cfg','C',10,0})
+                AADD(matriz,{'nome','C',10,0})
+                AADD(matriz,{'tip_term','C',1,0})
+                AADD(matriz,{'tip_cor','C',1,0})
+                AADD(matriz,{'mult_med','C',1,0})
+                AADD(matriz,{'porta_def','N',1,0})
+                AADD(matriz,{'cam_print','C',30,0})
+                DBCREATE('saccfg.dbf',matriz)
+                USE saccfg ALIAS cfg EXCLUSIVE NEW
+                **************
+                SELE('cfg')
+                **************
+                BLOQARQ()
+                APPEND FROM saccfgv.DBF
+                cfg->ver_cfg := mversao
+                DBCOMMITALL()
+                DBUNLOCKALL()
+                ERASE saccfgv.dbf
+        ENDIF
+ENDIF
+*/
+IF (cfg->tip_term = 'T' .AND. ! EMPTY(mcfg)) .OR. cfg->tip_term = 'S'
+        IF matualiza = 'X'
+                IF cfg->tip_term = 'S'
+                        IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                        **************
+                        SELE('set')
+                        **************
+                        BLOQARQ()
+                        set->situacao := 'M'
+                        DBCOMMITALL()
+                        DBUNLOCKALL()
+                        set->(DBCLOSEAREA())
+                ENDIF
+                @ lci,cci CLEAR TO lba,cba
+                SETCOR(3)
+                DEVPOS(lci,cci);DEVOUT(PADC(' A T U A L I Z A C A O    D E   A R Q U I V O S ',80))
+                @ lci+1,cci+1 SAY PADC(' SIAC - Sistema Medicos - '+mversao,78)
+                @ lci+2,cci+1 TO lci+2,cba-1
+                DEVPOS(lci+3 ,cci+1);DEVOUT('1> Atualizar o arquivo smedcli.DBF      ['+mcli      +']  '+DTOC(mdata_cli))
+                DEVPOS(lci+4 ,cci+1);DEVOUT('2> Atualizar o arquivo SACMOV.DBF      ['+mmov      +']  '+DTOC(mdata_mov))
+                DEVPOS(lci+5 ,cci+1);DEVOUT('3> Atualizar o arquivo SACCAIXA.DBF    ['+mcaix     +']  '+DTOC(mdata_caixa))
+                DEVPOS(lci+6 ,cci+1);DEVOUT('4> Atualizar o arquivo SACDUPR.DBF     ['+mdupr     +']  '+DTOC(mdata_dupr))
+                DEVPOS(lci+7,cci+1);DEVOUT('5> Atualizar o arquivo smedsetu.DBF    ['+msetup    +']  '+DTOC(mdata_setup))
+                DEVPOS(lci+8,cci+1);DEVOUT('6> Atualizar o arquivo SACCONF.DBF     ['+mconf     +']  '+DTOC(mdata_conf))
+                DEVPOS(lci+9,cci+1);DEVOUT('7> Atualizar o arquivo SACCHEQ.DBF     ['+mcheq     +']  '+DTOC(mdata_cheq))
+                DEVPOS(lci+10,cci+1);DEVOUT('8> Atualizar o arquivo INSOPERA.DBF    ['+minsopera +']  '+DTOC(mdata_senha))
+                DEVPOS(lci+11,cci+1);DEVOUT('9> Atualizar o arquivo SACLOG.DBF      ['+mlog      +']  '+DTOC(mdata_log))
+                DEVPOS(lci+12,cci+1);DEVOUT('10> Atualizar o arquivo SACDUPP.DBF    ['+mdupp     +']  '+DTOC(mdata_dupp))
+                DEVPOS(lci+13,cci+1);DEVOUT('11> Atualizar o arquivo SACCARTA.DBF   ['+mcart     +']  '+DTOC(mdata_cart))
+                DEVPOS(lci+14,cci+1);DEVOUT('12> Atualizar o arquivo SACCFG.DBF     ['+mcfg      +']  '+DTOC(mdata_cfg))
+                DEVPOS(lci+15,cci+1);DEVOUT('13> Atualizar o arquivo SACESPE.DBF    ['+mespe     +']  '+DTOC(mdata_espe))
+                DEVPOS(24,00);DEVOUT('Confirma a Atualiza‡Æo [S/n]:')
+                opcao := 'S'
+                @ 24,COL()+1 GET opcao PICT '@!' VALID opcao $ 'S,N' WHEN mtp <> NIL
+                READ
+                IF LASTKEY() = 27 .OR. opcao = 'N'
+                        RESTSCREEN(00,00,24,79,mtela)
+                        RETURN NIL
+                ENDIF
+                opcao_bkp := 'N'
+                IF FILE('bkpdbf.arj') .AND. cfg->tip_term = 'S'
+                        mdata_arq := DIRECTORY('bkpdbf.arj') [1][3]
+                        IF mdata_arq = DATE()
+                                opcao_bkp := mensagem1('Ja foi feito o BACKUP dos Arquivos nesta DATA, Deseja fazer mesmo assim:',' ','S,N',,'*')
+                        ELSE
+                                opcao_bkp := mensagem1('Deseja fazer o BACKUP dos Arquivos:',' ','S,N',,'*')
+                        ENDIF
+                ELSEIF cfg->tip_term = 'S'
+                        opcao_bkp := mensagem1('Deseja fazer o BACKUP dos Arquivos:',' ','S,N',,'*')
+                ENDIF
+                IF opcao_bkp = 'S' .AND. cfg->tip_term = 'S'
+                        mtela_bkp:= SAVESCREEN(00,00,24,79)
+                        CLS
+                        RUN ARJ A BKPDBF *.DBF
+                        RESTSCREEN(00,00,24,79,mtela_bkp)
+                ELSEIF LASTKEY() = 27
+                        RESTSCREEN(00,00,24,79,mtela)
+                        RETURN NIL
+                ENDIF
+                IF mcli = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+3,cci+56);DEVOUT('** smedcli.DBF **')
+                        ERASE smedcliv.dbf
+                        IF ! ren_arq('smedcli.DBF','smedcliV.DBF','smcli')
+                                DEVPOS(lci+3,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matcli:={ }
+                                AADD(matcli,{'cod_prop','C',5,0})
+                                AADD(matcli,{'cli','C',35,0})
+                                AADD(matcli,{'cod_pela','C',5,0})
+                                AADD(matcli,{'cod_espe','C',5,0})
+                                AADD(matcli,{'cod_raca','C',5,0})
+                                AADD(matcli,{'raca','C',35,0})
+                                AADD(matcli,{'registro','C',5,0})
+                                AADD(matcli,{'data','D',8,0})
+                                AADD(matcli,{'nome','C',35,0})
+                                AADD(matcli,{'datans','D',8,0})
+                                AADD(matcli,{'sexo','C',1,0})
+                                AADD(matcli,{'cor','C',1,0})
+                                AADD(matcli,{'estcivil','C',1,0})
+                                AADD(matcli,{'profissao','C',20,0})
+                                AADD(matcli,{'natural','C',25,0})
+                                AADD(matcli,{'endereco','C',35,0})
+                                AADD(matcli,{'cidade','C',25,0})
+                                AADD(matcli,{'fone','C',15,0})
+                                AADD(matcli,{'est','C',2,0})
+                                AADD(matcli,{'cep','C',9,0})
+                                AADD(matcli,{'resp','C',30,0})
+                                AADD(matcli,{'indica','C',30,0})
+                                AADD(matcli,{'datault','D',8,0})
+                                AADD(matcli,{'codconv','C',2,0})
+                                AADD(matcli,{'emp_cli','C',20,0})
+                                AADD(matcli,{'bairro','C',25,0})
+                                AADD(matcli,{'conjuge','C',30,0})
+                                AADD(matcli,{'emp_conj','C',20,0})
+                                AADD(matcli,{'prof_conj','C',20,0})
+                                AADD(matcli,{'fone_conj','C',15,0})
+                                AADD(matcli,{'plano','C',25,0})
+                                AADD(matcli,{'empresa','C',25,0})
+                                AADD(matcli,{'num_cart','C',18,0})
+                                AADD(matcli,{'val_cart','D',8,0})
+                                AADD(matcli,{'rg','C',12,0})
+                                AADD(matcli,{'fuma','C',1,0})     
+                                AADD(matcli,{'fum_dat1','D',8,0})
+                                AADD(matcli,{'fum_dat2','D',8,0})
+                                AADD(matcli,{'obs1','C',60,0})
+                                AADD(matcli,{'obs2','C',60,0})
+                                AADD(matcli,{'obs3','C',60,0})
+                                AADD(matcli,{'obs4','C',60,0})
+                                AADD(matcli,{'ult_mest1','D',8,0})
+                                AADD(matcli,{'pro_nasc1','D',8,0})
+                                AADD(matcli,{'dat_nasc1','D',8,0})
+                                AADD(matcli,{'ult_mest2','D',8,0})
+                                AADD(matcli,{'pro_nasc2','D',8,0})
+                                AADD(matcli,{'dat_nasc2','D',8,0})
+                                AADD(matcli,{'ult_mest3','D',8,0})
+                                AADD(matcli,{'pro_nasc3','D',8,0})
+                                AADD(matcli,{'dat_nasc3','D',8,0})
+                                AADD(matcli,{'ult_mest4','D',8,0})
+                                AADD(matcli,{'pro_nasc4','D',8,0})
+                                AADD(matcli,{'dat_nasc4','D',8,0})
+                                AADD(matcli,{'ult_mest5','D',8,0})
+                                AADD(matcli,{'pro_nasc5','D',8,0})
+                                AADD(matcli,{'dat_nasc5','D',8,0})
+                                AADD(matcli,{'ult_mest6','D',8,0})                
+                                AADD(matcli,{'pro_nasc6','D',8,0})
+                                AADD(matcli,{'dat_nasc6','D',8,0})
+                                DBCREATE('smedcli.dbf',matcli)
+                                ERASE smedcli.CDX
+                                USE smedcli ALIAS cli NEW SHARED
+                                **************
+                                SELE('smcli')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM smedcliv.DBF
+                                COMMIT
+                                UNLOCK
+                                smcli->(DBCLOSEAREA())
+                                ERASE smedcliv.dbf
+                        ENDIF
+                ENDIF
+                IF mmov = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+4,cci+56);DEVOUT('**  SACMOV.DBF **')
+                        IF ! ren_arq('SMEDMOV.DBF','SMEDMOVV.DBF','CONTR')
+                                DEVPOS(lci+5,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'medico','C',5,0})
+                                AADD(matriz,{'datacons','D',8,0})
+                                AADD(matriz,{'cadnome','C',35,0})
+                                AADD(matriz,{'registro','C',5,0})
+                                AADD(matriz,{'situacao','C',1,0})
+                                AADD(matriz,{'codconv','C',2,0})
+                                AADD(matriz,{'modalidade','C',2,0})
+                                AADD(matriz,{'valor','N',10,2})
+                                AADD(matriz,{'valor_op','N',10,2})
+                                AADD(matriz,{'guiano','C',16,0})
+                                AADD(matriz,{'recibo','C',1,0})
+                                DBCREATE('smedmov.dbf',matriz)
+                                ERASE smedmov.cdx
+                                USE smedmov ALIAS contr EXCLUSIVE NEW
+                                **************
+                                SELE('contr')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SMEDMOVV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                contr->(DBCLOSEAREA())
+                                ERASE smedmovv.dbf
+                        ENDIF
+                ENDIF
+                IF mcaix = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+5,cci+56);DEVOUT('**  SACCAIXA.DBF **')
+                        IF ! ren_arq('SACCAIXA.DBF','SACCAIXV.DBF','CAIX')
+                                DEVPOS(lci+5,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'empresa','C',3,0})
+                                AADD(matriz,{'tipo','C',2,0})
+                                AADD(matriz,{'medico','C',5,0})
+                                AADD(matriz,{'data','D',8,0})
+                                AADD(matriz,{'nota','C',8,0})
+                                AADD(matriz,{'num_dup','C',10,0})
+                                AADD(matriz,{'num_ban','C',3,0})
+                                AADD(matriz,{'cod_ct','C',3,0})
+                                AADD(matriz,{'documento','C',10,0})
+                                AADD(matriz,{'venci','D',8,0})
+                                AADD(matriz,{'valor','N',10,2})
+                                AADD(matriz,{'tipo_comp','C',2,0})
+                                AADD(matriz,{'coddesp','C',3,0})
+                                AADD(matriz,{'descri1','C',40,0})
+                                AADD(matriz,{'descri2','C',40,0})
+                                AADD(matriz,{'cod_vend','C',3,0})
+                                AADD(matriz,{'cod_cli','C',5,0})
+                                AADD(matriz,{'cod_opera','C',3,0})
+                                AADD(matriz,{'sangria','C',1,0})
+                                AADD(matriz,{'op_pg','C',3,0})
+                                AADD(matriz,{'pg','C',1,0})
+                                AADD(matriz,{'hora','C',8,0})
+                                AADD(matriz,{'autoriz','C',3,0})
+                                AADD(matriz,{'valor_com','N',10,2})
+                                AADD(matriz,{'comissao','N',12,6})
+                                AADD(matriz,{'tp_desp','C',1,0})
+                                AADD(matriz,{'num_pdv','C',4,0})
+                                AADD(matriz,{'num_cup','C',6,0})
+                                AADD(matriz,{'fechado','C',2,0})
+                                AADD(matriz,{'tp_mov','C',1,0})
+                                DBCREATE('saccaixa.dbf',matriz)
+                                ERASE saccaixa.cdx
+                                USE saccaixa ALIAS caix EXCLUSIVE NEW
+                                **************
+                                SELE('caix')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACCAIXV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                caix->(DBCLOSEAREA())
+                                ERASE saccaixv.dbf
+                        ENDIF
+                ENDIF
+                IF mdupr = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+6,cci+56);DEVOUT('**  SACDUPR **')
+                        IF ! ren_arq('SACDUPR.DBF','SACDUPRV.DBF','DUPR')
+                                DEVPOS(lci+6,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'empresa','C',3,0})
+                                AADD(matriz,{'tipo_con','C',1,0})
+                                AADD(matriz,{'conv','C',2,0})
+                                AADD(matriz,{'cod_esp','C',3,0})        //24.08.2006
+                                AADD(matriz,{'cod_med','C',3,0})        //24.08.2006
+                                AADD(matriz,{'status','C',1,0})        //24.08.2006
+                                AADD(matriz,{'tipo','C',2,0})
+                                AADD(matriz,{'numero','C',3,0})
+                                AADD(matriz,{'duplicata','C',10,0})
+                                AADD(matriz,{'valor_dup','N',10,2})
+                                AADD(matriz,{'tip_cli','C',1,0})
+                                AADD(matriz,{'fornec','C',5,0})
+                                AADD(matriz,{'cliente','C',40,0})
+                                AADD(matriz,{'c_cpfcnpj','C',14,0})
+                                AADD(matriz,{'hora','C',8,0})
+                                AADD(matriz,{'emissao','D',8,0})
+                                AADD(matriz,{'venc','D',8,0})
+                                AADD(matriz,{'venc1','D',8,0})
+                                AADD(matriz,{'datpag','D',8,0})
+                                AADD(matriz,{'dattra','D',8,0})
+                                AADD(matriz,{'datope','D',8,0})
+                                AADD(matriz,{'banco','C',1,0})
+                                AADD(matriz,{'agencia','C',8,0})
+                                AADD(matriz,{'c_c','C',13,0})
+                                AADD(matriz,{'valor','N',10,2})
+                                AADD(matriz,{'vlpago','N',10,2})
+                                AADD(matriz,{'desc','N',10,2})
+                                AADD(matriz,{'juros','N',10,2})
+                                AADD(matriz,{'juros_d','N',10,2})
+                                AADD(matriz,{'tip_pg','C',2,0})
+                                AADD(matriz,{'pago','C',1,0})
+                                AADD(matriz,{'mov_cx','C',1,0})
+                                AADD(matriz,{'conta','C',1,0})
+                                AADD(matriz,{'cheque','C',8,0})
+                                AADD(matriz,{'vendedor','C',3,0})
+                                AADD(matriz,{'num_ped','C',6,0})
+                                AADD(matriz,{'comissao','N',12,6})
+                                AADD(matriz,{'operador','C',3,0})
+                                AADD(matriz,{'alt_oper','C',3,0})
+                                AADD(matriz,{'doc_tran','C',12,0})     //14.05.2002
+                                AADD(matriz,{'dat_tran','D',8,0})      //12.06.2002
+                                AADD(matriz,{'cod_forn','C',4,0})      //27.05.2002
+                                AADD(matriz,{'forn_desp','C',40,0})    //11.07.2003
+                                AADD(matriz,{'baix_parc','D',8,0})     //27.05.2002
+                                AADD(matriz,{'oper_parc','C',3,0})     //11.07.2003
+                                AADD(matriz,{'data_fund','D',8,0})     //09.05.2005
+                                AADD(matriz,{'motivo','C',30,0})       //09.05.2005
+                                AADD(matriz,{'cod_incl','C',3,0})      //09.05.2005
+                                AADD(matriz,{'obs','C',60,0})
+                                AADD(matriz,{'obs1','C',60,0})
+                                AADD(matriz,{'corrente','C',35,0})
+                                AADD(matriz,{'cpfcnpj','C',14,0})
+                                AADD(matriz,{'datcobra','D',8,0})
+                                AADD(matriz,{'datprev','D',8,0})
+                                AADD(matriz,{'datproc','D',8,0})        //03.06.2002
+                                AADD(matriz,{'opeproc','C',3,0})        //03.06.2002
+                                AADD(matriz,{'lin1','C',60,0})
+                                AADD(matriz,{'lin2','C',60,0})
+                                AADD(matriz,{'lin3','C',60,0})
+                                AADD(matriz,{'lin4','C',30,0})
+                                AADD(matriz,{'lin5','C',30,0})
+                                DBCREATE('sacdupr.dbf',matriz)
+                                ERASE sacdupr.cdx
+                                USE sacdupr ALIAS dupr EXCLUSIVE NEW
+                                **************
+                                SELE('dupr')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACDUPRV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                ERASE sacdupr.cdx
+                                ERASE smedcli.cdx
+                                dupr->(DBCLOSEAREA())
+                                ERASE sacduprv.dbf
+                        ENDIF
+                ENDIF
+                IF msetup = 'X' .AND. cfg->tip_term = 'S'
+                        IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                        set->(DBCLOSEAREA())
+                        DEVPOS(lci+7,cci+56);DEVOUT('**  smedsetu.DBF **')
+                        IF ! ren_arq('smedsetu.DBF','SACSETUV.DBF','SET')
+                                DEVPOS(lci+7,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'ver','C',10,0})
+                                AADD(matriz,{'impress','C',1,0})
+                                AADD(matriz,{'relatorio','C',4,0})
+                                AADD(matriz,{'duplicata','C',1,0})
+                                AADD(matriz,{'copia_dup','N',1,0})
+                                AADD(matriz,{'dup_imp','C',1,0})
+                                AADD(matriz,{'dup_port','C',4,0})
+                                AADD(matriz,{'intervalo','N',3,0})
+                                AADD(matriz,{'multa_dup','N',6,2})
+                                AADD(matriz,{'juros_dup','N',6,2})
+                                AADD(matriz,{'roda_dup1','C',60,0})
+                                AADD(matriz,{'roda_dup2','C',60,0})
+                                AADD(matriz,{'ceden_bol','C',1,0})
+                                AADD(matriz,{'local_bol','C',46,0})
+                                AADD(matriz,{'mens_bol1','C',46,0})
+                                AADD(matriz,{'mens_bol2','C',46,0})
+                                AADD(matriz,{'mens_bol3','C',46,0})
+                                AADD(matriz,{'mens_bol4','C',46,0})
+                                AADD(matriz,{'mens_bol5','C',46,0})
+                                AADD(matriz,{'fecha_cx','C',1,0})
+                                AADD(matriz,{'sysdatlm','C',12,0})
+                                AADD(matriz,{'situacao','C',1,0})
+                                AADD(matriz,{'medico','C',20,0})
+                                DBCREATE('smedsetu.dbf',matriz)
+                                ERASE smedsetu.cdx
+                                USE smedsetu ALIAS set EXCLUSIVE NEW
+                                **************
+                                SELE('set')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACSETUV.DBF
+                                DBCOMMIT()
+                                DBUNLOCK()
+                                set->(DBCLOSEAREA())
+                                ERASE sacsetuv.dbf
+                        ENDIF
+                ENDIF
+                IF mconf = 'X' .AND. cfg->tip_term = 'S'
+                        IF ! AbriArq('sacconf','conf');RETURN NIL;ENDIF
+                        conf->(DBCLOSEAREA())
+                        DEVPOS(lci+8,cci+56);DEVOUT('**  SACCONF.DBF **')
+                        IF ! ren_arq('SACCONF.DBF','SACCONFV.DBF','CONF')
+                                DEVPOS(lci+8,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'modulo','C',20,0})
+                                AADD(matriz,{'descri','C',60,0})
+                                AADD(matriz,{'nivel','C',9,0})
+                                AADD(matriz,{'data_alt','D',8,0})
+                                AADD(matriz,{'oper_alt','C',3,0})
+                                DBCREATE('sacconf.dbf',matriz)
+                                USE sacconf ALIAS conf EXCLUSIVE NEW
+                                **************
+                                SELE('conf')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACCONFV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                conf->(DBCLOSEAREA())
+                                ERASE sacconf.cdx
+                                ERASE sacconfv.dbf
+                        ENDIF
+                ENDIF
+                IF mcheq = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+9,cci+56);DEVOUT('**  SACCHEQ.DBF **')
+                        IF ! ren_arq('SACCHEQ.DBF','SACCHEQV.DBF','CHEQ')
+                                DEVPOS(lci+9,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'empresa','C',3,0})
+                                AADD(matriz,{'data_fund','D',8,0})
+                                AADD(matriz,{'nota','C',8,0})
+                                AADD(matriz,{'data_cheq','D',8,0})
+                                AADD(matriz,{'data_venc','D',8,0})
+                                AADD(matriz,{'num_ban','C',3,0})
+                                AADD(matriz,{'num_cheq','C',10,0})
+                                AADD(matriz,{'cheq_vlr','N',12,2})
+                                AADD(matriz,{'valor_cheq','N',12,2})
+                                AADD(matriz,{'motivo','C',30,0})
+                                AADD(matriz,{'cod_vend','C',3,0})
+                                AADD(matriz,{'cod_cli','C',5,0})
+                                AADD(matriz,{'correntist','C',35,0})
+                                AADD(matriz,{'cpfcnpj','C',14,0})
+                                AADD(matriz,{'cod_opera','C',3,0})
+                                AADD(matriz,{'cod_incl','C',3,0})
+                                AADD(matriz,{'ok','C',1,0})
+                                AADD(matriz,{'data_ok','D',8,0})
+                                AADD(matriz,{'vlr_pago','N',12,2})
+                                AADD(matriz,{'conta','C',1,0})
+                                DBCREATE('saccheq.dbf',matriz)
+                                ERASE saccheq.cdx
+                                USE saccheq ALIAS cheq EXCLUSIVE NEW
+                                **************
+                                SELE('cheq')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACCHEQV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                cheq->(DBCLOSEAREA())
+                                ERASE saccheqv.dbf
+                        ENDIF
+                ENDIF
+                IF minsopera = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+10,cci+56);DEVOUT('**  INSOPERA.DBF **')
+                        IF ! ren_arq('INSOPERA.DBF','INSOPERV.DBF','SEN')
+                                DEVPOS(lci+10,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'scod_op','C',3,0})
+                                AADD(matriz,{'snome','C',30,0})
+                                AADD(matriz,{'ssenha','C',8,0})
+                                AADD(matriz,{'sdata_cad','D',8,0})
+                                AADD(matriz,{'scod_med','C',5,0})
+                                AADD(matriz,{'scomissao','N',6,2})
+                                AADD(matriz,{'scom_praz','N',6,2})
+                                AADD(matriz,{'scom_oper','N',6,2})
+                                AADD(matriz,{'scota','N',12,2})
+                                AADD(matriz,{'sult_ent','D',8,0})
+                                AADD(matriz,{'sult_fim','D',8,0})
+                                AADD(matriz,{'snivel','C',2,0})
+                                AADD(matriz,{'shora_ini','C',5,2})
+                                AADD(matriz,{'shora_fim','C',5,2})
+                                AADD(matriz,{'sult_e_c','D',8,0})
+                                AADD(matriz,{'sh_i_c','C',5,2})
+                                AADD(matriz,{'sexpira','N',3,0})
+                                AADD(matriz,{'scod_aut','C',17,0})
+                                DBCREATE('insopera.dbf',matriz)
+                                ERASE insopera.cdx
+                                ERASE insoperv.cdx
+                                USE insopera ALIAS sen EXCLUSIVE NEW
+                                **************
+                                SELE('sen')
+                                **************
+                                APPEND FROM insoperv.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                sen->(DBCLOSEAREA())
+                                ERASE insoperv.dbf
+                        ENDIF
+                ENDIF
+                IF mlog = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+11,cci+56);DEVOUT('**  SACLOG.DBF **')
+                        IF ! ren_arq('SACLOG.DBF','SACLOGV.DBF','LOG')
+                                DEVPOS(lci+11,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'data_sis','D',8,0})
+                                AADD(matriz,{'data','D',8,0})
+                                AADD(matriz,{'hora','C',8,0})
+                                AADD(matriz,{'tipo','C',10,0})
+                                AADD(matriz,{'aut_oper','C',3,0})
+                                AADD(matriz,{'cod_oper','C',3,0})
+                                AADD(matriz,{'cod_vend','C',3,0})
+                                AADD(matriz,{'cod_cli','C',5,0})
+                                AADD(matriz,{'cod_forn','C',4,0})
+                                AADD(matriz,{'cod_prod','C',5,0})
+                                AADD(matriz,{'documento','C',10,0})
+                                AADD(matriz,{'quantd1','N',14,3})
+                                AADD(matriz,{'quantd2','N',14,3})
+                                AADD(matriz,{'valor1','N',14,3})
+                                AADD(matriz,{'valor2','N',14,3})
+                                AADD(matriz,{'venc1','D',8,0})
+                                AADD(matriz,{'venc2','D',8,0})
+                                AADD(matriz,{'modulo','C',20,0})
+                                AADD(matriz,{'descri','C',60,0})
+                                AADD(matriz,{'cod_aut','C',17,0})
+                                DBCREATE('saclog.dbf',matriz)
+                                ERASE saclog.cdx
+                                USE saclog ALIAS log EXCLUSIVE NEW
+                                **************
+                                SELE('log')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACLOGV.DBF
+                                DBCOMMIT()
+                                DBUNLOCK()
+                                log->(DBCLOSEAREA())
+                                ERASE saclogv.dbf
+                        ENDIF
+                ENDIF
+                IF mdupp = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+12,cci+56);DEVOUT('**  SACDUPP.DBF **')
+                        IF ! ren_arq('SACDUPP.DBF','SACDUPPV.DBF','DUPP')
+                                DEVPOS(lci+12,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'empresa','C',3,0})
+                                AADD(matriz,{'tipo','C',2,0})
+                                AADD(matriz,{'numero','C',3,0})
+                                AADD(matriz,{'duplicata','C',10,0})
+                                AADD(matriz,{'valor_dup','N',10,2})
+                                AADD(matriz,{'tip_for','C',4,0})
+                                AADD(matriz,{'fornec','C',4,0})
+                                AADD(matriz,{'cliente','C',40,0})
+                                AADD(matriz,{'emissao','D',8,0})
+                                AADD(matriz,{'venc','D',8,0})
+                                AADD(matriz,{'datpag','D',8,0})
+                                AADD(matriz,{'banco','C',3,0})
+                                AADD(matriz,{'agencia','C',8,0})
+                                AADD(matriz,{'c_c','C',13,0})
+                                AADD(matriz,{'valor','N',10,2})
+                                AADD(matriz,{'vlpago','N',10,2})
+                                AADD(matriz,{'desc','N',10,2})
+                                AADD(matriz,{'juros','N',10,2})
+                                AADD(matriz,{'pago','C',1,0})
+                                AADD(matriz,{'conta','C',1,0})
+                                AADD(matriz,{'obs','C',60,0})
+                                AADD(matriz,{'nbanco','C',3,0})
+                                AADD(matriz,{'cheque','C',6,0})
+                                AADD(matriz,{'vendedor','C',3,0})
+                                AADD(matriz,{'num_ped','C',6,0})
+                                AADD(matriz,{'operador','C',3,0})
+                                DBCREATE('sacdupp.dbf',matriz)
+                                ERASE sacdupp.cdx
+                                USE sacdupp ALIAS dupp EXCLUSIVE NEW
+                                **************
+                                SELE('dupp')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM SACDUPPV.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                ERASE sacdupp.cdx
+                                dupp->(DBCLOSEAREA())
+                                ERASE sacduppv.dbf
+                        ENDIF
+                ENDIF
+                IF mcart = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+13,cci+56);DEVOUT('**  SACCARTA.DBF **')
+                        IF ! ren_arq('SACCARTA.DBF','SACCARTV.DBF','CAR')
+                                DEVPOS(lci+13,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'codigo','C',3,0})
+                                AADD(matriz,{'cartao','C',20,0})
+                                AADD(matriz,{'prazo','N',3,0})
+                                AADD(matriz,{'desconto','N',5,2})
+                                AADD(matriz,{'cod_forn','C',4,0})
+                                AADD(matriz,{'tipo_conta','C',4,0})
+                                AADD(matriz,{'tipo_venda','C',1,0})
+                                DBCREATE('saccarta.dbf',matriz)
+                                ERASE saccarta.cdx
+                                USE saccarta ALIAS car EXCLUSIVE NEW
+                                **************
+                                SELE('car')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM saccartv.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                car->(DBCLOSEAREA())
+                                ERASE saccartv.dbf
+                        ENDIF
+                ENDIF
+                IF mespe = 'X' .AND. cfg->tip_term = 'S'
+                        DEVPOS(lci+15,cci+56);DEVOUT('**  SACESPE.DBF **')
+                        IF ! ren_arq('smedmed.DBF','smedmedV.DBF','med')
+                                DEVPOS(lci+15,cci+56);DEVOUT('** NAO ATUALIZADO **')
+                                matual := 'X'
+                        ELSE
+                                matriz:={ }
+                                AADD(matriz,{'cod_espe','C',5,0})
+                                AADD(matriz,{'especialid','C',20,0})
+                                AADD(matriz,{'profission','C',35,0})
+                                AADD(matriz,{'crm','C',15,0})
+                                AADD(matriz,{'fone','C',15,0})
+                                AADD(matriz,{'endereco','C',35,0})
+                                AADD(matriz,{'cep','C',9,0})
+                                AADD(matriz,{'cidade','C',20,0})
+                                DBCREATE('smedmed.dbf',matriz)
+                                ERASE smedmed.cdx
+                                USE smedmed ALIAS med EXCLUSIVE NEW
+                                **************
+                                SELE('med')
+                                **************
+                                BLOQARQ()
+                                APPEND FROM smedmedv.DBF
+                                DBCOMMITALL()
+                                DBUNLOCKALL()
+                                med->(DBCLOSEAREA())
+                                ERASE smedmedv.dbf
+                        ENDIF
+                ENDIF
+                IF EMPTY(matual)
+                        IF ! AbriArq('saccfg','cfg');RETURN NIL;ENDIF
+                        SELE('cfg')
+                        BLOQREG()
+                        cfg->ver_cfg := mversao
+                        DBCOMMIT();DBUNLOCK()
+                        IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+                        **************
+                        SELE('set')
+                        **************
+                        BLOQARQ()
+                        set->situacao := 'O'
+                        set->ver := mversao
+                        DBCOMMIT();DBUNLOCK()
+                        set->(DBCLOSEAREA())
+                        atencao('Atualiza‡Æo Completa com exito OK !!!')
+                        RESTSCREEN(00,00,24,79,mtela)
+                        smeddbf()
+                        RETURN NIL
+                ELSE
+                        atencao('Nao foi Atualizado todos os arquivos necessario !!!')
+                        RESTSCREEN(00,00,24,79,mtela)
+                        smeddbf()
+                        RETURN NIL
+                ENDIF
+        ENDIF
+ENDIF
+smeddbf()
+IF ! AbriArq('saccfg','cfg');RETURN NIL;ENDIF
+SELE('cfg')
+BLOQREG()
+cfg->ver_cfg := mversao
+DBCOMMIT();DBUNLOCK()
+IF ! AbriArq('smedsetu','set');RETURN NIL;ENDIF
+**************
+SELE('set')
+**************
+BLOQARQ()
+set->situacao := 'O'
+set->ver := mversao
+DBCOMMIT();DBUNLOCK()
+set->(DBCLOSEAREA())
+RESTSCREEN(00,00,24,79,mtela)
+RETURN NIL
+

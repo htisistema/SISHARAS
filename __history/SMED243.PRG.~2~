@@ -1,0 +1,42 @@
+**************************
+* EXCLUSAO DE MEDICAMENTOS
+**************************
+FUNCTION smed243
+****************
+LOCAL mprg:='SMED243',lci,cci,lba,cba,opcao
+
+lci := cci := 0
+lba := 19
+cba := 77
+op_tela(15,14,19,80,'EXCLUSAO DE MEDICAMENTOS')
+WHILE .T.
+        exibi_prg(mprg)
+        opcao := SPACE(1)
+        Mensagem('Preencha o Campos ou Tecle <ESC> P/Retornar')
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome Comercial ...:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Nome da Droga ....:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Posologia ........:')
+        SETCOLOR(vcor[3])
+        DEVPOS(lci+1,cci+22);DEVOUT(dro->nomecom)
+        DEVPOS(lci+2,cci+22);DEVOUT(dro->nomedroga)
+        DEVPOS(lci+3,cci+22);DEVOUT(dro->posologia)
+        SETCOLOR(vcor[1])
+        opcao := op_simnao('N','Confirma Exclusao:')
+        IF LASTKEY() = 27 .OR. opcao = 'N'
+                EXIT
+        ENDIF
+        IF BLOQREG()
+                DELE
+                COMMIT
+                UNLOCK
+                EXIT
+        ELSE
+                atencao('Nao foi possivel acessar o Arquivo !!!')
+                EXIT
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN
+********************** f i m ***********************************
+

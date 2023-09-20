@@ -1,0 +1,108 @@
+**************************
+* EXCLUSAO DE PROPRIETARIO
+**************************
+
+FUNCTION smedpro3
+****************
+
+LOCAL mprg:='SMEDPRO3';
+      ,lci,cci,lba,cba,opcao,mreg,mdat,mnome,mdatn,mfone,mresp,mind;
+      ,sinal
+
+IF ! ver_nivel(mprg,'EXCLUSAO DE PROPRIETARIO','12',nivel_acess)
+        RETURN NIL
+ENDIF
+lci := cci := 0
+lba := 18
+cba := 77
+op_tela(11,24,18,77,'EXCLUSAO DE PROPRIETARIO')
+
+WHILE .T.
+        sinal := opcao := 0
+        mreg := SPACE(5)
+        mdat := CTOD('  /  /  ')
+        mnome := SPACE(35)
+        mdatn := CTOD('  /  /  ')
+        mresp := mind := SPACE(30)
+        Mensagem('Preencha o Campo ou Tecle <ESC> P/Retornar')
+
+        setcor(1)
+        DEVPOS(lci+1,cci+2);DEVOUT('Nome ......:')
+        DEVPOS(lci+2,cci+2);DEVOUT('Registro ..:')
+        DEVPOS(lci+3,cci+2);DEVOUT('Data Inicio:')
+        DEVPOS(lci+4,cci+2);DEVOUT('Data Nasc..:')
+        DEVPOS(lci+4,cci+24);DEVOUT('Idade:')
+        DEVPOS(lci+5,cci+2);DEVOUT('Responsavel:')
+        DEVPOS(lci+6,cci+2);DEVOUT('Indicado Por:')
+
+        Mensagem('<ESC> Retornar - <E> Excluir Reg. - <'+setcim+'> Prox.Reg. - <'+setbaix+'> Reg.Ant.')
+
+        WHILE .T.
+                mnome := nome
+                mreg := registro
+                mdat := data
+                mdatn := datans
+                mresp := resp
+                mind := indica
+                SETCOLOR(vcor[3])
+                DEVPOS(lci+1,cci+15);DEVOUT(mnome)
+                DEVPOS(lci+2,cci+15);DEVOUT(mreg)
+                DEVPOS(lci+3,cci+15);DEVOUT(DTOC(mdat))
+                DEVPOS(lci+4,cci+15);DEVOUT(DTOC(mdatn))
+                DEVPOS(lci+4,cci+31);DEVOUT(STR(INT((DATE() - datans)/365),2))
+                DEVPOS(lci+6,cci+18);DEVOUT(mind)
+                SETCOLOR(vcor[1])
+                INKEY(0)
+                IF LASTKEY() = 5
+                        SKIP
+                        IF EOF()
+                                SKIP -1
+                                atencao('Fim do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 24
+                        SKIP -1
+                        IF BOF()
+                                atencao('Inicio do Arquivo !!!')
+                        ENDIF
+                        LOOP
+                ENDIF
+
+                IF LASTKEY() = 27
+                        SET CURSOR ON
+                        SETCOLOR(vcor[1])
+                        wvw_lclosewindow()
+                        RETURN NIL
+                ENDIF
+
+                IF LASTKEY() = 69 .OR. LASTKEY() = 101
+                        IF BLOQREG()
+                                SETCOLOR(vcor[1])
+                                SET CURSOR ON
+                                EXIT
+                        ELSE
+                                atencao('Nao foi possivel acessar o Arquivo !!!')
+                                LOOP
+                        ENDIF
+                ENDIF
+        ENDDO
+        opcao := op_simnao('N','Confirma Exclusao:')
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+
+        IF opcao = 'S'
+                DELE
+                COMMIT
+                UNLOCK
+                atencao('Cliente foi Excluida OK ')
+                EXIT
+        ELSE
+                UNLOCK
+                EXIT
+        ENDIF
+ENDDO
+wvw_lclosewindow()
+RETURN NIL

@@ -1,0 +1,132 @@
+#INCLUDE 'INKEY.CH'
+
+FUNCTION saccli(mop)
+*****************
+
+LOCAL f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,;
+      oconsprod,ocolprod[4],f7i,f7nkey,f7opcao,mcodcli,mponto
+MEMVAR mcod_cli
+
+f7lci := f7cci := 0
+*f7lba := MAXROW()-3
+f7lba := 29
+f7cba := 96
+
+f7msele := SELE()
+f7morde := INDEXORD()
+IF ! AbriArq('smedconv','conv');RETURN NIL;ENDIF
+IF ! AbriArq('saccli','cli');RETURN NIL;ENDIF
+IF ! AbriArq('sacdupr','dupr');RETURN NIL;ENDIF
+*************
+SELE('cli');ORDSETFOCUS(2)
+*************
+mponto := RECNO()
+*************
+SELE('cli');ORDSETFOCUS(1)
+GO BOTT
+mcodcli:=cli->cod_cli
+*************
+*************
+SELE('cli');ORDSETFOCUS(2)
+GO mponto
+*************
+op_tela(00,00,33,96,' PROPRIETARIO               Ult.Cliente:'+mcodcli+'        Quantidades: '+TRANSFORM(LASTREC(),'999,999'))
+oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+ocolprod[1] := TBCOLUMNNEW('Razao Social',{||cli->razao})
+ocolprod[2] := TBCOLUMNNEW('Cod.',{||cli->cod_cli})
+ocolprod[3] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(cli->nascimento)})
+ocolprod[4] := TBCOLUMNNEW('Dat.Cad.',{||cli->data_cad})
+f7i:=0
+FOR f7i=1 TO LEN(ocolprod)
+        oconsprod:ADDCOLUMN(ocolprod[f7i])
+NEXT
+oconsprod:HEADSEP := CHR(196)
+oconsprod:COLSEP := CHR(179)
+oconsprod:FORCESTABLE()
+WHILE .T.
+        exibi_prg('SMEDPROP')
+        IF mop = '*'
+                mensagem('<P>esquisa <I>nclusao <ENTER>p/Alterar e Excluir <ESC>Retornar')
+        ELSE
+                mensagem('<PGUP> <PGDN> <P>esquisa <I>nclusao <ENTER> Conf. <ESC>Retornar')
+        ENDIF
+        f7nkey := 0
+        WHILE f7nkey == 0         //.AND. ! oconsprod:STABLE
+                oconsprod:FORCESTABLE()
+                botao(f7lba+1,f7cci,f7lba+5,f7cba,,' Detalhe ')
+                setcor(1)
+                DEVPOS(f7lba+2,f7cci+1);DEVOUT('Data Cadastro:')
+                DEVPOS(f7lba+2,f7cci+31);DEVOUT('Data Nasc:')
+                DEVPOS(f7lba+3,f7cci+1);DEVOUT('Idade........:')
+                setcor(3)
+                DEVPOS(f7lba+2,f7cci+17);DEVOUT(DTOC(cli->data_cad))
+                DEVPOS(f7lba+2,f7cci+42);DEVOUT(DTOC(cli->nascimento))
+                DEVPOS(f7lba+3,f7cci+17);DEVOUT(STR(INT((DATE() - cli->nascimento)/365),2))
+                f7nkey := INKEY(0)
+        ENDDO
+        IF f7nkey == K_ESC
+                EXIT
+        ELSEIF f7nkey == 105 .OR. f7nkey == 73
+                smedpro1()
+        ELSEIF f7nkey == K_ENTER
+                mcod_prop := VAL(cli->cod_cli)
+                IF mop = NIL
+                        op_tela(10,10,12,60,'Escolha a Opcao')
+                        DEVPOS(01,00);DEVOUT('Deseja <A>lterar <E>xcluir:')
+                        f7opcao := 'A'
+                        @ 01,COL()+1 GET f7opcao PICT '@!' VALID f7opcao $ 'A,E'
+                        READ
+                        wvw_lclosewindow()
+                        IF LASTKEY() = 27
+                                LOOP
+                        ELSEIF f7opcao = 'A'
+                                smedpro2()
+                        ELSEIF f7opcao = 'E'
+                                smedpro3()
+                        ENDIF
+                ELSE
+                        mcod_prop := VAL(cli->cod_cli)
+                        CLEAR GETS
+                        EXIT
+                ENDIF
+                oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                ocolprod[1] := TBCOLUMNNEW('Razao Social',{||cli->razao})
+                ocolprod[2] := TBCOLUMNNEW('Cod.',{||cli->cod_cli})
+                ocolprod[3] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(cli->nascimento)})
+                ocolprod[4] := TBCOLUMNNEW('Dat.Cad.',{||cli->data_cad})
+                f7i:=0
+                FOR f7i=1 TO LEN(ocolprod)
+                        oconsprod:ADDCOLUMN(ocolprod[f7i])
+                NEXT
+                oconsprod:HEADSEP := CHR(196)
+                oconsprod:COLSEP := CHR(179)
+                oconsprod:FORCESTABLE()
+        ELSE
+                IF genkey(oconsprod,f7nkey,'cli')
+                        oconsprod := TBROWSEDB(f7lci,f7cci,f7lba-1,f7cba)
+                        ocolprod[1] := TBCOLUMNNEW('Razao Social',{||cli->razao})
+                        ocolprod[2] := TBCOLUMNNEW('Cod.',{||cli->cod_cli})
+                        ocolprod[3] := TBCOLUMNNEW('Dat.Nasc',{||DTOC(cli->nascimento)})
+                        ocolprod[4] := TBCOLUMNNEW('Dat.Cad.',{||cli->data_cad})
+                        f7i:=0
+                        FOR f7i=1 TO LEN(ocolprod)
+                                oconsprod:ADDCOLUMN(ocolprod[f7i])
+                        NEXT
+                        oconsprod:HEADSEP := CHR(196)
+                        oconsprod:COLSEP := CHR(179)
+                        oconsprod:FORCESTABLE()
+                ENDIF
+        ENDIF
+END
+SELE(f7msele);IF(f7morde>0,ORDSETFOCUS(f7morde),)
+wvw_lclosewindow()
+IF f7nkey == K_ESC
+        RELEASE f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        RETURN NIL
+ELSE
+        RELEASE f7tela,f7tela1,f7lci,f7cci,f7lba,f7cba,f7msele,f7morde,f7men,oconsprod,ocolprod[8],f7i,f7nkey,f7opcao
+        CLEAR GETS
+        RETURN mcod_prop
+ENDIF
+RETURN NIL
+******************************* f i m *********************************************

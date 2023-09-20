@@ -1,0 +1,214 @@
+*INCLUSAO DE REPASSE
+********************
+FUNCTION smed480
+*****************
+LOCAL mprg:='SMED480',mdocumento,opcao := ' ',;
+      m_dupr:={},cons_semen:={},m_doc:={},point:=0,cons_prop:={},cons_anim:={},mnome_repass,mcpf_cnpj,;
+      mendereco,mcomplement,mnumero,mbairro,mcidade,mfone,mest,mcep,memail,mobs1,mobs2
+
+IF ! ver_nivel(mprg,'INCLUSAO DE REPASSE','12',nivel_acess)
+        RETURN NIL
+ENDIF
+op_tela(0,0,40,120,'INCLUSAO DE REPASSE',,1)
+WHILE .T.
+        exibi_prg(mprg)
+        mdata := mdata_sis
+        mdocumento := SPACE(10)
+        mcod_cli := mcod_ani := 0
+        mnome_repass := SPACE(40)
+        mcpf_cnpj := SPACE(14)
+        mendereco := SPACE(35)
+        mcomplement := SPACE(15)
+        mnumero := SPACE(5)
+        mbairro := SPACE(25)
+        mcidade := SPACE(25)
+        mfone := SPACE(15)
+        mest := SPACE(2)
+        mcep := SPACE(9)
+        memail := SPACE(60)
+        mobs1 := mobs2 := SPACE(60)
+        limpa(00,00,40,120)
+        setcor(1)
+        Mensagem('Preencha os Campos - <ESC> p/Abandonar')
+        DEVPOS(0, 1);DEVOUT('No. Documento......:')
+        DEVPOS(1, 1);DEVOUT('Codigo Cliente.....:')
+        DEVPOS(2, 1);DEVOUT('Codigo da Animal...:')
+        @ 3,0 TO 3,MAXCOL()
+        DEVPOS(4, 1);DEVOUT('     Cliente                                        Animal                             Data Emissao   Documento')
+        @ 5,0 TO 5,MAXCOL()
+        @ 0,22 GET mdocumento
+        @ 1,22 GET mcod_cli PICT '99999' VALID ver_prop(mcod_cli,1,28) WHEN EMPTY(mdocumento)
+        READ
+        IF LASTKEY() = 27
+                EXIT
+        ENDIF
+        ver_prop(mcod_cli,1,28)
+        @ 2,22 GET mcod_ani PICT '99999' VALID ver_animal(mcod_ani,2,28) WHEN EMPTY(mcod_cli)
+        READ
+        IF LASTKEY() = 27
+                LOOP
+        ENDIF
+        ver_animal(mcod_ani,2,28)
+        opcao := op_simnao('S','Confirma os Dados:')
+        IF opcao = "N"
+                LOOP
+        ENDIF
+        m_doc:={}
+        cons_semen := {}
+        IF ! EMPTY(mdocumento)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE documento = "+sr_cdbvalue(mdocumento)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_cli)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_prop = "+sr_cdbvalue(mcod_cli)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSEIF ! EMPTY(mcod_ani)
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE cod_anim = "+sr_cdbvalue(mcod_ani)+" AND data_lib IS NULL",,.t.,@cons_semen)
+        ELSE
+                sr_getconnection():exec("SELECT * FROM smedsemen WHERE data_lib IS NULL",,.t.,@cons_semen)
+        ENDIF
+        IF LEN(cons_semen) = 0
+                atencao('Nao foi encontrado nenhum registro')
+                LOOP
+        ENDIF
+        i := 0
+        m_dupr := {}
+        FOR i = 1 TO LEN(cons_semen)
+                cons_prop:={}
+                cons_anim:={}
+                sr_getconnection():exec("SELECT razao FROM saccli WHERE cod_cli = "+sr_cdbvalue(cons_semen[i,3]),,.t.,@cons_prop)
+                IF LEN(cons_prop) = 0
+                        //atencao('Nao foi encontrado este Cliente de Codigo: '+STR(cons_semen[i,3],5))
+                        LOOP
+                ENDIF
+                sr_getconnection():exec("SELECT nome FROM smedcli WHERE registro = "+sr_cdbvalue(cons_semen[i,4]),,.t.,@cons_anim)
+                IF LEN(cons_anim) = 0
+                        //atencao('Nao foi encontrado este Animal de Codigo: '+STR(cons_semen[i,4],5))
+                        LOOP
+                ENDIF
+                                //  COD_PROP                                                    COD_ANIMAL                   DATA EMISSAO                  DOCUMENTO
+                AADD(m_dupr,' '+STR(cons_semen[i,3],5)+'-'+cons_prop[1,1]+' '+STR(cons_semen[i,4],5)+'-'+cons_anim[1,1]+'  '+DTOC(cons_semen[i,1])+'   '+cons_semen[i,2])
+                AADD(m_doc,{cons_semen[i,3],cons_semen[i,2]})
+        NEXT
+        IF LEN(m_dupr) = 0
+                atencao('Nenhum registro encontrado...')
+                LOOP
+        ENDIF
+        point := ACHOICE(6,1,39,119,m_dupr,,,point)
+        DO CASE
+                CASE LASTKEY()=27
+                        LOOP
+                CASE LASTKEY() = 13
+                        cons_repass := {}
+                        sr_getconnection():exec("SELECT * FROM smedrepass WHERE documento = "+sr_cdbvalue(m_doc[point,2]),,.t.,@cons_repass)
+                        op_tela(0,0,40,110,'INCLUSAO DE REPASSE no Cadastro: '+SUBSTR(m_dupr[point],2,45)+'  DOCUMENTO: '+m_doc[point,2],,1)
+                        DEVPOS(0, 1);DEVOUT('Data da Inclusaoo..:')
+                        DEVPOS(1, 1);DEVOUT('CPF/CNPJ...........:')
+                        DEVPOS(2, 1);DEVOUT('Nome...............:')
+                        DEVPOS(3, 1);DEVOUT('Endereco...........:')
+                        DEVPOS(4, 1);DEVOUT('Numero.............:')
+                        DEVPOS(5, 1);DEVOUT('Complemento........:')
+                        DEVPOS(6, 1);DEVOUT('Bairro.............:')
+                        DEVPOS(7, 1);DEVOUT('Cidade.............:')
+                        DEVPOS(8, 1);DEVOUT('Estado.............:')
+                        DEVPOS(9, 1);DEVOUT('CEP................:')
+                        DEVPOS(10,1);DEVOUT('Telefone...........:')
+                        DEVPOS(11,1);DEVOUT('Email..............:')
+                        DEVPOS(12,1);DEVOUT('Observacao.........:')
+                        @ 14,0 TO 14,MAXCOL()
+                        WVW_DrawLabel(,15,45,'R E P A S S E S',,,240,, 'times new roman',14,8,,,,,)
+                        //DEVPOS(15,1);DEVOUT(PADC('R E P A S S E S',100))
+                        DEVPOS(16,1);DEVOUT('  Data   Nome                                     CPF/CNPJ       Cidade                    UF')
+                        @ 17,0 TO 17,MAXCOL()
+                        IF LEN(cons_repass) > 0
+                                y:=0
+                                FOR y = 1 TO LEN(cons_repass)
+                                        DEVPOS(17+Y,1);DEVOUT(DTOC(cons_repass[y,1])+' '+cons_repass[y,4]+' '+cons_repass[y,5]+' '+cons_repass[y,10]+'-'+cons_repass[y,12])
+                                NEXT
+                        ENDIF
+                        ver_debito(m_doc[point,1])
+                        @ 0,22 GET mdata
+                        @ 1,22 GET mcpf_cnpj
+                        READ
+                        IF LASTKEY() = 27
+                                wvw_lclosewindow()
+                                LOOP
+                        ENDIF
+                        cons_cpfcnpj := {}
+                        sr_getconnection():exec("SELECT * FROM smedrepass WHERE cpf_cnpj = "+sr_cdbvalue(mcpf_cnpj),,.t.,@cons_cpfcnpj)
+                        IF LEN(cons_cpfcnpj)> 0
+                                mNOME_REPASS := cons_cpfcnpj[1,4]
+                                mENDERECO  := cons_cpfcnpj[1,6]
+                                mCOMPLEMENT  := cons_cpfcnpj[1,7]
+                                mNUMERO := cons_cpfcnpj[1,8]
+                                mBAIRRO := cons_cpfcnpj[1,9]
+                                mCIDADE := cons_cpfcnpj[1,10]
+                                mFONE := cons_cpfcnpj[1,11]
+                                mEST := cons_cpfcnpj[1,12]
+                                mCEP := cons_cpfcnpj[1,13]
+                                mEMAIL := cons_cpfcnpj[1,14]
+                        ENDIF
+                        @ 2,22 GET mnome_repass PICT '@!' VALID IF(EMPTY(mnome_repass),.F.,.T.)
+                        @ 3,22 GET mendereco PICT '@!'
+                        @ 4,22 GET mnumero PICT '@!'
+                        @ 5,22 GET mcomplement PICT '@!'
+                        @ 6,22 GET mbairro PICT '@!'
+                        @ 7,22 GET mcidade PICT '@!'
+                        @ 8,22 GET mest PICT '@!'
+                        @ 9,22 GET mcep
+                        @ 10,22 GET mfone
+                        @ 11,22 GET memail
+                        @ 12,22 GET mobs1
+                        @ 13,22 GET mobs2
+                        READ
+                        IF LASTKEY() = 27
+                                wvw_lclosewindow()
+                                EXIT
+                        ENDIF
+                        opcao := op_simnao('S','Confirma a INCLUSAO DO REPASSE:')
+                        wvw_lclosewindow()
+                        IF opcao = "N"
+                                wvw_lclosewindow()
+                                LOOP
+                        ENDIF
+                        sr_getconnection():exec('INSERT INTO smedrepass ('+;
+                                'DATA,'+;//1
+                                'DOCUMENTO,'+;//2
+                                'COD_PROP,'+;//3
+                                'NOME_REPASS,'+;//3
+                                'CPF_CNPJ,'+;//4
+                                'ENDERECO,'+;//4
+                                'COMPLEMENT,'+;//4
+                                'NUMERO,'+;//4
+                                'BAIRRO,'+;//4
+                                'CIDADE,'+;//4
+                                'FONE,'+;//4
+                                'EST,'+;//4
+                                'CEP,'+;//4
+                                'EMAIL,'+;//4
+                                'OBS1,'+;//4
+                                'OBS2,'+;//4
+                                'SR_DELETED )'+;
+                                ' VALUES ('+;
+                                sr_cdbvalue(mdata         )+','+; //1
+                                sr_cdbvalue(m_doc[point,2])+','+; //2
+                                sr_cdbvalue(m_doc[point,1])+','+; //2
+                                sr_cdbvalue(mNOME_REPASS)+','+; //3
+                                sr_cdbvalue(mCPF_CNPJ   )+','+; //4
+                                sr_cdbvalue(mENDERECO   )+','+; //3
+                                sr_cdbvalue(mCOMPLEMENT )+','+; //4
+                                sr_cdbvalue(mNUMERO     )+','+; //3
+                                sr_cdbvalue(mBAIRRO     )+','+; //4
+                                sr_cdbvalue(mCIDADE     )+','+; //3
+                                sr_cdbvalue(mFONE       )+','+; //4
+                                sr_cdbvalue(mEST        )+','+; //3
+                                sr_cdbvalue(mCEP        )+','+; //4
+                                sr_cdbvalue(mEMAIL      )+','+; //3
+                                sr_cdbvalue(mOBS1       )+','+; //4
+                                sr_cdbvalue(mOBS2       )+','+; //3
+                                sr_cdbvalue(' ')+')',,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+                        sr_getconnection():exec("UPDATE smedsemen SET repasse = '*' WHERE documento = "+sr_cdbvalue(m_doc[point,2]),,.f.)
+                        sr_getconnection():exec('COMMIT',,.f.)
+                        wvw_lclosewindow()
+        ENDCASE
+ENDDO
+wvw_lclosewindow()
+RETURN NIL
